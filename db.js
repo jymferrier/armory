@@ -32,6 +32,7 @@ function initDB() {
       caliber TEXT,
       serial TEXT,
       barrel_length TEXT,
+      overall_length TEXT,
       optics TEXT,
       date_acquired TEXT,
       is_nfa INTEGER DEFAULT 0,
@@ -82,6 +83,7 @@ function initDB() {
     "ALTER TABLE firearms ADD COLUMN is_disposed INTEGER DEFAULT 0",
     "ALTER TABLE firearms ADD COLUMN date_disposed TEXT",
     "ALTER TABLE firearms ADD COLUMN disposal_method TEXT",
+    "ALTER TABLE firearms ADD COLUMN overall_length TEXT",
   ];
   for (const sql of migrations) {
     try { db.exec(sql); } catch (_) { /* column already exists */ }
@@ -139,11 +141,11 @@ const firearmsQueries = {
   create: (data) => {
     const result = getDB().prepare(`
       INSERT INTO firearms (
-        manufacturer, model, caliber, serial, barrel_length, optics, date_acquired,
+        manufacturer, model, caliber, serial, barrel_length, overall_length, optics, date_acquired,
         is_nfa, nfa_type, nfa_form_number, nfa_submit_date, nfa_tax_stamp_serial, nfa_approve_date, nfa_trust_name,
         is_disposed, date_disposed, disposal_method, notes
       ) VALUES (
-        @manufacturer, @model, @caliber, @serial, @barrel_length, @optics, @date_acquired,
+        @manufacturer, @model, @caliber, @serial, @barrel_length, @overall_length, @optics, @date_acquired,
         @is_nfa, @nfa_type, @nfa_form_number, @nfa_submit_date, @nfa_tax_stamp_serial, @nfa_approve_date, @nfa_trust_name,
         @is_disposed, @date_disposed, @disposal_method, @notes
       )
@@ -154,7 +156,7 @@ const firearmsQueries = {
     getDB().prepare(`
       UPDATE firearms SET
         manufacturer = @manufacturer, model = @model, caliber = @caliber,
-        serial = @serial, barrel_length = @barrel_length, optics = @optics,
+        serial = @serial, barrel_length = @barrel_length, overall_length = @overall_length, optics = @optics,
         date_acquired = @date_acquired,
         is_nfa = @is_nfa, nfa_type = @nfa_type,
         nfa_form_number = @nfa_form_number, nfa_submit_date = @nfa_submit_date,

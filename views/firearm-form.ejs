@@ -44,12 +44,22 @@
 
         <div class="field-row">
           <div class="field">
-            <label class="field-label">BARREL LENGTH</label>
+            <label class="field-label" id="barrelLengthLabel"><%= (firearm && firearm.nfa_type === 'Suppressor/Silencer') ? 'LENGTH' : 'BARREL LENGTH' %></label>
             <input type="text" name="barrel_length" class="field-input" value="<%= firearm ? (firearm.barrel_length || '') : '' %>" placeholder='e.g. 16", 18.5", 4.25"'>
           </div>
           <div class="field">
             <label class="field-label">OPTICS / ACCESSORIES</label>
             <input type="text" name="optics" class="field-input" value="<%= firearm ? (firearm.optics || '') : '' %>" placeholder="e.g. Trijicon MRO, Streamlight TLR-1">
+          </div>
+        </div>
+
+        <% const showOverallLength = firearm && (firearm.nfa_type === 'Short Barrel Rifle (SBR)' || firearm.nfa_type === 'Short Barrel Shotgun (SBS)'); %>
+        <div id="overallLengthRow" style="display:<%= showOverallLength ? '' : 'none' %>">
+          <div class="field-row field-row--half">
+            <div class="field">
+              <label class="field-label">OVERALL LENGTH</label>
+              <input type="text" name="overall_length" class="field-input" value="<%= firearm ? (firearm.overall_length || '') : '' %>" placeholder='e.g. 26.5", 30"'>
+            </div>
           </div>
         </div>
 
@@ -207,9 +217,12 @@
 
 <script>
 const NFA_TYPES = new Set(['Suppressor/Silencer','Short Barrel Rifle (SBR)','Short Barrel Shotgun (SBS)','Machine Gun','Destructive Device (DD)','Any Other Weapon (AOW)']);
+const OVERALL_LENGTH_TYPES = new Set(['Short Barrel Rifle (SBR)','Short Barrel Shotgun (SBS)']);
 
 function onItemTypeChange(val) {
   document.getElementById('nfaBand').style.display = NFA_TYPES.has(val) ? 'block' : 'none';
+  document.getElementById('barrelLengthLabel').textContent = val === 'Suppressor/Silencer' ? 'LENGTH' : 'BARREL LENGTH';
+  document.getElementById('overallLengthRow').style.display = OVERALL_LENGTH_TYPES.has(val) ? '' : 'none';
 }
 
 function toggleSection(id, show) {

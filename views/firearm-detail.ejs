@@ -103,8 +103,14 @@
         <% } %>
         <% if (firearm.barrel_length) { %>
         <div class="info-item">
-          <span class="info-label">BARREL LENGTH</span>
+          <span class="info-label"><%= firearm.nfa_type === 'Suppressor/Silencer' ? 'LENGTH' : 'BARREL LENGTH' %></span>
           <span class="info-value"><%= firearm.barrel_length %></span>
+        </div>
+        <% } %>
+        <% if (firearm.overall_length) { %>
+        <div class="info-item">
+          <span class="info-label">OVERALL LENGTH</span>
+          <span class="info-value"><%= firearm.overall_length %></span>
         </div>
         <% } %>
         <% if (firearm.optics) { %>

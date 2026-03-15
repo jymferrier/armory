@@ -48,18 +48,20 @@ router.post('/new', (req, res) => {
     if (err) return res.render('firearm-form', { user: req.session.user, firearm: null, error: err.message });
 
     const {
-      manufacturer, model, caliber, serial, barrel_length, optics, date_acquired,
+      manufacturer, model, caliber, serial, barrel_length, overall_length, optics, date_acquired,
       item_type, nfa_form_number, nfa_submit_date, nfa_tax_stamp_serial, nfa_approve_date, nfa_trust_name,
       is_disposed, date_disposed, disposal_method, notes
     } = req.body;
 
     const isNfa = NFA_TYPES.has(item_type);
+    const hasSbrSbs = item_type === 'Short Barrel Rifle (SBR)' || item_type === 'Short Barrel Shotgun (SBS)';
 
     const firearmsId = firearmsQueries.create({
       manufacturer, model,
       caliber: caliber || null,
       serial: serial || null,
       barrel_length: barrel_length || null,
+      overall_length: hasSbrSbs ? (overall_length || null) : null,
       optics: optics || null,
       date_acquired: date_acquired || null,
       is_nfa: isNfa ? 1 : 0,
@@ -102,18 +104,20 @@ router.get('/:id/edit', (req, res) => {
 // Update
 router.post('/:id/edit', (req, res) => {
   const {
-    manufacturer, model, caliber, serial, barrel_length, optics, date_acquired,
+    manufacturer, model, caliber, serial, barrel_length, overall_length, optics, date_acquired,
     item_type, nfa_form_number, nfa_submit_date, nfa_tax_stamp_serial, nfa_approve_date, nfa_trust_name,
     is_disposed, date_disposed, disposal_method, notes
   } = req.body;
 
   const isNfa = NFA_TYPES.has(item_type);
+  const hasSbrSbs = item_type === 'Short Barrel Rifle (SBR)' || item_type === 'Short Barrel Shotgun (SBS)';
 
   firearmsQueries.update(req.params.id, {
     manufacturer, model,
     caliber: caliber || null,
     serial: serial || null,
     barrel_length: barrel_length || null,
+    overall_length: hasSbrSbs ? (overall_length || null) : null,
     optics: optics || null,
     date_acquired: date_acquired || null,
     is_nfa: isNfa ? 1 : 0,
