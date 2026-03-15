@@ -1,0 +1,288 @@
+<%- include('partials/header') %>
+<div class="page">
+  <div class="page-header">
+    <div>
+      <p class="breadcrumb"><a href="/inventory">← INVENTORY</a></p>
+      <h1 class="page-title"><%= firearm.manufacturer %> <span class="title-model"><%= firearm.model %></span></h1>
+      <div class="detail-badges">
+        <% if (firearm.nfa_type) { %><span class="badge <%= firearm.is_nfa ? 'badge--nfa' : 'badge--type' %>"><%= firearm.nfa_type %></span><% } %>
+        <% if (firearm.caliber) { %><span class="badge badge--caliber"><%= firearm.caliber %></span><% } %>
+        <% if (firearm.is_disposed) { %><span class="badge badge--disposed">DISPOSED</span><% } %>
+      </div>
+    </div>
+    <div class="page-actions">
+      <a href="/inventory/<%= firearm.id %>/edit" class="btn btn--ghost">EDIT</a>
+      <form method="POST" action="/inventory/<%= firearm.id %>/delete" onsubmit="return confirm('Delete this firearm and all associated files?')">
+        <button type="submit" class="btn btn--danger">DELETE</button>
+      </form>
+    </div>
+  </div>
+
+  <% if (firearm.is_disposed) { %>
+  <div class="alert alert--disposed">
+    ⚠ This item has been transferred or disposed of
+    <% if (firearm.date_disposed || firearm.disposal_method) { %>
+      —
+      <% if (firearm.date_disposed) { %><strong><%= new Date(firearm.date_disposed + 'T00:00:00').toLocaleDateString('en-US', {year:'numeric',month:'long',day:'numeric'}) %></strong><% } %>
+      <% if (firearm.disposal_method) { %> &middot; <%= firearm.disposal_method %><% } %>
+    <% } %>
+  </div>
+  <% } %>
+
+  <div class="detail-layout">
+    <!-- Left: Photos -->
+    <div class="detail-photos">
+      <% if (firearm.photos.length > 0) { %>
+        <div class="photo-main" id="photoMain">
+          <img src="/uploads/photos/<%= (firearm.photos.find(p=>p.is_primary) || firearm.photos[0]).filename %>" alt="Primary photo" id="photoMainImg">
+        </div>
+        <div class="photo-thumbs">
+          <% firearm.photos.forEach(p => { %>
+            <div class="photo-thumb-wrap <%= p.is_primary ? 'photo-thumb-wrap--active' : '' %>">
+              <img src="/uploads/photos/<%= p.filename %>" class="photo-thumb" onclick="setMainPhoto(this.src, this.closest('.photo-thumb-wrap'))" alt="">
+              <div class="photo-thumb-actions">
+                <% if (!p.is_primary) { %>
+                  <form method="POST" action="/inventory/<%= firearm.id %>/photos/<%= p.id %>/primary">
+                    <button type="submit" class="thumb-btn thumb-btn--primary" title="Set as primary">★</button>
+                  </form>
+                <% } else { %>
+                  <span class="thumb-primary-badge">★</span>
+                <% } %>
+                <form method="POST" action="/inventory/<%= firearm.id %>/photos/<%= p.id %>/delete" onsubmit="return confirm('Delete this photo?')">
+                  <button type="submit" class="thumb-btn thumb-btn--delete" title="Delete">✕</button>
+                </form>
+              </div>
+            </div>
+          <% }) %>
+        </div>
+      <% } else { %>
+        <div class="photo-placeholder">NO PHOTOS</div>
+      <% } %>
+
+      <div class="upload-section">
+        <h3 class="section-title">ADD PHOTOS</h3>
+        <form method="POST" action="/inventory/<%= firearm.id %>/photos" enctype="multipart/form-data">
+          <div class="file-drop-zone" id="photoDropZone">
+            <input type="file" name="photos" multiple accept="image/*" class="file-input" id="photoInput">
+            <div class="file-drop-label">
+              <span class="file-drop-icon">⊕</span>
+              <span>DROP IMAGES OR CLICK TO BROWSE</span>
+              <span class="file-drop-hint">JPG, PNG, WEBP — MAX 20MB EACH</span>
+            </div>
+          </div>
+          <button type="submit" class="btn btn--primary btn--full mt-sm">UPLOAD PHOTOS</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Right: Details -->
+    <div class="detail-info">
+
+      <!-- Identification -->
+      <h3 class="section-title">IDENTIFICATION</h3>
+      <div class="info-grid">
+        <div class="info-item">
+          <span class="info-label">MANUFACTURER</span>
+          <span class="info-value"><%= firearm.manufacturer %></span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">MODEL</span>
+          <span class="info-value"><%= firearm.model %></span>
+        </div>
+        <% if (firearm.caliber) { %>
+        <div class="info-item">
+          <span class="info-label">CALIBER</span>
+          <span class="info-value"><%= firearm.caliber %></span>
+        </div>
+        <% } %>
+        <% if (firearm.serial) { %>
+        <div class="info-item">
+          <span class="info-label">SERIAL NUMBER</span>
+          <span class="info-value mono"><%= firearm.serial %></span>
+        </div>
+        <% } %>
+        <% if (firearm.barrel_length) { %>
+        <div class="info-item">
+          <span class="info-label">BARREL LENGTH</span>
+          <span class="info-value"><%= firearm.barrel_length %></span>
+        </div>
+        <% } %>
+        <% if (firearm.optics) { %>
+        <div class="info-item">
+          <span class="info-label">OPTICS / ACCESSORIES</span>
+          <span class="info-value"><%= firearm.optics %></span>
+        </div>
+        <% } %>
+        <% if (firearm.date_acquired) { %>
+        <div class="info-item">
+          <span class="info-label">DATE ACQUIRED</span>
+          <span class="info-value"><%= new Date(firearm.date_acquired + 'T00:00:00').toLocaleDateString('en-US', {year:'numeric',month:'long',day:'numeric'}) %></span>
+        </div>
+        <% } %>
+        <% if (firearm.nfa_type) { %>
+        <div class="info-item">
+          <span class="info-label">ITEM TYPE</span>
+          <span class="info-value <%= firearm.is_nfa ? 'value--nfa' : '' %>"><%= firearm.nfa_type %></span>
+        </div>
+        <% } %>
+        <% if (firearm.nfa_trust_name) { %>
+        <div class="info-item">
+          <span class="info-label">TRUST / ENTITY</span>
+          <span class="info-value"><%= firearm.nfa_trust_name %></span>
+        </div>
+        <% } %>
+      </div>
+
+      <!-- NFA Details -->
+      <% if (firearm.is_nfa) { %>
+      <h3 class="section-title mt-lg">NFA DETAILS</h3>
+
+      <%
+        // Wait time calculation
+        const submitDate = firearm.nfa_submit_date ? new Date(firearm.nfa_submit_date + 'T00:00:00') : null;
+        const approveDate = firearm.nfa_approve_date ? new Date(firearm.nfa_approve_date + 'T00:00:00') : null;
+        const today = new Date();
+        today.setHours(0,0,0,0);
+        let waitDays = null;
+        let waitPending = false;
+        if (submitDate) {
+          const endDate = approveDate || today;
+          waitDays = Math.round((endDate - submitDate) / (1000 * 60 * 60 * 24));
+          waitPending = !approveDate;
+        }
+      %>
+
+      <% if (submitDate) { %>
+      <div class="nfa-wait-tracker <%= waitPending ? 'nfa-wait-tracker--pending' : 'nfa-wait-tracker--approved' %>">
+        <div class="nfa-wait-icon"><%= waitPending ? '⏳' : '✓' %></div>
+        <div class="nfa-wait-body">
+          <div class="nfa-wait-days"><%= waitDays %> <span>DAYS</span></div>
+          <div class="nfa-wait-label">
+            <% if (waitPending) { %>
+              PENDING — submitted <%= submitDate.toLocaleDateString('en-US', {year:'numeric',month:'short',day:'numeric'}) %>
+            <% } else { %>
+              APPROVED — <%= submitDate.toLocaleDateString('en-US', {month:'short',day:'numeric',year:'numeric'}) %> → <%= approveDate.toLocaleDateString('en-US', {month:'short',day:'numeric',year:'numeric'}) %>
+            <% } %>
+          </div>
+        </div>
+      </div>
+      <% } %>
+
+      <div class="info-grid">
+        <% if (firearm.nfa_form_number) { %>
+        <div class="info-item">
+          <span class="info-label">FORM 1 / FORM 4 NUMBER</span>
+          <span class="info-value mono"><%= firearm.nfa_form_number %></span>
+        </div>
+        <% } %>
+        <% if (firearm.nfa_submit_date) { %>
+        <div class="info-item">
+          <span class="info-label">DATE SUBMITTED</span>
+          <span class="info-value"><%= new Date(firearm.nfa_submit_date + 'T00:00:00').toLocaleDateString('en-US', {year:'numeric',month:'long',day:'numeric'}) %></span>
+        </div>
+        <% } %>
+        <% if (firearm.nfa_tax_stamp_serial) { %>
+        <div class="info-item">
+          <span class="info-label">TAX STAMP / FORM SERIAL</span>
+          <span class="info-value mono"><%= firearm.nfa_tax_stamp_serial %></span>
+        </div>
+        <% } %>
+        <% if (firearm.nfa_approve_date) { %>
+        <div class="info-item">
+          <span class="info-label">ATF APPROVAL DATE</span>
+          <span class="info-value"><%= new Date(firearm.nfa_approve_date + 'T00:00:00').toLocaleDateString('en-US', {year:'numeric',month:'long',day:'numeric'}) %></span>
+        </div>
+        <% } %>
+      </div>
+      <% } %>
+
+
+      <!-- Disposition -->
+      <% if (firearm.is_disposed) { %>
+      <h3 class="section-title mt-lg">DISPOSITION</h3>
+      <div class="info-grid">
+        <% if (firearm.date_disposed) { %>
+        <div class="info-item">
+          <span class="info-label">DATE DISPOSED</span>
+          <span class="info-value"><%= new Date(firearm.date_disposed + 'T00:00:00').toLocaleDateString('en-US', {year:'numeric',month:'long',day:'numeric'}) %></span>
+        </div>
+        <% } %>
+        <% if (firearm.disposal_method) { %>
+        <div class="info-item">
+          <span class="info-label">METHOD / TRANSFEREE</span>
+          <span class="info-value"><%= firearm.disposal_method %></span>
+        </div>
+        <% } %>
+      </div>
+      <% } %>
+
+      <!-- Notes -->
+      <% if (firearm.notes) { %>
+      <div class="notes-block mt-lg">
+        <h3 class="section-title">NOTES</h3>
+        <p class="notes-text"><%= firearm.notes %></p>
+      </div>
+      <% } %>
+
+      <!-- Documents -->
+      <div class="documents-section">
+        <h3 class="section-title">DOCUMENTS</h3>
+        <% const docLabels = {atf_form: 'ATF Form', form5320: 'Form 5320', additional_docs: 'Additional Document'}; %>
+        <% const groupedDocs = {}; %>
+        <% firearm.documents.forEach(d => { if(!groupedDocs[d.doc_type]) groupedDocs[d.doc_type]=[]; groupedDocs[d.doc_type].push(d); }); %>
+
+        <% if (firearm.documents.length > 0) { %>
+          <div class="doc-list">
+            <% Object.entries(groupedDocs).forEach(([type, docs]) => { %>
+              <div class="doc-group">
+                <h4 class="doc-group-title"><%= docLabels[type] || type %></h4>
+                <% docs.forEach(doc => { %>
+                  <div class="doc-item">
+                    <a href="/api/document/<%= doc.filename %>" class="doc-link" target="_blank">
+                      <span class="doc-icon">📄</span>
+                      <span class="doc-name"><%= doc.original_name %></span>
+                    </a>
+                    <form method="POST" action="/inventory/<%= firearm.id %>/documents/<%= doc.id %>/delete" onsubmit="return confirm('Delete this document?')">
+                      <button type="submit" class="thumb-btn thumb-btn--delete">✕</button>
+                    </form>
+                  </div>
+                <% }) %>
+              </div>
+            <% }) %>
+          </div>
+        <% } else { %>
+          <p class="no-docs">No documents uploaded</p>
+        <% } %>
+
+        <form method="POST" action="/inventory/<%= firearm.id %>/documents" enctype="multipart/form-data" class="doc-upload-form">
+          <% if (firearm.is_nfa) { %>
+          <div class="field">
+            <label class="field-label">ATF FORM(S)</label>
+            <input type="file" name="atf_form" multiple accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" class="file-input-plain">
+          </div>
+          <div class="field">
+            <label class="field-label">FORM 5320</label>
+            <input type="file" name="form5320" multiple accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" class="file-input-plain">
+          </div>
+          <% } %>
+          <div class="field">
+            <label class="field-label">ADDITIONAL DOCUMENTS</label>
+            <input type="file" name="additional_docs" multiple accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" class="file-input-plain">
+          </div>
+          <button type="submit" class="btn btn--ghost btn--full mt-sm">UPLOAD DOCUMENTS</button>
+        </form>
+      </div>
+
+      <p class="detail-meta">Added <%= new Date(firearm.created_at).toLocaleDateString('en-US', {year:'numeric',month:'short',day:'numeric'}) %></p>
+    </div>
+  </div>
+</div>
+
+<script>
+function setMainPhoto(src, wrap) {
+  document.getElementById('photoMainImg').src = src;
+  document.querySelectorAll('.photo-thumb-wrap').forEach(w => w.classList.remove('photo-thumb-wrap--active'));
+  wrap.classList.add('photo-thumb-wrap--active');
+}
+</script>
+<%- include('partials/footer') %>

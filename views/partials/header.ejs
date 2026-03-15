@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= typeof title !== 'undefined' ? title + ' — ' : '' %>ARMORY</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/main.css">
+</head>
+<body>
+<% if (typeof user !== 'undefined' && user) { %>
+<nav class="navbar">
+  <div class="nav-brand">
+    <span class="nav-logo">⬡</span>
+    <span class="nav-title">ARMORY</span>
+  </div>
+  <div class="nav-links">
+    <a href="/inventory" class="nav-link">INVENTORY</a>
+    <a href="/inventory/new" class="nav-link nav-link--accent">+ ADD</a>
+    <a href="/settings" class="nav-link">SETTINGS</a>
+    <span class="nav-user"><%= user.username %></span>
+    <a href="/logout" class="nav-link nav-link--muted">LOGOUT</a>
+  </div>
+</nav>
+<% } %>

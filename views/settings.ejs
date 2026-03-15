@@ -1,0 +1,65 @@
+<%- include('partials/header') %>
+<div class="page">
+  <div class="page-header">
+    <h1 class="page-title">SETTINGS</h1>
+  </div>
+
+  <% if (typeof message !== 'undefined' && message) { %>
+    <div class="alert alert--<%= message.type %>"><%= message.text %></div>
+  <% } %>
+
+  <div class="settings-grid">
+    <!-- Change password -->
+    <div class="settings-card">
+      <h2 class="section-title">CHANGE PASSWORD</h2>
+      <form method="POST" action="/settings/change-password" class="settings-form">
+        <div class="field">
+          <label class="field-label">CURRENT PASSWORD</label>
+          <input type="password" name="current_password" class="field-input" required>
+        </div>
+        <div class="field">
+          <label class="field-label">NEW PASSWORD</label>
+          <input type="password" name="new_password" class="field-input" required minlength="8">
+        </div>
+        <button type="submit" class="btn btn--ghost">UPDATE PASSWORD</button>
+      </form>
+    </div>
+
+    <!-- Users -->
+    <div class="settings-card">
+      <h2 class="section-title">USERS</h2>
+      <div class="user-list">
+        <% users.forEach(u => { %>
+          <div class="user-item">
+            <div>
+              <span class="user-name"><%= u.username %></span>
+              <% if (u.id === user.id) { %><span class="badge">YOU</span><% } %>
+            </div>
+            <% if (u.id !== user.id) { %>
+              <form method="POST" action="/settings/delete-user" onsubmit="return confirm('Delete user <%= u.username %>?')">
+                <input type="hidden" name="id" value="<%= u.id %>">
+                <button type="submit" class="btn btn--danger btn--sm">DELETE</button>
+              </form>
+            <% } %>
+          </div>
+        <% }) %>
+      </div>
+
+      <div class="divider"></div>
+
+      <h3 class="section-title">ADD USER</h3>
+      <form method="POST" action="/settings/add-user" class="settings-form">
+        <div class="field">
+          <label class="field-label">USERNAME</label>
+          <input type="text" name="username" class="field-input" required>
+        </div>
+        <div class="field">
+          <label class="field-label">PASSWORD</label>
+          <input type="password" name="password" class="field-input" required minlength="8">
+        </div>
+        <button type="submit" class="btn btn--primary">CREATE USER</button>
+      </form>
+    </div>
+  </div>
+</div>
+<%- include('partials/footer') %>

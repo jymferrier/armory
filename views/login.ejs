@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ARMORY — LOGIN</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/main.css">
+</head>
+<body class="login-body">
+  <div class="login-container">
+    <div class="login-brand">
+      <div class="login-hex">⬡</div>
+      <h1 class="login-title">ARMORY</h1>
+      <p class="login-sub">SECURE INVENTORY SYSTEM</p>
+    </div>
+    <div class="login-card">
+      <% if (error) { %>
+        <div class="alert alert--error"><%= error %></div>
+      <% } %>
+      <form method="POST" action="/login" class="login-form">
+        <div class="field">
+          <label class="field-label">USERNAME</label>
+          <input type="text" name="username" class="field-input" autocomplete="username" autofocus required>
+        </div>
+        <div class="field">
+          <label class="field-label">PASSWORD</label>
+          <input type="password" name="password" class="field-input" autocomplete="current-password" required>
+        </div>
+        <button type="submit" class="btn btn--primary btn--full">AUTHENTICATE</button>
+      </form>
+    </div>
+    <p class="login-hint">Default credentials set via environment variables</p>
+  </div>
+</body>
+</html>

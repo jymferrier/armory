@@ -1,0 +1,237 @@
+<%- include('partials/header') %>
+<div class="page">
+  <div class="page-header">
+    <div>
+      <p class="breadcrumb"><a href="<%= firearm ? '/inventory/' + firearm.id : '/inventory' %>">← <%= firearm ? firearm.manufacturer + ' ' + firearm.model : 'INVENTORY' %></a></p>
+      <h1 class="page-title"><%= firearm ? 'EDIT FIREARM' : 'ADD FIREARM' %></h1>
+    </div>
+  </div>
+
+  <% if (error) { %>
+    <div class="alert alert--error"><%= error %></div>
+  <% } %>
+
+  <form method="POST" action="/inventory/<%= firearm ? firearm.id + '/edit' : 'new' %>"
+    <% if (!firearm) { %>enctype="multipart/form-data"<% } %>
+    class="firearm-form">
+
+    <!-- 01: IDENTIFICATION -->
+    <div class="form-band">
+      <div class="form-band__label">01 / IDENTIFICATION</div>
+      <div class="form-band__fields">
+
+        <div class="field-row">
+          <div class="field">
+            <label class="field-label">MANUFACTURER <span class="required">*</span></label>
+            <input type="text" name="manufacturer" class="field-input" value="<%= firearm ? firearm.manufacturer : '' %>" required placeholder="e.g. Smith &amp; Wesson">
+          </div>
+          <div class="field">
+            <label class="field-label">MODEL <span class="required">*</span></label>
+            <input type="text" name="model" class="field-input" value="<%= firearm ? firearm.model : '' %>" required placeholder="e.g. M&amp;P 9 Shield">
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label class="field-label">CALIBER</label>
+            <input type="text" name="caliber" class="field-input" value="<%= firearm ? (firearm.caliber || '') : '' %>" placeholder="e.g. 9mm, .308 Win, .223 Rem">
+          </div>
+          <div class="field">
+            <label class="field-label">SERIAL NUMBER</label>
+            <input type="text" name="serial" class="field-input mono" value="<%= firearm ? (firearm.serial || '') : '' %>" placeholder="Manufacturer serial number">
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label class="field-label">BARREL LENGTH</label>
+            <input type="text" name="barrel_length" class="field-input" value="<%= firearm ? (firearm.barrel_length || '') : '' %>" placeholder='e.g. 16", 18.5", 4.25"'>
+          </div>
+          <div class="field">
+            <label class="field-label">OPTICS / ACCESSORIES</label>
+            <input type="text" name="optics" class="field-input" value="<%= firearm ? (firearm.optics || '') : '' %>" placeholder="e.g. Trijicon MRO, Streamlight TLR-1">
+          </div>
+        </div>
+
+        <div class="field-row field-row--half">
+          <div class="field">
+            <label class="field-label">DATE ACQUIRED</label>
+            <input type="date" name="date_acquired" class="field-input field-input--date" value="<%= firearm ? (firearm.date_acquired || '') : '' %>">
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label class="field-label">ITEM TYPE</label>
+            <%
+              const allItemTypes = [
+                { group: 'Standard', items: ['Handgun', 'Rifle', 'Shotgun'] },
+                { group: 'NFA', items: ['Suppressor/Silencer','Short Barrel Rifle (SBR)','Short Barrel Shotgun (SBS)','Machine Gun','Destructive Device (DD)','Any Other Weapon (AOW)'] }
+              ];
+              const currentType = firearm ? (firearm.nfa_type || '') : '';
+            %>
+            <select name="item_type" id="itemType" class="field-select" onchange="onItemTypeChange(this.value)">
+              <option value="">— SELECT TYPE —</option>
+              <% allItemTypes.forEach(group => { %>
+                <optgroup label="<%= group.group %>">
+                  <% group.items.forEach(t => { %>
+                    <option value="<%= t %>" <%= currentType === t ? 'selected' : '' %>><%= t %></option>
+                  <% }) %>
+                </optgroup>
+              <% }) %>
+            </select>
+          </div>
+          <div class="field">
+            <label class="field-label">TRUST / ENTITY NAME</label>
+            <input type="text" name="nfa_trust_name" class="field-input"
+              value="<%= firearm ? (firearm.nfa_trust_name || '') : '' %>"
+              placeholder="Trust or entity name, if applicable">
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- 02: NFA -->
+    <%
+      const nfaTypesList = ['Suppressor/Silencer','Short Barrel Rifle (SBR)','Short Barrel Shotgun (SBS)','Machine Gun','Destructive Device (DD)','Any Other Weapon (AOW)'];
+      const isNfaOnLoad = firearm && nfaTypesList.includes(firearm.nfa_type);
+    %>
+    <div class="form-band" id="nfaBand" style="display:<%= isNfaOnLoad ? 'block' : 'none' %>">
+      <div class="form-band__label">02 / NFA</div>
+      <div class="form-band__fields">
+
+        <div class="field-row">
+          <div class="field">
+            <label class="field-label">FORM 1 / FORM 4 NUMBER</label>
+            <input type="text" name="nfa_form_number" class="field-input mono"
+              value="<%= firearm ? (firearm.nfa_form_number || '') : '' %>"
+              placeholder="e.g. 20240001234">
+          </div>
+          <div class="field">
+            <label class="field-label">TAX STAMP / FORM SERIAL</label>
+            <input type="text" name="nfa_tax_stamp_serial" class="field-input mono"
+              value="<%= firearm ? (firearm.nfa_tax_stamp_serial || '') : '' %>"
+              placeholder="Tax stamp or Form serial number">
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label class="field-label">DATE SUBMITTED TO ATF</label>
+            <input type="date" name="nfa_submit_date" class="field-input field-input--date"
+              value="<%= firearm ? (firearm.nfa_submit_date || '') : '' %>">
+          </div>
+          <div class="field">
+            <label class="field-label">ATF APPROVAL DATE</label>
+            <input type="date" name="nfa_approve_date" class="field-input field-input--date"
+              value="<%= firearm ? (firearm.nfa_approve_date || '') : '' %>">
+          </div>
+        </div>
+        <div class="nfa-info-box">
+          📋 ATF Form and Form 5320 documents can be uploaded from the item detail page after saving.
+        </div>
+
+      </div>
+    </div>
+
+    <!-- 03: DISPOSITION -->
+    <div class="form-band">
+      <div class="form-band__label">03 / DISPOSITION</div>
+      <div class="form-band__fields">
+
+        <div class="field field--checkbox">
+          <label class="checkbox-label">
+            <input type="checkbox" name="is_disposed" id="isDisposed" value="1" class="checkbox-input"
+              <%= firearm && firearm.is_disposed ? 'checked' : '' %>
+              onchange="toggleSection('disposalFields', this.checked)">
+            <span class="checkbox-custom checkbox-custom--warning"></span>
+            <span class="checkbox-text">THIS ITEM HAS BEEN TRANSFERRED / DISPOSED OF</span>
+          </label>
+        </div>
+
+        <div id="disposalFields" class="conditional-fields" style="display:<%= firearm && firearm.is_disposed ? 'block' : 'none' %>">
+          <div class="field-row">
+            <div class="field">
+              <label class="field-label">DATE OF DISPOSAL / TRANSFER</label>
+              <input type="date" name="date_disposed" class="field-input field-input--date"
+                value="<%= firearm ? (firearm.date_disposed || '') : '' %>">
+            </div>
+            <div class="field">
+              <label class="field-label">METHOD / TRANSFEREE</label>
+              <input type="text" name="disposal_method" class="field-input"
+                value="<%= firearm ? (firearm.disposal_method || '') : '' %>"
+                placeholder="e.g. Private sale to John Doe, FFL transfer, Trade-in">
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- 04: NOTES -->
+    <div class="form-band">
+      <div class="form-band__label">04 / NOTES</div>
+      <div class="form-band__fields">
+        <div class="field">
+          <label class="field-label">GENERAL NOTES</label>
+          <textarea name="notes" class="field-textarea" rows="5"
+            placeholder="Condition, modifications, storage location, purchase details, provenance…"><%= firearm ? (firearm.notes || '') : '' %></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- 05: PHOTOS (new items only) -->
+    <% if (!firearm) { %>
+    <div class="form-band">
+      <div class="form-band__label">05 / PHOTOS</div>
+      <div class="form-band__fields">
+        <div class="file-drop-zone" id="photoDropZone">
+          <input type="file" name="photos" multiple accept="image/*" class="file-input" id="photoInput">
+          <div class="file-drop-label">
+            <span class="file-drop-icon">⊕</span>
+            <span>DROP IMAGES OR CLICK TO BROWSE</span>
+            <span class="file-drop-hint">JPG, PNG, WEBP — MAX 20MB EACH — FIRST IMAGE WILL BE PRIMARY</span>
+          </div>
+          <div class="file-preview" id="filePreview"></div>
+        </div>
+      </div>
+    </div>
+    <% } %>
+
+    <div class="form-actions">
+      <a href="<%= firearm ? '/inventory/' + firearm.id : '/inventory' %>" class="btn btn--ghost">CANCEL</a>
+      <button type="submit" class="btn btn--primary"><%= firearm ? 'SAVE CHANGES' : 'ADD TO INVENTORY' %></button>
+    </div>
+  </form>
+</div>
+
+<script>
+const NFA_TYPES = new Set(['Suppressor/Silencer','Short Barrel Rifle (SBR)','Short Barrel Shotgun (SBS)','Machine Gun','Destructive Device (DD)','Any Other Weapon (AOW)']);
+
+function onItemTypeChange(val) {
+  document.getElementById('nfaBand').style.display = NFA_TYPES.has(val) ? 'block' : 'none';
+}
+
+function toggleSection(id, show) {
+  document.getElementById(id).style.display = show ? 'block' : 'none';
+}
+
+const photoInput = document.getElementById('photoInput');
+if (photoInput) {
+  photoInput.addEventListener('change', function() {
+    const preview = document.getElementById('filePreview');
+    preview.innerHTML = '';
+    Array.from(this.files).forEach((file, i) => {
+      const reader = new FileReader();
+      reader.onload = e => {
+        const div = document.createElement('div');
+        div.className = 'file-preview-item';
+        div.innerHTML = '<img src="' + e.target.result + '" alt="' + file.name + '"><span class="preview-label">' + (i === 0 ? '★ PRIMARY' : '') + '</span>';
+        preview.appendChild(div);
+      };
+      reader.readAsDataURL(file);
+    });
+  });
+}
+</script>
+<%- include('partials/footer') %>

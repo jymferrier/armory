@@ -1,0 +1,54 @@
+<%- include('partials/header') %>
+<div class="page">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">INVENTORY</h1>
+      <p class="page-sub"><%= firearms.length %> ITEM<%= firearms.length !== 1 ? 'S' : '' %> CATALOGUED</p>
+    </div>
+    <div class="page-actions">
+      <form method="GET" action="/inventory" class="search-form">
+        <input type="text" name="q" value="<%= q %>" placeholder="SEARCH INVENTORY…" class="search-input">
+        <button type="submit" class="btn btn--ghost">SEARCH</button>
+        <% if (q) { %><a href="/inventory" class="btn btn--ghost">CLEAR</a><% } %>
+      </form>
+      <a href="/inventory/new" class="btn btn--primary">+ ADD FIREARM</a>
+    </div>
+  </div>
+
+  <% if (firearms.length === 0) { %>
+    <div class="empty-state">
+      <div class="empty-icon">⊘</div>
+      <p class="empty-text"><%= q ? 'NO RESULTS FOR "' + q + '"' : 'NO ITEMS IN INVENTORY' %></p>
+      <% if (!q) { %><a href="/inventory/new" class="btn btn--primary">ADD FIRST ITEM</a><% } %>
+    </div>
+  <% } else { %>
+    <div class="inventory-grid">
+      <% firearms.forEach(f => { %>
+        <a href="/inventory/<%= f.id %>" class="firearm-card">
+          <div class="firearm-card__photo">
+            <% if (f.primary_photo) { %>
+              <img src="/uploads/photos/<%= f.primary_photo.filename %>" alt="<%= f.manufacturer %> <%= f.model %>">
+            <% } else { %>
+              <div class="firearm-card__no-photo">NO PHOTO</div>
+            <% } %>
+          </div>
+          <div class="firearm-card__body">
+            <div class="firearm-card__badges">
+              <% if (f.nfa_type) { %><span class="badge <%= f.is_nfa ? 'badge--nfa' : 'badge--type' %>"><%= f.nfa_type %></span><% } %>
+              <% if (f.caliber) { %><span class="badge badge--caliber"><%= f.caliber %></span><% } %>
+            </div>
+            <h2 class="firearm-card__make"><%= f.manufacturer %></h2>
+            <p class="firearm-card__model"><%= f.model %></p>
+            <% if (f.serial) { %>
+              <p class="firearm-card__serial">S/N: <%= f.serial %></p>
+            <% } %>
+            <% if (f.optics) { %>
+              <p class="firearm-card__optics">⊕ <%= f.optics %></p>
+            <% } %>
+          </div>
+        </a>
+      <% }) %>
+    </div>
+  <% } %>
+</div>
+<%- include('partials/footer') %>
