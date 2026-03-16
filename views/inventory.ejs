@@ -11,7 +11,11 @@
         <button type="submit" class="btn btn--ghost">SEARCH</button>
         <% if (q) { %><a href="/inventory" class="btn btn--ghost">CLEAR</a><% } %>
       </form>
-<a href="/inventory/new" class="btn btn--primary">+ ADD FIREARM</a>
+      <div class="view-toggle" id="viewToggle">
+        <button type="button" class="view-toggle__btn" id="btnGrid" onclick="setView('grid')" title="Grid view">⊞</button>
+        <button type="button" class="view-toggle__btn" id="btnList" onclick="setView('list')" title="List view">≡</button>
+      </div>
+      <a href="/inventory/new" class="btn btn--primary">+ ADD FIREARM</a>
     </div>
   </div>
 
@@ -22,37 +26,89 @@
       <% if (!q) { %><a href="/inventory/new" class="btn btn--primary">ADD FIRST ITEM</a><% } %>
     </div>
   <% } else { %>
-    <div class="inventory-grid">
-      <% firearms.forEach(f => { %>
-        <a href="/inventory/<%= f.id %>" class="firearm-card">
-          <div class="firearm-card__photo">
-            <% if (f.primary_photo) { %>
-              <img src="/uploads/photos/<%= f.primary_photo.filename %>" alt="<%= f.manufacturer %> <%= f.model %>">
-            <% } else { %>
-              <div class="firearm-card__no-photo">NO PHOTO</div>
-            <% } %>
-          </div>
-          <div class="firearm-card__body">
-            <div class="firearm-card__badges">
-              <% if (f.nfa_type) { %><span class="badge <%= f.is_nfa ? 'badge--nfa' : 'badge--type' %>"><%= f.nfa_type %></span><% } %>
-              <% if (f.caliber) { %><span class="badge badge--caliber"><%= f.caliber %></span><% } %>
+
+    <!-- Grid view -->
+    <div id="viewGrid">
+      <div class="inventory-grid">
+        <% firearms.forEach(f => { %>
+          <a href="/inventory/<%= f.id %>" class="firearm-card">
+            <div class="firearm-card__photo">
+              <% if (f.primary_photo) { %>
+                <img src="/uploads/photos/<%= f.primary_photo.filename %>" alt="<%= f.manufacturer %> <%= f.model %>">
+              <% } else { %>
+                <div class="firearm-card__no-photo">NO PHOTO</div>
+              <% } %>
             </div>
-            <h2 class="firearm-card__make"><%= f.manufacturer %></h2>
-            <p class="firearm-card__model"><%= f.model %></p>
-            <% if (f.serial) { %>
-              <p class="firearm-card__serial">S/N: <%= f.serial %></p>
-            <% } %>
-            <% if (f.optics) {
-                let cardOptics = [];
-                try { const p = JSON.parse(f.optics); cardOptics = Array.isArray(p) ? p : [f.optics]; }
-                catch(e) { cardOptics = [f.optics]; }
-              %>
-              <p class="firearm-card__optics">⊕ <%= cardOptics.join(', ') %></p>
-            <% } %>
-          </div>
-        </a>
-      <% }) %>
+            <div class="firearm-card__body">
+              <div class="firearm-card__badges">
+                <% if (f.nfa_type) { %><span class="badge <%= f.is_nfa ? 'badge--nfa' : 'badge--type' %>"><%= f.nfa_type %></span><% } %>
+                <% if (f.caliber) { %><span class="badge badge--caliber"><%= f.caliber %></span><% } %>
+              </div>
+              <h2 class="firearm-card__make"><%= f.manufacturer %></h2>
+              <p class="firearm-card__model"><%= f.model %></p>
+              <% if (f.serial) { %>
+                <p class="firearm-card__serial">S/N: <%= f.serial %></p>
+              <% } %>
+              <% if (f.optics) {
+                  let cardOptics = [];
+                  try { const p = JSON.parse(f.optics); cardOptics = Array.isArray(p) ? p : [f.optics]; }
+                  catch(e) { cardOptics = [f.optics]; }
+                %>
+                <p class="firearm-card__optics">⊕ <%= cardOptics.join(', ') %></p>
+              <% } %>
+            </div>
+          </a>
+        <% }) %>
+      </div>
     </div>
+
+    <!-- List view -->
+    <div id="viewList">
+      <div class="inventory-list">
+        <% firearms.forEach(f => { %>
+          <a href="/inventory/<%= f.id %>" class="firearm-row">
+            <div class="firearm-row__thumb">
+              <% if (f.primary_photo) { %>
+                <img src="/uploads/photos/<%= f.primary_photo.filename %>" alt="">
+              <% } else { %>
+                <div class="firearm-row__no-photo">NO PHOTO</div>
+              <% } %>
+            </div>
+            <div class="firearm-row__main">
+              <div class="firearm-row__title"><%= f.manufacturer %> <span><%= f.model %></span></div>
+              <div class="firearm-row__meta">
+                <% if (f.serial) { %>S/N: <%= f.serial %><% } %>
+                <% if (f.serial && (f.caliber || f.date_acquired)) { %> &middot; <% } %>
+                <% if (f.caliber) { %><%= f.caliber %><% } %>
+                <% if (f.caliber && f.date_acquired) { %> &middot; <% } %>
+                <% if (f.date_acquired) { %>Acq: <%= f.date_acquired %><% } %>
+              </div>
+            </div>
+            <div class="firearm-row__badges">
+              <% if (f.is_nfa) { %><span class="badge badge--nfa"><%= f.nfa_type %></span><% } %>
+              <% if (!f.is_nfa && f.nfa_type) { %><span class="badge badge--type"><%= f.nfa_type %></span><% } %>
+              <% if (f.is_disposed) { %><span class="badge badge--disposed">DISPOSED</span><% } %>
+            </div>
+          </a>
+        <% }) %>
+      </div>
+    </div>
+
   <% } %>
 </div>
+
+<script>
+function setView(v) {
+  document.getElementById('viewGrid').style.display = v === 'grid' ? '' : 'none';
+  document.getElementById('viewList').style.display = v === 'list' ? '' : 'none';
+  document.getElementById('btnGrid').classList.toggle('view-toggle__btn--active', v === 'grid');
+  document.getElementById('btnList').classList.toggle('view-toggle__btn--active', v === 'list');
+  try { localStorage.setItem('armory_inventory_view', v); } catch(e) {}
+}
+(function() {
+  var saved = 'grid';
+  try { saved = localStorage.getItem('armory_inventory_view') || 'grid'; } catch(e) {}
+  setView(saved);
+})();
+</script>
 <%- include('partials/footer') %>

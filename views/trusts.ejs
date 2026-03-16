@@ -27,21 +27,22 @@
     </div>
     <% } %>
 
-    <div class="form-band" style="margin-bottom:0;">
+    <div class="trust-list">
       <% trusts.forEach(trust => { %>
-      <div style="display:grid;grid-template-columns:1fr auto;align-items:center;padding:1rem 1.5rem;border-bottom:1px solid var(--border);background:var(--bg-2);">
-        <div>
-          <div style="font-family:var(--font-display);font-size:1.4rem;letter-spacing:0.06em;"><%= trust.name %></div>
-          <% if (trust.settlor_name) { %>
-          <div style="font-family:var(--font-mono);font-size:0.7rem;color:var(--text-muted);margin-top:0.2rem;">
-            <%= trust.settlor_name %><% if (trust.settlor_location) { %> · <%= trust.settlor_location %><% } %>
-            <% if (trust.agreement_date) { %> · Dated <%= new Date(trust.agreement_date + 'T00:00:00').toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'}) %><% } %>
+      <div class="trust-row">
+        <div class="trust-row__info">
+          <div class="trust-row__name"><%= trust.name %></div>
+          <% if (trust.settlor_name || trust.settlor_location || trust.agreement_date) { %>
+          <div class="trust-row__meta">
+            <% if (trust.settlor_name) { %><%= trust.settlor_name %><% } %>
+            <% if (trust.settlor_name && trust.settlor_location) { %> &middot; <% } %>
+            <% if (trust.settlor_location) { %><%= trust.settlor_location %><% } %>
+            <% if ((trust.settlor_name || trust.settlor_location) && trust.agreement_date) { %> &middot; <% } %>
+            <% if (trust.agreement_date) { %>Dated <%= new Date(trust.agreement_date + 'T00:00:00').toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'}) %><% } %>
           </div>
           <% } %>
         </div>
-        <div style="display:flex;gap:0.5rem;">
-          <a href="/trusts/<%= trust.id %>" class="btn btn--ghost btn--sm">MANAGE</a>
-        </div>
+        <a href="/trusts/<%= trust.id %>" class="btn btn--ghost btn--sm">MANAGE</a>
       </div>
       <% }) %>
     </div>
