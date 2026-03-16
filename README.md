@@ -4,34 +4,6 @@ A self-hosted, Dockerized web application for cataloguing a personal firearms in
 
 ---
 
-## Screenshots
-
-### Inventory — Grid View
-![Inventory Grid](screenshots/02-inventory-grid.png)
-
-### Inventory — List View
-![Inventory List](screenshots/03-inventory-list.png)
-
-### Firearm Detail
-![Firearm Detail](screenshots/04-firearm-detail.png)
-
-### NFA Item Detail
-![NFA Detail](screenshots/05-nfa-detail.png)
-
-### Add Firearm
-![Add Firearm Form](screenshots/06-add-form.png)
-
-### Trust Management
-![Trusts](screenshots/07-trusts-list.png)
-
-### Trust Assignment
-![Trust Detail](screenshots/08-trust-detail.png)
-
-### Settings
-![Settings](screenshots/09-settings.png)
-
----
-
 ## Features
 
 - **Inventory management** — manufacturer, model, caliber, serial, barrel length, optics/accessories (tag-based), notes
@@ -126,3 +98,31 @@ npx nodemon server.js
 |-------------|-----------------|
 | Photos | JPG, PNG, GIF, WEBP — max 20MB each |
 | Documents | PDF, JPG, PNG, DOC, DOCX — max 50MB each |
+
+---
+
+## Screenshots
+
+### Inventory — Grid View
+![Inventory Grid](screenshots/02-inventory-grid.png)
+
+### Inventory — List View
+![Inventory List](screenshots/03-inventory-list.png)
+
+### Firearm Detail
+![Firearm Detail](screenshots/04-firearm-detail.png)
+
+### NFA Item Detail
+![NFA Detail](screenshots/05-nfa-detail.png)
+
+### Add Firearm
+![Add Firearm Form](screenshots/06-add-form.png)
+
+### Trust Management
+![Trusts](screenshots/07-trusts-list.png)
+
+### Trust Assignment
+![Trust Detail](screenshots/08-trust-detail.png)
+
+### Settings
+![Settings](screenshots/09-settings.png)
