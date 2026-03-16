@@ -7,3 +7,6 @@ npm-debug.log*
 sample-data.json
 take-screenshots.py
 generate-sample-zip.js
+convert-csv-to-zip.js
+my-import.zip
+Book*.csv
