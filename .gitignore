@@ -5,3 +5,4 @@ uploads/
 .env
 npm-debug.log*
 sample-data.json
+take-screenshots.py

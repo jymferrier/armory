@@ -1,56 +1,81 @@
 # ARMORY — Firearms Inventory System
 
-A self-hosted, Dockerized web application for cataloguing a personal firearms inventory. Supports photos, NFA documents, and secure multi-user access.
+A self-hosted, Dockerized web application for cataloguing a personal firearms inventory. Supports photos, NFA documents, trust assignment documents, and secure multi-user access.
+
+---
+
+## Screenshots
+
+### Inventory — Grid View
+![Inventory Grid](screenshots/02-inventory-grid.png)
+
+### Inventory — List View
+![Inventory List](screenshots/03-inventory-list.png)
+
+### Firearm Detail
+![Firearm Detail](screenshots/04-firearm-detail.png)
+
+### NFA Item Detail
+![NFA Detail](screenshots/05-nfa-detail.png)
+
+### Add Firearm
+![Add Firearm Form](screenshots/06-add-form.png)
+
+### Trust Management
+![Trusts](screenshots/07-trusts-list.png)
+
+### Trust Assignment
+![Trust Detail](screenshots/08-trust-detail.png)
+
+### Settings
+![Settings](screenshots/09-settings.png)
 
 ---
 
 ## Features
 
-- **Inventory management** — manufacturer, model, caliber, serial number, optics/accessories, notes
-- **Photo gallery** — multiple photos per firearm, primary photo selection
-- **NFA support** — NFA flag, item type classification, ATF Form and Form 5320 uploads
-- **Document storage** — upload and download PDF/image documents per firearm
+- **Inventory management** — manufacturer, model, caliber, serial, barrel length, optics/accessories (tag-based), notes
+- **Grid & list views** — toggle between card grid and compact list; preference saved per browser
+- **NFA tracking** — Form 1 / Form 4, FMI flag, tax stamp serial, ATF submit/approval dates, wait-time tracker
+- **Trust assignment** — manage NFA trusts, assign any inventory item, generate printable legal assignment documents
+- **Round count** — log rounds fired per firearm with a quick-add form; cumulative total tracked automatically
+- **Acquisition records** — acquired date, acquired from, price paid, transfer date, FFL transferred from
+- **3D printed firearms** — checkbox renames Manufacturer → Creator
+- **Photo gallery** — multiple photos per firearm, primary photo selection, drag-and-drop upload
+- **Document storage** — upload ATF forms, Form 5320, and additional documents per firearm
+- **Export / Import** — CSV and JSON export; CSV and JSON import for bulk data transfer
+- **Database purge** — typed confirmation (`PURGE`) required to wipe all data
+- **Search** — searches across make, model, serial, caliber, optics tags, notes, and item type
+- **Manufacturer autocomplete** — datalist populated from existing entries
+- **Disposition tracking** — mark items as transferred/sold with date and method
 - **Session authentication** — form-based login with bcrypt password hashing
 - **User management** — add/remove users, change passwords
-- **Search** — filter inventory by manufacturer, model, serial, or caliber
-- **Fully containerized** — runs as a single Docker container with persistent volumes
 
 ---
 
 ## Quick Start
 
-### Prerequisites
-- Docker + Docker Compose
-
-### 1. Clone / download the project
+**Requirements:** Docker and Docker Compose
 
 ```bash
-git clone <your-repo> armory
+git clone https://github.com/jymferrier/armory.git
 cd armory
+docker compose up -d
 ```
 
-### 2. Configure environment (optional)
+Open [http://localhost:3000](http://localhost:3000) and log in.
 
-Edit `docker-compose.yml` and set:
+Default credentials: `admin` / `armory123`
 
-```yaml
-environment:
-  - SESSION_SECRET=your-long-random-secret-here   # CHANGE THIS
-  - DEFAULT_USER=admin                             # initial login username
-  - DEFAULT_PASS=armory123                         # initial login password
-```
+> **Change your password** in Settings after first login.
 
-> **Important:** Change `SESSION_SECRET` to a random 32+ character string before deploying.
-
-### 3. Build and run
+### Custom port
 
 ```bash
-docker compose up -d --build
+ARMORY_HOST_PORT=8080 docker compose up -d
 ```
 
-### 4. Access the app
-
-Open **http://localhost:3000** and log in with your configured credentials.
+Or edit `docker-compose.yml` directly and set `SESSION_SECRET` to a random 32+ character string before deploying.
 
 ---
 
@@ -66,14 +91,11 @@ All data is stored in named Docker volumes:
 To back up your data:
 
 ```bash
-# Find volume paths
-docker volume inspect armory_data
-docker volume inspect armory_uploads
-
-# Or copy out of a running container
 docker cp armory:/app/data ./backup/data
 docker cp armory:/app/uploads ./backup/uploads
 ```
+
+Or export a full JSON snapshot any time from **Settings → Export JSON**.
 
 ---
 
@@ -83,19 +105,7 @@ docker cp armory:/app/uploads ./backup/uploads
 npm install
 node server.js
 # or with auto-reload:
-npm install -g nodemon
-nodemon server.js
-```
-
----
-
-## Changing the Port
-
-Edit `docker-compose.yml`:
-
-```yaml
-ports:
-  - "8080:3000"   # maps host port 8080 → container port 3000
+npx nodemon server.js
 ```
 
 ---
@@ -103,10 +113,9 @@ ports:
 ## Security Notes
 
 - Passwords are hashed with bcrypt (cost factor 10)
-- Sessions are stored in SQLite and expire after 8 hours
-- File uploads are validated by MIME type and extension
-- Uploaded filenames are replaced with UUIDs (no path traversal risk)
-- The app runs as a non-root user inside the container
+- Sessions stored in SQLite, expire after 8 hours
+- Uploaded filenames replaced with UUIDs (no path traversal risk)
+- App runs as non-root user inside the container
 - For production, place behind a reverse proxy (nginx/Caddy) with HTTPS
 
 ---
@@ -115,16 +124,5 @@ ports:
 
 | Upload Type | Accepted Formats |
 |-------------|-----------------|
-| Photos | JPG, PNG, GIF, WEBP (max 20MB each) |
-| Documents | PDF, JPG, PNG, GIF, WEBP, DOC, DOCX (max 50MB each) |
-
-Up to 20 photos and unlimited documents per firearm.
-
----
-
-## Keyboard Shortcuts
-
-| Key | Action |
-|-----|--------|
-| `N` | New firearm (from inventory page) |
-| `/` | Focus search box |
+| Photos | JPG, PNG, GIF, WEBP — max 20MB each |
+| Documents | PDF, JPG, PNG, DOC, DOCX — max 50MB each |
