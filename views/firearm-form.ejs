@@ -13,7 +13,8 @@
 
   <form method="POST" action="/inventory/<%= firearm ? firearm.id + '/edit' : 'new' %>"
     <% if (!firearm) { %>enctype="multipart/form-data"<% } %>
-    class="firearm-form">
+    class="firearm-form"
+    onkeydown="if(event.key==='Enter'&&event.target.tagName!=='TEXTAREA'&&event.target.type!=='submit'){event.preventDefault();}">
 
     <!-- 01: IDENTIFICATION -->
     <div class="form-band">
