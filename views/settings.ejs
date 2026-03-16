@@ -92,6 +92,19 @@
         </div>
         <button type="submit" class="btn btn--primary">IMPORT</button>
       </form>
+
+      <div class="divider" style="margin-top:1.5rem;"></div>
+      <h3 class="section-title" style="margin-top:1.25rem;">FULL ARCHIVE IMPORT</h3>
+      <p style="font-family:var(--font-mono);font-size:0.72rem;color:var(--text-muted);margin-bottom:1.25rem;">
+        Import from a full archive ZIP. Restores all item metadata, photos, and documents. Items are added as new records — no existing items are overwritten.
+      </p>
+      <form method="POST" action="/settings/import/zip" enctype="multipart/form-data" class="settings-form">
+        <div class="field">
+          <label class="field-label">SELECT ZIP FILE</label>
+          <input type="file" name="import_zip" accept=".zip" class="file-input-plain" required>
+        </div>
+        <button type="submit" class="btn btn--primary">↑ IMPORT FULL ARCHIVE</button>
+      </form>
     </div>
   </div>
 

@@ -9,7 +9,10 @@ const { requireAuth } = require('../middleware/auth');
 const { PHOTO_DIR, DOC_DIR } = require('../middleware/upload');
 
 const archiver = require('archiver');
+const AdmZip = require('adm-zip');
+const { v4: uuidv4 } = require('uuid');
 const importUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 20 * 1024 * 1024 } }).single('import_file');
+const zipImportUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 500 * 1024 * 1024 } }).single('import_zip');
 
 // ── Shared helpers ──────────────────────────────────────────────────────────
 
@@ -284,12 +287,12 @@ router.get('/settings/export/full', requireAuth, (req, res) => {
       });
     }
 
-    // documents
+    // documents — stored under documents/{doc_type}/ for round-trip import
     if (f.documents && f.documents.length > 0) {
       f.documents.forEach(d => {
         const src = path.join(DOC_DIR, d.filename);
         if (fs.existsSync(src)) {
-          archive.file(src, { name: `${dir}/documents/${d.original_name || d.filename}` });
+          archive.file(src, { name: `${dir}/documents/${d.doc_type}/${d.original_name || d.filename}` });
         }
       });
     }
@@ -335,6 +338,98 @@ router.post('/settings/import', requireAuth, (req, res) => {
     }
 
     res.render('settings', { user: req.session.user, users, message: { type: 'success', text: `Imported ${imported} of ${records.length} records.` } });
+  });
+});
+
+// Import ZIP archive
+router.post('/settings/import/zip', requireAuth, (req, res) => {
+  zipImportUpload(req, res, (err) => {
+    const users = userQueries.all();
+    const fail = (text) => res.render('settings', { user: req.session.user, users, message: { type: 'error', text } });
+
+    if (err) return fail('Upload error: ' + err.message);
+    if (!req.file) return fail('No file selected.');
+
+    let zip;
+    try { zip = new AdmZip(req.file.buffer); }
+    catch (e) { return fail('Invalid ZIP file: ' + e.message); }
+
+    const VALID_DOC_TYPES = new Set(['atf_form', 'form5320', 'additional_docs']);
+
+    // Group entries by top-level folder
+    const folders = {};
+    zip.getEntries().forEach(entry => {
+      const parts = entry.entryName.split('/');
+      if (parts.length < 2) return;
+      const folder = parts[0];
+      if (!folders[folder]) folders[folder] = [];
+      folders[folder].push(entry);
+    });
+
+    let imported = 0, skipped = 0;
+
+    for (const [folder, folderEntries] of Object.entries(folders)) {
+      const metaEntry = folderEntries.find(e => e.entryName === `${folder}/firearm.json`);
+      if (!metaEntry) { skipped++; continue; }
+
+      let meta;
+      try { meta = JSON.parse(metaEntry.getData().toString('utf8')); }
+      catch (e) { skipped++; continue; }
+
+      const data = {
+        ...jsonRecordToFirearm(meta),
+        model_number: meta.model_number || null,
+        round_count: meta.round_count || 0,
+        spouse_price: meta.spouse_price || null,
+      };
+
+      let firearmsId;
+      try { firearmsId = firearmsQueries.create(data); }
+      catch (e) { skipped++; continue; }
+
+      // Import photos
+      let primarySet = false;
+      folderEntries
+        .filter(e => e.entryName.startsWith(`${folder}/photos/`) && !e.isDirectory)
+        .forEach(photoEntry => {
+          const basename = path.basename(photoEntry.entryName);
+          const ext = path.extname(basename);
+          const newFilename = uuidv4() + ext;
+          try {
+            fs.writeFileSync(path.join(PHOTO_DIR, newFilename), photoEntry.getData());
+            const isPrimary = basename.startsWith('primary') && !primarySet;
+            if (isPrimary) primarySet = true;
+            firearmsQueries.addPhoto(firearmsId, newFilename, basename, isPrimary);
+          } catch (e) { /* skip bad photo */ }
+        });
+
+      // Import documents — subfolders are doc_type
+      folderEntries
+        .filter(e => e.entryName.startsWith(`${folder}/documents/`) && !e.isDirectory)
+        .forEach(docEntry => {
+          const parts = docEntry.entryName.split('/');
+          // folder/documents/docType/filename (new format) or folder/documents/filename (legacy)
+          let docType, basename;
+          if (parts.length >= 4 && VALID_DOC_TYPES.has(parts[2])) {
+            docType = parts[2];
+            basename = parts.slice(3).join('/');
+          } else {
+            docType = 'additional_docs';
+            basename = parts[parts.length - 1];
+          }
+          const ext = path.extname(basename);
+          const newFilename = uuidv4() + ext;
+          try {
+            fs.writeFileSync(path.join(DOC_DIR, newFilename), docEntry.getData());
+            firearmsQueries.addDocument(firearmsId, docType, newFilename, basename);
+          } catch (e) { /* skip bad doc */ }
+        });
+
+      imported++;
+    }
+
+    const skippedNote = skipped ? `, ${skipped} folder${skipped !== 1 ? 's' : ''} skipped` : '';
+    res.render('settings', { user: req.session.user, users, message: { type: 'success', text: `ZIP import complete: ${imported} item${imported !== 1 ? 's' : ''} imported${skippedNote}.` } });
   });
 });
 
