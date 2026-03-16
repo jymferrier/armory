@@ -219,8 +219,9 @@ const firearmsQueries = {
       FROM firearms f
       LEFT JOIN firearm_photos fp ON fp.firearm_id = f.id AND fp.is_primary = 1
       WHERE f.manufacturer LIKE ? OR f.model LIKE ? OR f.serial LIKE ? OR f.caliber LIKE ?
+         OR f.optics LIKE ? OR f.notes LIKE ? OR f.nfa_type LIKE ?
       ORDER BY f.created_at DESC
-    `).all(like, like, like, like);
+    `).all(like, like, like, like, like, like, like);
   }
 };
 
