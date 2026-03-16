@@ -63,7 +63,9 @@ a:hover { color: var(--text); }
 
 .nav-brand {
   display: flex; align-items: center; gap: 0.6rem;
+  text-decoration: none;
 }
+.nav-brand:hover .nav-title { color: var(--accent); }
 
 .nav-logo {
   color: var(--accent); font-size: 1.4rem; line-height: 1;
