@@ -1,8 +1,137 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
 const router = express.Router();
-const { userQueries } = require('../db');
+const { userQueries, firearmsQueries } = require('../db');
 const { requireAuth } = require('../middleware/auth');
+const { PHOTO_DIR, DOC_DIR } = require('../middleware/upload');
+
+const importUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 20 * 1024 * 1024 } }).single('import_file');
+
+// ── Shared helpers ──────────────────────────────────────────────────────────
+
+const CSV_COLUMNS = [
+  'ID', 'Manufacturer', 'Model', 'Caliber', 'Serial Number',
+  'Barrel Length', 'Overall Length', 'Optics / Accessories',
+  'Acquired Date', 'Acquired From', 'Price Paid', 'Transfer Date', 'FFL Transferred From',
+  'Trust / Entity Name', '3D Printed', 'Is NFA', 'Item Type',
+  'Form Type', 'Form Number', 'FMI',
+  'Date Submitted to ATF', 'Tax Stamp / Form Serial', 'ATF Approval Date',
+  'Is Disposed', 'Date Disposed', 'Disposal Method',
+  'Notes', 'Date Added'
+];
+
+function csvCell(val) {
+  if (val === null || val === undefined) return '';
+  const str = String(val);
+  if (str.includes('"') || str.includes(',') || str.includes('\n')) {
+    return '"' + str.replace(/"/g, '""') + '"';
+  }
+  return str;
+}
+
+function parseOpticsToStr(raw) {
+  if (!raw) return '';
+  try { const p = JSON.parse(raw); return Array.isArray(p) ? p.join('; ') : raw; }
+  catch (e) { return raw; }
+}
+
+function buildCsvRows(firearms) {
+  return firearms.map(f => [
+    f.id, f.manufacturer, f.model, f.caliber, f.serial,
+    f.barrel_length, f.overall_length, parseOpticsToStr(f.optics),
+    f.date_acquired, f.acquired_from, f.price_paid, f.transfer_date, f.ffl_transferred_from,
+    f.nfa_trust_name, f.is_3d_printed ? 'Yes' : 'No',
+    f.is_nfa ? 'Yes' : 'No', f.nfa_type,
+    f.nfa_form_type, f.nfa_form_number, f.nfa_fmi ? 'Yes' : 'No',
+    f.nfa_submit_date, f.nfa_tax_stamp_serial, f.nfa_approve_date,
+    f.is_disposed ? 'Yes' : 'No', f.date_disposed, f.disposal_method,
+    f.notes, f.created_at
+  ].map(csvCell).join(','));
+}
+
+function parseCSV(text) {
+  const lines = [];
+  let current = [], field = '', inQuote = false;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (inQuote) {
+      if (ch === '"' && text[i + 1] === '"') { field += '"'; i++; }
+      else if (ch === '"') { inQuote = false; }
+      else { field += ch; }
+    } else {
+      if (ch === '"') { inQuote = true; }
+      else if (ch === ',') { current.push(field); field = ''; }
+      else if (ch === '\r' && text[i + 1] === '\n') { current.push(field); if (current.some(Boolean) || lines.length) lines.push(current); current = []; field = ''; i++; }
+      else if (ch === '\n') { current.push(field); if (current.some(Boolean) || lines.length) lines.push(current); current = []; field = ''; }
+      else { field += ch; }
+    }
+  }
+  if (field || current.length) { current.push(field); lines.push(current); }
+  return lines;
+}
+
+function csvRowToFirearm(headers, row) {
+  const get = (col) => { const i = headers.indexOf(col); return i >= 0 ? (row[i] || '').trim() : ''; };
+  const bool = (col) => get(col).toLowerCase() === 'yes';
+  const opt = (col) => get(col) || null;
+  const opticsRaw = get('Optics / Accessories');
+  const opticsTags = opticsRaw ? opticsRaw.split(';').map(s => s.trim()).filter(Boolean) : [];
+  const NFA_TYPES = new Set(['Suppressor/Silencer','Short Barrel Rifle (SBR)','Short Barrel Shotgun (SBS)','Machine Gun','Destructive Device (DD)','Any Other Weapon (AOW)']);
+  const itemType = opt('Item Type');
+  const isNfa = NFA_TYPES.has(itemType);
+  return {
+    manufacturer: get('Manufacturer') || 'Unknown',
+    model: get('Model') || 'Unknown',
+    caliber: opt('Caliber'), serial: opt('Serial Number'),
+    barrel_length: opt('Barrel Length'), overall_length: opt('Overall Length'),
+    optics: opticsTags.length ? JSON.stringify(opticsTags) : null,
+    date_acquired: opt('Acquired Date'), acquired_from: opt('Acquired From'),
+    price_paid: opt('Price Paid'), transfer_date: opt('Transfer Date'),
+    ffl_transferred_from: opt('FFL Transferred From'),
+    nfa_trust_name: opt('Trust / Entity Name'),
+    is_3d_printed: bool('3D Printed') ? 1 : 0,
+    is_nfa: isNfa ? 1 : 0, nfa_type: itemType,
+    nfa_form_type: opt('Form Type'), nfa_form_number: opt('Form Number'),
+    nfa_fmi: bool('FMI') ? 1 : 0,
+    nfa_submit_date: opt('Date Submitted to ATF'),
+    nfa_tax_stamp_serial: opt('Tax Stamp / Form Serial'),
+    nfa_approve_date: opt('ATF Approval Date'),
+    is_disposed: bool('Is Disposed') ? 1 : 0,
+    date_disposed: opt('Date Disposed'), disposal_method: opt('Disposal Method'),
+    notes: opt('Notes')
+  };
+}
+
+function jsonRecordToFirearm(r) {
+  const NFA_TYPES = new Set(['Suppressor/Silencer','Short Barrel Rifle (SBR)','Short Barrel Shotgun (SBS)','Machine Gun','Destructive Device (DD)','Any Other Weapon (AOW)']);
+  const itemType = r.nfa_type || r.item_type || null;
+  const isNfa = NFA_TYPES.has(itemType);
+  const optics = Array.isArray(r.optics) ? JSON.stringify(r.optics) : (r.optics || null);
+  return {
+    manufacturer: r.manufacturer || 'Unknown',
+    model: r.model || 'Unknown',
+    caliber: r.caliber || null, serial: r.serial || null,
+    barrel_length: r.barrel_length || null, overall_length: r.overall_length || null,
+    optics,
+    date_acquired: r.date_acquired || null, acquired_from: r.acquired_from || null,
+    price_paid: r.price_paid || null, transfer_date: r.transfer_date || null,
+    ffl_transferred_from: r.ffl_transferred_from || null,
+    nfa_trust_name: r.nfa_trust_name || null,
+    is_3d_printed: r.is_3d_printed ? 1 : 0,
+    is_nfa: isNfa ? 1 : 0, nfa_type: itemType,
+    nfa_form_type: r.nfa_form_type || null, nfa_form_number: r.nfa_form_number || null,
+    nfa_fmi: r.nfa_fmi ? 1 : 0,
+    nfa_submit_date: r.nfa_submit_date || null,
+    nfa_tax_stamp_serial: r.nfa_tax_stamp_serial || null,
+    nfa_approve_date: r.nfa_approve_date || null,
+    is_disposed: r.is_disposed ? 1 : 0,
+    date_disposed: r.date_disposed || null, disposal_method: r.disposal_method || null,
+    notes: r.notes || null
+  };
+}
 
 router.get('/', (req, res) => {
   if (req.session.user) return res.redirect('/inventory');
@@ -67,6 +196,120 @@ router.post('/settings/change-password', requireAuth, (req, res) => {
   }
   userQueries.updatePassword(req.session.user.id, new_password);
   res.render('settings', { user: req.session.user, users, message: { type: 'success', text: 'Password updated successfully' } });
+});
+
+// Export CSV
+router.get('/settings/export/csv', requireAuth, (req, res) => {
+  const firearms = firearmsQueries.all();
+  const csv = [CSV_COLUMNS.map(csvCell).join(','), ...buildCsvRows(firearms)].join('\r\n');
+  const filename = `armory-export-${new Date().toISOString().slice(0, 10)}.csv`;
+  res.setHeader('Content-Type', 'text/csv');
+  res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+  res.send(csv);
+});
+
+// Export JSON
+router.get('/settings/export/json', requireAuth, (req, res) => {
+  const firearms = firearmsQueries.all();
+  const data = {
+    version: '1.0',
+    exported_at: new Date().toISOString(),
+    count: firearms.length,
+    firearms: firearms.map(f => ({
+      manufacturer: f.manufacturer, model: f.model,
+      caliber: f.caliber, serial: f.serial,
+      barrel_length: f.barrel_length, overall_length: f.overall_length,
+      optics: (() => { try { const p = JSON.parse(f.optics); return Array.isArray(p) ? p : [f.optics]; } catch(e) { return f.optics ? [f.optics] : []; } })(),
+      date_acquired: f.date_acquired, acquired_from: f.acquired_from,
+      price_paid: f.price_paid, transfer_date: f.transfer_date,
+      ffl_transferred_from: f.ffl_transferred_from,
+      nfa_trust_name: f.nfa_trust_name,
+      is_3d_printed: !!f.is_3d_printed,
+      is_nfa: !!f.is_nfa, nfa_type: f.nfa_type,
+      nfa_form_type: f.nfa_form_type, nfa_form_number: f.nfa_form_number,
+      nfa_fmi: !!f.nfa_fmi,
+      nfa_submit_date: f.nfa_submit_date,
+      nfa_tax_stamp_serial: f.nfa_tax_stamp_serial,
+      nfa_approve_date: f.nfa_approve_date,
+      is_disposed: !!f.is_disposed,
+      date_disposed: f.date_disposed, disposal_method: f.disposal_method,
+      notes: f.notes
+    }))
+  };
+  const filename = `armory-export-${new Date().toISOString().slice(0, 10)}.json`;
+  res.setHeader('Content-Type', 'application/json');
+  res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+  res.send(JSON.stringify(data, null, 2));
+});
+
+// Import
+router.post('/settings/import', requireAuth, (req, res) => {
+  importUpload(req, res, (err) => {
+    const users = userQueries.all();
+    const fail = (text) => res.render('settings', { user: req.session.user, users, message: { type: 'error', text } });
+
+    if (err) return fail('Upload error: ' + err.message);
+    if (!req.file) return fail('No file selected.');
+
+    const ext = path.extname(req.file.originalname).toLowerCase();
+    const text = req.file.buffer.toString('utf8');
+    let records = [];
+
+    try {
+      if (ext === '.json') {
+        const parsed = JSON.parse(text);
+        const arr = Array.isArray(parsed) ? parsed : (parsed.firearms || []);
+        if (!Array.isArray(arr) || arr.length === 0) return fail('JSON file contains no records.');
+        records = arr.map(jsonRecordToFirearm);
+      } else if (ext === '.csv') {
+        const rows = parseCSV(text);
+        if (rows.length < 2) return fail('CSV file contains no data rows.');
+        const headers = rows[0];
+        records = rows.slice(1).filter(r => r.some(Boolean)).map(r => csvRowToFirearm(headers, r));
+      } else {
+        return fail('Unsupported file type. Please upload a .csv or .json file.');
+      }
+    } catch (e) {
+      return fail('Failed to parse file: ' + e.message);
+    }
+
+    let imported = 0;
+    for (const record of records) {
+      try { firearmsQueries.create(record); imported++; } catch (e) { /* skip bad rows */ }
+    }
+
+    res.render('settings', { user: req.session.user, users, message: { type: 'success', text: `Imported ${imported} of ${records.length} records.` } });
+  });
+});
+
+// Purge database
+router.post('/settings/purge', requireAuth, (req, res) => {
+  const users = userQueries.all();
+  const fail = (text) => res.render('settings', { user: req.session.user, users, message: { type: 'error', text } });
+
+  if (req.body.confirm !== 'PURGE') return fail('Incorrect confirmation. Type PURGE exactly to proceed.');
+
+  // Delete all photo and document files
+  const firearms = firearmsQueries.all();
+  for (const f of firearms) {
+    if (f.primary_photo) {
+      const fp = path.join(PHOTO_DIR, f.primary_photo.filename);
+      if (fs.existsSync(fp)) fs.unlinkSync(fp);
+    }
+  }
+  // Wipe all files in upload dirs
+  for (const dir of [PHOTO_DIR, DOC_DIR]) {
+    if (fs.existsSync(dir)) {
+      fs.readdirSync(dir).forEach(file => {
+        try { fs.unlinkSync(path.join(dir, file)); } catch (e) {}
+      });
+    }
+  }
+
+  // Delete all firearm records (cascade handles photos + documents)
+  firearmsQueries.all().forEach(f => firearmsQueries.delete(f.id));
+
+  res.render('settings', { user: req.session.user, users, message: { type: 'success', text: 'All inventory records have been purged.' } });
 });
 
 module.exports = router;

@@ -98,57 +98,6 @@ router.post('/new', (req, res) => {
   });
 });
 
-// Export CSV
-router.get('/export', (req, res) => {
-  const firearms = firearmsQueries.all();
-
-  const columns = [
-    'ID', 'Manufacturer', 'Model', 'Caliber', 'Serial Number',
-    'Barrel Length', 'Overall Length', 'Optics / Accessories',
-    'Acquired Date', 'Acquired From', 'Price Paid', 'Transfer Date', 'FFL Transferred From',
-    'Trust / Entity Name', '3D Printed', 'Is NFA', 'Item Type',
-    'Form Type', 'Form Number', 'FMI',
-    'Date Submitted to ATF', 'Tax Stamp / Form Serial', 'ATF Approval Date',
-    'Is Disposed', 'Date Disposed', 'Disposal Method',
-    'Notes', 'Date Added'
-  ];
-
-  function csvCell(val) {
-    if (val === null || val === undefined) return '';
-    const str = String(val);
-    if (str.includes('"') || str.includes(',') || str.includes('\n')) {
-      return '"' + str.replace(/"/g, '""') + '"';
-    }
-    return str;
-  }
-
-  function parseOptics(raw) {
-    if (!raw) return '';
-    try {
-      const p = JSON.parse(raw);
-      return Array.isArray(p) ? p.join('; ') : raw;
-    } catch (e) { return raw; }
-  }
-
-  const rows = firearms.map(f => [
-    f.id, f.manufacturer, f.model, f.caliber, f.serial,
-    f.barrel_length, f.overall_length, parseOptics(f.optics),
-    f.date_acquired, f.acquired_from, f.price_paid, f.transfer_date, f.ffl_transferred_from,
-    f.nfa_trust_name, f.is_3d_printed ? 'Yes' : 'No',
-    f.is_nfa ? 'Yes' : 'No', f.nfa_type,
-    f.nfa_form_type, f.nfa_form_number, f.nfa_fmi ? 'Yes' : 'No',
-    f.nfa_submit_date, f.nfa_tax_stamp_serial, f.nfa_approve_date,
-    f.is_disposed ? 'Yes' : 'No', f.date_disposed, f.disposal_method,
-    f.notes, f.created_at
-  ].map(csvCell).join(','));
-
-  const csv = [columns.map(csvCell).join(','), ...rows].join('\r\n');
-  const filename = `armory-export-${new Date().toISOString().slice(0,10)}.csv`;
-
-  res.setHeader('Content-Type', 'text/csv');
-  res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-  res.send(csv);
-});
 
 // View
 router.get('/:id', (req, res) => {

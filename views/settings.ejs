@@ -60,6 +60,61 @@
         <button type="submit" class="btn btn--primary">CREATE USER</button>
       </form>
     </div>
+
+    <!-- Export -->
+    <div class="settings-card">
+      <h2 class="section-title">EXPORT INVENTORY</h2>
+      <p style="font-family:var(--font-mono);font-size:0.72rem;color:var(--text-muted);margin-bottom:1.25rem;">
+        Download all inventory records. Photos and documents are not included.
+      </p>
+      <div style="display:flex;gap:0.75rem;flex-wrap:wrap;">
+        <a href="/settings/export/csv" class="btn btn--ghost">↓ EXPORT CSV</a>
+        <a href="/settings/export/json" class="btn btn--ghost">↓ EXPORT JSON</a>
+      </div>
+    </div>
+
+    <!-- Import -->
+    <div class="settings-card">
+      <h2 class="section-title">IMPORT INVENTORY</h2>
+      <p style="font-family:var(--font-mono);font-size:0.72rem;color:var(--text-muted);margin-bottom:1.25rem;">
+        Import records from a CSV or JSON file. Existing records are not overwritten — all imported rows are added as new items.
+      </p>
+      <form method="POST" action="/settings/import" enctype="multipart/form-data" class="settings-form">
+        <div class="field">
+          <label class="field-label">SELECT FILE (.csv or .json)</label>
+          <input type="file" name="import_file" accept=".csv,.json" class="file-input-plain" required>
+        </div>
+        <button type="submit" class="btn btn--primary">IMPORT</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Danger Zone -->
+  <div style="margin-top:2px;">
+    <div class="settings-card" style="border:1px solid var(--red-dim);background:rgba(192,57,43,0.04);">
+      <h2 class="section-title" style="color:var(--red);">⚠ DANGER ZONE</h2>
+      <p style="font-family:var(--font-mono);font-size:0.72rem;color:var(--text-muted);margin-bottom:1.25rem;">
+        Permanently delete all inventory records and uploaded files. This cannot be undone.
+        Type <strong style="color:var(--text);font-family:var(--font-mono);">PURGE</strong> to confirm.
+      </p>
+      <form method="POST" action="/settings/purge" class="settings-form" onsubmit="return validatePurge(this)">
+        <div class="field">
+          <label class="field-label" style="color:var(--red);">CONFIRMATION</label>
+          <input type="text" name="confirm" class="field-input mono" placeholder='Type PURGE to confirm' autocomplete="off">
+        </div>
+        <button type="submit" class="btn btn--danger">PURGE ALL INVENTORY</button>
+      </form>
+    </div>
   </div>
 </div>
+<script>
+function validatePurge(form) {
+  const val = form.querySelector('input[name="confirm"]').value;
+  if (val !== 'PURGE') {
+    alert('You must type PURGE exactly to confirm.');
+    return false;
+  }
+  return true;
+}
+</script>
 <%- include('partials/footer') %>
