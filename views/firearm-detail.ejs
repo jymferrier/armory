@@ -168,6 +168,12 @@
           <span class="info-value"><%= firearm.price_paid %></span>
         </div>
         <% } %>
+        <% if (firearm.spouse_price) { %>
+        <div class="info-item">
+          <span class="info-label">WHAT SPOUSE THINKS I PAID</span>
+          <span class="info-value"><%= firearm.spouse_price %></span>
+        </div>
+        <% } %>
         <% if (firearm.transfer_date) { %>
         <div class="info-item">
           <span class="info-label">TRANSFER DATE</span>

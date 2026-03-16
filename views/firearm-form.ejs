@@ -168,6 +168,12 @@
             <input type="text" name="price_paid" class="field-input" value="<%= firearm ? (firearm.price_paid || '') : '' %>" placeholder="e.g. $1,200.00">
           </div>
           <div class="field">
+            <label class="field-label">WHAT SPOUSE THINKS I PAID</label>
+            <input type="text" name="spouse_price" class="field-input" value="<%= firearm ? (firearm.spouse_price || '') : '' %>" placeholder="e.g. $200.00">
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field field-row--half">
             <label class="field-label">TRANSFER DATE</label>
             <input type="date" name="transfer_date" class="field-input field-input--date" value="<%= firearm ? (firearm.transfer_date || '') : '' %>">
           </div>

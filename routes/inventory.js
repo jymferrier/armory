@@ -62,7 +62,7 @@ router.post('/new', (req, res) => {
 
     const {
       manufacturer, model, model_number, caliber, serial, barrel_length, overall_length, optics, date_acquired,
-      acquired_from, price_paid, transfer_date, ffl_transferred_from,
+      acquired_from, price_paid, spouse_price, transfer_date, ffl_transferred_from,
       is_3d_printed,
       item_type, nfa_form_type, nfa_form_number, nfa_fmi, nfa_submit_date, nfa_tax_stamp_serial, nfa_approve_date, nfa_trust_name,
       is_disposed, date_disposed, disposal_method, notes, round_count
@@ -81,6 +81,7 @@ router.post('/new', (req, res) => {
       date_acquired: date_acquired || null,
       acquired_from: acquired_from || null,
       price_paid: price_paid || null,
+      spouse_price: spouse_price || null,
       transfer_date: transfer_date || null,
       ffl_transferred_from: ffl_transferred_from || null,
       is_3d_printed: is_3d_printed ? 1 : 0,

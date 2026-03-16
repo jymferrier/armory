@@ -111,6 +111,7 @@ function initDB() {
     "ALTER TABLE firearms ADD COLUMN ffl_transferred_from TEXT",
     "ALTER TABLE firearms ADD COLUMN round_count INTEGER DEFAULT 0",
     "ALTER TABLE firearms ADD COLUMN model_number TEXT",
+    "ALTER TABLE firearms ADD COLUMN spouse_price TEXT",
   ];
   for (const sql of migrations) {
     try { db.exec(sql); } catch (_) { /* column already exists */ }
@@ -173,12 +174,12 @@ const firearmsQueries = {
     const result = getDB().prepare(`
       INSERT INTO firearms (
         manufacturer, model, model_number, caliber, serial, barrel_length, overall_length, optics,
-        date_acquired, acquired_from, price_paid, transfer_date, ffl_transferred_from,
+        date_acquired, acquired_from, price_paid, spouse_price, transfer_date, ffl_transferred_from,
         is_3d_printed, is_nfa, nfa_type, nfa_form_type, nfa_form_number, nfa_fmi, nfa_submit_date, nfa_tax_stamp_serial, nfa_approve_date, nfa_trust_name,
         is_disposed, date_disposed, disposal_method, notes, round_count
       ) VALUES (
         @manufacturer, @model, @model_number, @caliber, @serial, @barrel_length, @overall_length, @optics,
-        @date_acquired, @acquired_from, @price_paid, @transfer_date, @ffl_transferred_from,
+        @date_acquired, @acquired_from, @price_paid, @spouse_price, @transfer_date, @ffl_transferred_from,
         @is_3d_printed, @is_nfa, @nfa_type, @nfa_form_type, @nfa_form_number, @nfa_fmi, @nfa_submit_date, @nfa_tax_stamp_serial, @nfa_approve_date, @nfa_trust_name,
         @is_disposed, @date_disposed, @disposal_method, @notes, @round_count
       )
@@ -191,7 +192,7 @@ const firearmsQueries = {
         manufacturer = @manufacturer, model = @model, model_number = @model_number, caliber = @caliber,
         serial = @serial, barrel_length = @barrel_length, overall_length = @overall_length, optics = @optics,
         date_acquired = @date_acquired, acquired_from = @acquired_from,
-        price_paid = @price_paid, transfer_date = @transfer_date, ffl_transferred_from = @ffl_transferred_from,
+        price_paid = @price_paid, spouse_price = @spouse_price, transfer_date = @transfer_date, ffl_transferred_from = @ffl_transferred_from,
         is_3d_printed = @is_3d_printed, is_nfa = @is_nfa, nfa_type = @nfa_type,
         nfa_form_type = @nfa_form_type, nfa_form_number = @nfa_form_number, nfa_fmi = @nfa_fmi,
         nfa_submit_date = @nfa_submit_date, nfa_tax_stamp_serial = @nfa_tax_stamp_serial,
