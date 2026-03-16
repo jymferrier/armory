@@ -6,6 +6,12 @@ const { firearmsQueries } = require('../db');
 const { requireAuth } = require('../middleware/auth');
 const { uploadPhotos, uploadDocs, PHOTO_DIR, DOC_DIR } = require('../middleware/upload');
 
+const sanitizePrice = (val) => {
+  if (!val) return null;
+  const n = parseFloat(String(val).replace(/[$,\s]/g, ''));
+  return isNaN(n) ? null : String(n);
+};
+
 const NFA_TYPES = new Set([
   'Suppressor/Silencer',
   'Short Barrel Rifle (SBR)',
@@ -80,8 +86,8 @@ router.post('/new', (req, res) => {
       optics: optics || null,
       date_acquired: date_acquired || null,
       acquired_from: acquired_from || null,
-      price_paid: price_paid || null,
-      spouse_price: spouse_price || null,
+      price_paid: sanitizePrice(price_paid),
+      spouse_price: sanitizePrice(spouse_price),
       transfer_date: transfer_date || null,
       ffl_transferred_from: ffl_transferred_from || null,
       is_3d_printed: is_3d_printed ? 1 : 0,

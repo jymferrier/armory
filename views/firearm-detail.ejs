@@ -165,13 +165,13 @@
         <% if (firearm.price_paid) { %>
         <div class="info-item">
           <span class="info-label">PRICE PAID</span>
-          <span class="info-value"><%= firearm.price_paid %></span>
+          <span class="info-value">$<%= parseFloat(firearm.price_paid).toLocaleString('en-US', {minimumFractionDigits:2,maximumFractionDigits:2}) %></span>
         </div>
         <% } %>
         <% if (firearm.spouse_price) { %>
         <div class="info-item">
           <span class="info-label">WHAT SPOUSE THINKS I PAID</span>
-          <span class="info-value"><%= firearm.spouse_price %></span>
+          <span class="info-value">$<%= parseFloat(firearm.spouse_price).toLocaleString('en-US', {minimumFractionDigits:2,maximumFractionDigits:2}) %></span>
         </div>
         <% } %>
         <% if (firearm.transfer_date) { %>
