@@ -37,17 +37,28 @@ router.get('/', (req, res) => {
   res.render('inventory', { user: req.session.user, firearms, q: q || '' });
 });
 
+function getFormSuggestions() {
+  return {
+    manufacturers: firearmsQueries.distinctManufacturers(),
+    models: firearmsQueries.distinctModels(),
+    calibers: firearmsQueries.distinctCalibers(),
+    barrelLengths: firearmsQueries.distinctBarrelLengths(),
+    acquiredFromList: firearmsQueries.distinctAcquiredFrom(),
+    fflList: firearmsQueries.distinctFflTransferredFrom(),
+    opticsTags: firearmsQueries.distinctOpticsTags(),
+  };
+}
+
 // New form
 router.get('/new', (req, res) => {
-  const manufacturers = firearmsQueries.distinctManufacturers();
-  res.render('firearm-form', { user: req.session.user, firearm: null, error: null, manufacturers });
+  res.render('firearm-form', { user: req.session.user, firearm: null, error: null, ...getFormSuggestions() });
 });
 
 // Create
 router.post('/new', (req, res) => {
   photoUpload(req, res, (err) => {
     const manufacturers = firearmsQueries.distinctManufacturers();
-    if (err) return res.render('firearm-form', { user: req.session.user, firearm: null, error: err.message, manufacturers });
+    if (err) return res.render('firearm-form', { user: req.session.user, firearm: null, error: err.message, ...getFormSuggestions() });
 
     const {
       manufacturer, model, model_number, caliber, serial, barrel_length, overall_length, optics, date_acquired,
@@ -111,8 +122,7 @@ router.get('/:id', (req, res) => {
 router.get('/:id/edit', (req, res) => {
   const firearm = firearmsQueries.findById(req.params.id);
   if (!firearm) return res.status(404).render('error', { message: 'Firearm not found', user: req.session.user });
-  const manufacturers = firearmsQueries.distinctManufacturers();
-  res.render('firearm-form', { user: req.session.user, firearm, error: null, manufacturers });
+  res.render('firearm-form', { user: req.session.user, firearm, error: null, ...getFormSuggestions() });
 });
 
 // Update

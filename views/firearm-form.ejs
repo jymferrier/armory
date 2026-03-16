@@ -41,7 +41,10 @@
           </div>
           <div class="field">
             <label class="field-label">MODEL <span class="required">*</span></label>
-            <input type="text" name="model" class="field-input" value="<%= firearm ? firearm.model : '' %>" required placeholder="e.g. 92FS">
+            <input type="text" name="model" class="field-input" list="modelList" value="<%= firearm ? firearm.model : '' %>" required placeholder="e.g. 92FS" autocomplete="off">
+            <datalist id="modelList">
+              <% models.forEach(m => { %><option value="<%= m %>"><% }) %>
+            </datalist>
           </div>
         </div>
 
@@ -55,7 +58,10 @@
         <div class="field-row">
           <div class="field">
             <label class="field-label">CALIBER</label>
-            <input type="text" name="caliber" class="field-input" value="<%= firearm ? (firearm.caliber || '') : '' %>" placeholder="e.g. 9mm, .308 Win, .223 Rem">
+            <input type="text" name="caliber" class="field-input" list="caliberList" value="<%= firearm ? (firearm.caliber || '') : '' %>" placeholder="e.g. 9mm, .308 Win, .223 Rem" autocomplete="off">
+            <datalist id="caliberList">
+              <% calibers.forEach(c => { %><option value="<%= c %>"><% }) %>
+            </datalist>
           </div>
           <div class="field">
             <label class="field-label">SERIAL NUMBER</label>
@@ -66,7 +72,10 @@
         <div class="field-row">
           <div class="field">
             <label class="field-label" id="barrelLengthLabel"><%= (firearm && firearm.nfa_type === 'Suppressor/Silencer') ? 'LENGTH' : 'BARREL LENGTH' %></label>
-            <input type="text" name="barrel_length" class="field-input" value="<%= firearm ? (firearm.barrel_length || '') : '' %>" placeholder='e.g. 16", 18.5", 4.25"'>
+            <input type="text" name="barrel_length" class="field-input" list="barrelLengthList" value="<%= firearm ? (firearm.barrel_length || '') : '' %>" placeholder='e.g. 16", 18.5", 4.25"' autocomplete="off">
+            <datalist id="barrelLengthList">
+              <% barrelLengths.forEach(b => { %><option value="<%= b %>"><% }) %>
+            </datalist>
           </div>
           <div class="field">
             <label class="field-label">OPTICS / ACCESSORIES</label>
@@ -80,8 +89,11 @@
               }
             %>
             <input type="hidden" name="optics" id="opticsHidden" value="<%- JSON.stringify(initialOpticsTags) %>">
+            <datalist id="opticsTagList">
+              <% opticsTags.forEach(t => { %><option value="<%= t %>"><% }) %>
+            </datalist>
             <div class="tag-input-container" id="opticsTagContainer">
-              <input type="text" class="tag-input-field" id="opticsTagInput" placeholder='e.g. X300, XPS3, "Vortex Razor HD Gen III"'>
+              <input type="text" class="tag-input-field" id="opticsTagInput" list="opticsTagList" placeholder='e.g. X300, XPS3, "Vortex Razor HD Gen III"' autocomplete="off">
             </div>
           </div>
         </div>
@@ -143,7 +155,10 @@
           </div>
           <div class="field">
             <label class="field-label">ACQUIRED FROM</label>
-            <input type="text" name="acquired_from" class="field-input" value="<%= firearm ? (firearm.acquired_from || '') : '' %>" placeholder="e.g. GunBroker, Private sale, FFL dealer">
+            <input type="text" name="acquired_from" class="field-input" list="acquiredFromList" value="<%= firearm ? (firearm.acquired_from || '') : '' %>" placeholder="e.g. GunBroker, Private sale, FFL dealer" autocomplete="off">
+            <datalist id="acquiredFromList">
+              <% acquiredFromList.forEach(a => { %><option value="<%= a %>"><% }) %>
+            </datalist>
           </div>
         </div>
 
@@ -161,7 +176,10 @@
         <div class="field-row field-row--half">
           <div class="field">
             <label class="field-label">FFL TRANSFERRED FROM</label>
-            <input type="text" name="ffl_transferred_from" class="field-input" value="<%= firearm ? (firearm.ffl_transferred_from || '') : '' %>" placeholder="e.g. Dealer name, license number">
+            <input type="text" name="ffl_transferred_from" class="field-input" list="fflList" value="<%= firearm ? (firearm.ffl_transferred_from || '') : '' %>" placeholder="e.g. Dealer name, license number" autocomplete="off">
+            <datalist id="fflList">
+              <% fflList.forEach(f => { %><option value="<%= f %>"><% }) %>
+            </datalist>
           </div>
         </div>
 

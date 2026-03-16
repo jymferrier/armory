@@ -229,6 +229,20 @@ const firearmsQueries = {
     return doc;
   },
   distinctManufacturers: () => getDB().prepare('SELECT DISTINCT manufacturer FROM firearms ORDER BY manufacturer ASC').all().map(r => r.manufacturer),
+  distinctModels: () => getDB().prepare("SELECT DISTINCT model FROM firearms WHERE model IS NOT NULL AND model != '' ORDER BY model ASC").all().map(r => r.model),
+  distinctCalibers: () => getDB().prepare("SELECT DISTINCT caliber FROM firearms WHERE caliber IS NOT NULL AND caliber != '' ORDER BY caliber ASC").all().map(r => r.caliber),
+  distinctBarrelLengths: () => getDB().prepare("SELECT DISTINCT barrel_length FROM firearms WHERE barrel_length IS NOT NULL AND barrel_length != '' ORDER BY barrel_length ASC").all().map(r => r.barrel_length),
+  distinctAcquiredFrom: () => getDB().prepare("SELECT DISTINCT acquired_from FROM firearms WHERE acquired_from IS NOT NULL AND acquired_from != '' ORDER BY acquired_from ASC").all().map(r => r.acquired_from),
+  distinctFflTransferredFrom: () => getDB().prepare("SELECT DISTINCT ffl_transferred_from FROM firearms WHERE ffl_transferred_from IS NOT NULL AND ffl_transferred_from != '' ORDER BY ffl_transferred_from ASC").all().map(r => r.ffl_transferred_from),
+  distinctOpticsTags: () => {
+    const rows = getDB().prepare("SELECT optics FROM firearms WHERE optics IS NOT NULL AND optics != ''").all();
+    const tags = new Set();
+    rows.forEach(r => {
+      try { const p = JSON.parse(r.optics); if (Array.isArray(p)) p.forEach(t => tags.add(t)); else tags.add(r.optics); }
+      catch(e) { tags.add(r.optics); }
+    });
+    return [...tags].sort((a, b) => a.localeCompare(b));
+  },
   search: (q) => {
     const like = `%${q}%`;
     return getDB().prepare(`
