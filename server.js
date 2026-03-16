@@ -37,6 +37,7 @@ app.use(session({
 // Routes
 app.use('/', require('./routes/auth'));
 app.use('/inventory', require('./routes/inventory'));
+app.use('/trusts', require('./routes/trusts'));
 app.use('/api', require('./routes/api'));
 
 // 404

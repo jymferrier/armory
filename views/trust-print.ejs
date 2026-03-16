@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Assignment to <%= trust.name %></title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Times New Roman', Times, serif;
+      font-size: 12pt;
+      color: #000;
+      background: #e8e8e8;
+      line-height: 1.5;
+    }
+    .screen-actions {
+      background: #222;
+      padding: 0.75rem 2rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    .screen-actions a, .screen-actions button {
+      font-family: 'Courier New', monospace;
+      font-size: 0.72rem;
+      letter-spacing: 0.1em;
+      padding: 0.45rem 1rem;
+      border: 1px solid #555;
+      background: transparent;
+      color: #ccc;
+      cursor: pointer;
+      text-decoration: none;
+    }
+    .screen-actions button.print-btn {
+      background: #c8963c;
+      border-color: #c8963c;
+      color: #000;
+      font-weight: bold;
+    }
+    .paper {
+      max-width: 8.5in;
+      margin: 2rem auto;
+      background: white;
+      padding: 1in 1in 1.25in;
+      box-shadow: 0 4px 30px rgba(0,0,0,0.3);
+    }
+    .doc-title {
+      text-align: center;
+      font-size: 14pt;
+      font-weight: bold;
+      text-decoration: underline;
+      margin-bottom: 1.5rem;
+      text-transform: uppercase;
+    }
+    .doc-intro {
+      margin-bottom: 1.5rem;
+      text-align: justify;
+    }
+    .doc-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 1.5rem;
+    }
+    .doc-table th {
+      border: 1px solid #000;
+      padding: 0.35rem 0.6rem;
+      font-weight: bold;
+      text-align: center;
+      font-size: 11pt;
+      background: #fff;
+    }
+    .doc-table td {
+      border: 1px solid #000;
+      padding: 0.4rem 0.6rem;
+      font-size: 11pt;
+      text-align: center;
+      height: 1.6rem;
+    }
+    .doc-table td.row-num {
+      width: 0.4in;
+      text-align: right;
+      padding-right: 0.4rem;
+    }
+    .doc-table td.col-make { width: 2.2in; }
+    .doc-table td.col-model { width: 1.8in; }
+    .doc-table td.col-serial { width: 1.8in; }
+    .doc-table td.col-purchase { width: 1.5in; }
+    .doc-legal {
+      margin-bottom: 1.25rem;
+      text-align: justify;
+    }
+    .doc-acknowledge {
+      margin-bottom: 1.75rem;
+    }
+    .doc-settlor-name {
+      font-weight: bold;
+      margin-bottom: 0.1rem;
+    }
+    .sig-line {
+      border-top: 1px solid #000;
+      width: 3.5in;
+      margin-bottom: 0.2rem;
+    }
+    .sig-row {
+      display: flex;
+      align-items: flex-end;
+      gap: 2rem;
+      margin-bottom: 1.5rem;
+    }
+    .sig-label {
+      font-size: 10pt;
+      margin-top: 0.15rem;
+    }
+    .notary-section { margin-top: 1rem; }
+    .notary-state {
+      display: flex;
+      flex-direction: column;
+      gap: 0.1rem;
+      margin-bottom: 0.75rem;
+      font-size: 11pt;
+    }
+    .notary-state span { display: flex; align-items: center; gap: 0.5rem; }
+    .notary-state span::after { content: ')'; margin-left: 2rem; }
+    .notary-acknowledge { margin-bottom: 1.5rem; text-align: justify; }
+    .notary-sig .sig-line { margin-top: 1.5rem; }
+    .notary-sig .sig-label { font-size: 10pt; }
+    .doc-footer {
+      text-align: right;
+      font-style: italic;
+      font-size: 10pt;
+      margin-top: 2rem;
+      padding-top: 0.5rem;
+      border-top: 1px solid #ccc;
+    }
+    @media print {
+      body { background: white; }
+      .screen-actions { display: none; }
+      .paper { margin: 0; box-shadow: none; max-width: none; padding: 0; }
+      @page { margin: 1in; size: letter portrait; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="screen-actions">
+  <button class="print-btn" onclick="window.print()">⎙ PRINT / SAVE AS PDF</button>
+  <a href="/trusts/<%= trust.id %>">← BACK TO TRUST</a>
+</div>
+
+<%
+  const trustNameUpper = trust.name.toUpperCase();
+  const settlor = (trust.settlor_name || '_______________').toUpperCase();
+  const location = trust.settlor_location || '_______________';
+
+  let agreementDateStr = '_______________';
+  if (trust.agreement_date) {
+    const d = new Date(trust.agreement_date + 'T00:00:00');
+    agreementDateStr = d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: '2-digit' });
+  }
+
+  const MIN_ROWS = 5;
+  const totalRows = Math.max(items.length, MIN_ROWS);
+%>
+
+<div class="paper">
+  <div class="doc-title">ASSIGNMENT TO THE <%= trustNameUpper %></div>
+
+  <p class="doc-intro">
+    I, <%= settlor %>, of <%= location %>, Settlor, hereby GRANT, CONVEY, TRANSFER, and ASSIGN to the
+    <%= trustNameUpper %>, under Trust Agreement dated <%= agreementDateStr %> the following:
+  </p>
+
+  <table class="doc-table">
+    <thead>
+      <tr>
+        <th></th>
+        <th>Make</th>
+        <th>Model</th>
+        <th>Serial Number</th>
+        <th>Purchase Date /<br>Purchased From</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% for (let i = 0; i < totalRows; i++) {
+           const item = items[i] || null;
+           let purchaseDate = '';
+           if (item && item.date_acquired) {
+             const d = new Date(item.date_acquired + 'T00:00:00');
+             purchaseDate = d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+           }
+      %>
+      <tr>
+        <td class="row-num"><%= i + 1 %>.</td>
+        <td class="col-make"><%= item ? item.manufacturer : '' %></td>
+        <td class="col-model"><%= item ? item.model : '' %></td>
+        <td class="col-serial"><%= item ? (item.serial || '') : '' %></td>
+        <td class="col-purchase"><%= purchaseDate %></td>
+      </tr>
+      <% } %>
+    </tbody>
+  </table>
+
+  <p class="doc-legal">
+    In the event the assignment and transfer above violates the National Firearms Act, the Gun Control Act, or any other applicable state
+    or federal law, such assignment and transfer is void.
+  </p>
+
+  <div class="doc-acknowledge">
+    <p>As Settlor of the <%= trustNameUpper %>, I acknowledge the above stated property.</p>
+    <br>
+    <p class="doc-settlor-name"><%= settlor %>, Settlor and Trustee</p>
+  </div>
+
+  <div class="sig-row">
+    <div>
+      <div class="sig-line"></div>
+      <div class="sig-label">Signature: &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Date:</div>
+    </div>
+  </div>
+
+  <div class="notary-section">
+    <div class="notary-state">
+      <span>State of &nbsp;</span>
+      <span>County of </span>
+    </div>
+
+    <p class="notary-acknowledge">
+      This instrument was acknowledged before me on the ___ day of _______, 20__ by <%= settlor %>.
+    </p>
+
+    <div class="notary-sig">
+      <div class="sig-line"></div>
+      <div class="sig-label">Signature of notarial officer</div>
+      <div class="sig-label">My commission expires:___________</div>
+    </div>
+  </div>
+
+  <div class="doc-footer">ASSIGNMENT TO THE <%= trustNameUpper %></div>
+</div>
+
+</body>
+</html>

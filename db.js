@@ -72,6 +72,15 @@ function initDB() {
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (firearm_id) REFERENCES firearms(id) ON DELETE CASCADE
     );
+
+    CREATE TABLE IF NOT EXISTS trusts (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT UNIQUE NOT NULL,
+      settlor_name TEXT,
+      settlor_location TEXT,
+      agreement_date TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
   `);
 
   // Migrate existing databases — safely add new columns if they don't exist
@@ -215,4 +224,15 @@ const firearmsQueries = {
   }
 };
 
-module.exports = { initDB, userQueries, firearmsQueries };
+const trustQueries = {
+  all: () => getDB().prepare('SELECT * FROM trusts ORDER BY name ASC').all(),
+  findById: (id) => getDB().prepare('SELECT * FROM trusts WHERE id = ?').get(id),
+  findByName: (name) => getDB().prepare('SELECT * FROM trusts WHERE name = ?').get(name),
+  create: (data) => getDB().prepare('INSERT INTO trusts (name, settlor_name, settlor_location, agreement_date) VALUES (@name, @settlor_name, @settlor_location, @agreement_date)').run(data),
+  update: (id, data) => getDB().prepare('UPDATE trusts SET settlor_name = @settlor_name, settlor_location = @settlor_location, agreement_date = @agreement_date WHERE id = @id').run({ ...data, id }),
+  delete: (id) => getDB().prepare('DELETE FROM trusts WHERE id = ?').run(id),
+  nfaItemsForTrust: (name) => getDB().prepare("SELECT * FROM firearms WHERE nfa_trust_name = ? AND is_nfa = 1 ORDER BY manufacturer ASC").all(name).map(f => ({ ...f, is_3d_printed: !!f.is_3d_printed, is_nfa: !!f.is_nfa, nfa_fmi: !!f.nfa_fmi })),
+  distinctTrustNames: () => getDB().prepare("SELECT DISTINCT nfa_trust_name FROM firearms WHERE nfa_trust_name IS NOT NULL AND nfa_trust_name != '' AND is_nfa = 1 ORDER BY nfa_trust_name ASC").all().map(r => r.nfa_trust_name),
+};
+
+module.exports = { initDB, userQueries, firearmsQueries, trustQueries };
