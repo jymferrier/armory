@@ -5,6 +5,7 @@
       <p class="breadcrumb"><a href="/inventory">← INVENTORY</a></p>
       <h1 class="page-title"><%= firearm.manufacturer %> <span class="title-model"><%= firearm.model %></span></h1>
       <div class="detail-badges">
+        <% if (firearm.is_3d_printed) { %><span class="badge badge--3dp">3D PRINTED</span><% } %>
         <% if (firearm.nfa_type) { %><span class="badge <%= firearm.is_nfa ? 'badge--nfa' : 'badge--type' %>"><%= firearm.nfa_type %></span><% } %>
         <% if (firearm.caliber) { %><span class="badge badge--caliber"><%= firearm.caliber %></span><% } %>
         <% if (firearm.is_disposed) { %><span class="badge badge--disposed">DISPOSED</span><% } %>
@@ -82,7 +83,7 @@
       <h3 class="section-title">IDENTIFICATION</h3>
       <div class="info-grid">
         <div class="info-item">
-          <span class="info-label">MANUFACTURER</span>
+          <span class="info-label"><%= firearm.is_3d_printed ? 'CREATOR' : 'MANUFACTURER' %></span>
           <span class="info-value"><%= firearm.manufacturer %></span>
         </div>
         <div class="info-item">
@@ -113,10 +114,16 @@
           <span class="info-value"><%= firearm.overall_length %></span>
         </div>
         <% } %>
-        <% if (firearm.optics) { %>
+        <% if (firearm.optics) {
+          let opticsList = [];
+          try { const p = JSON.parse(firearm.optics); opticsList = Array.isArray(p) ? p : [firearm.optics]; }
+          catch(e) { opticsList = [firearm.optics]; }
+        %>
         <div class="info-item">
           <span class="info-label">OPTICS / ACCESSORIES</span>
-          <span class="info-value"><%= firearm.optics %></span>
+          <div class="tag-list">
+            <% opticsList.forEach(tag => { %><span class="tag"><%= tag %></span><% }) %>
+          </div>
         </div>
         <% } %>
         <% if (firearm.date_acquired) { %>
@@ -175,9 +182,21 @@
       <% } %>
 
       <div class="info-grid">
+        <% if (firearm.nfa_fmi) { %>
+        <div class="info-item">
+          <span class="info-label">FMI</span>
+          <span class="info-value value--nfa">YES</span>
+        </div>
+        <% } %>
+        <% if (firearm.nfa_form_type) { %>
+        <div class="info-item">
+          <span class="info-label">FORM TYPE</span>
+          <span class="info-value"><%= firearm.nfa_form_type %></span>
+        </div>
+        <% } %>
         <% if (firearm.nfa_form_number) { %>
         <div class="info-item">
-          <span class="info-label">FORM 1 / FORM 4 NUMBER</span>
+          <span class="info-label">FORM NUMBER</span>
           <span class="info-value mono"><%= firearm.nfa_form_number %></span>
         </div>
         <% } %>

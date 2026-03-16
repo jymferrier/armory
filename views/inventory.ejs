@@ -42,8 +42,12 @@
             <% if (f.serial) { %>
               <p class="firearm-card__serial">S/N: <%= f.serial %></p>
             <% } %>
-            <% if (f.optics) { %>
-              <p class="firearm-card__optics">⊕ <%= f.optics %></p>
+            <% if (f.optics) {
+                let cardOptics = [];
+                try { const p = JSON.parse(f.optics); cardOptics = Array.isArray(p) ? p : [f.optics]; }
+                catch(e) { cardOptics = [f.optics]; }
+              %>
+              <p class="firearm-card__optics">⊕ <%= cardOptics.join(', ') %></p>
             <% } %>
           </div>
         </a>

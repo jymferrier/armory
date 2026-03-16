@@ -39,17 +39,20 @@ router.get('/', (req, res) => {
 
 // New form
 router.get('/new', (req, res) => {
-  res.render('firearm-form', { user: req.session.user, firearm: null, error: null });
+  const manufacturers = firearmsQueries.distinctManufacturers();
+  res.render('firearm-form', { user: req.session.user, firearm: null, error: null, manufacturers });
 });
 
 // Create
 router.post('/new', (req, res) => {
   photoUpload(req, res, (err) => {
-    if (err) return res.render('firearm-form', { user: req.session.user, firearm: null, error: err.message });
+    const manufacturers = firearmsQueries.distinctManufacturers();
+    if (err) return res.render('firearm-form', { user: req.session.user, firearm: null, error: err.message, manufacturers });
 
     const {
       manufacturer, model, caliber, serial, barrel_length, overall_length, optics, date_acquired,
-      item_type, nfa_form_number, nfa_submit_date, nfa_tax_stamp_serial, nfa_approve_date, nfa_trust_name,
+      is_3d_printed,
+      item_type, nfa_form_type, nfa_form_number, nfa_fmi, nfa_submit_date, nfa_tax_stamp_serial, nfa_approve_date, nfa_trust_name,
       is_disposed, date_disposed, disposal_method, notes
     } = req.body;
 
@@ -64,9 +67,12 @@ router.post('/new', (req, res) => {
       overall_length: hasSbrSbs ? (overall_length || null) : null,
       optics: optics || null,
       date_acquired: date_acquired || null,
+      is_3d_printed: is_3d_printed ? 1 : 0,
       is_nfa: isNfa ? 1 : 0,
       nfa_type: item_type || null,
+      nfa_form_type: isNfa ? (nfa_form_type || null) : null,
       nfa_form_number: isNfa ? (nfa_form_number || null) : null,
+      nfa_fmi: isNfa ? (nfa_fmi ? 1 : 0) : 0,
       nfa_submit_date: isNfa ? (nfa_submit_date || null) : null,
       nfa_tax_stamp_serial: isNfa ? (nfa_tax_stamp_serial || null) : null,
       nfa_approve_date: isNfa ? (nfa_approve_date || null) : null,
@@ -98,14 +104,16 @@ router.get('/:id', (req, res) => {
 router.get('/:id/edit', (req, res) => {
   const firearm = firearmsQueries.findById(req.params.id);
   if (!firearm) return res.status(404).render('error', { message: 'Firearm not found', user: req.session.user });
-  res.render('firearm-form', { user: req.session.user, firearm, error: null });
+  const manufacturers = firearmsQueries.distinctManufacturers();
+  res.render('firearm-form', { user: req.session.user, firearm, error: null, manufacturers });
 });
 
 // Update
 router.post('/:id/edit', (req, res) => {
   const {
     manufacturer, model, caliber, serial, barrel_length, overall_length, optics, date_acquired,
-    item_type, nfa_form_number, nfa_submit_date, nfa_tax_stamp_serial, nfa_approve_date, nfa_trust_name,
+    is_3d_printed,
+    item_type, nfa_form_type, nfa_form_number, nfa_fmi, nfa_submit_date, nfa_tax_stamp_serial, nfa_approve_date, nfa_trust_name,
     is_disposed, date_disposed, disposal_method, notes
   } = req.body;
 
@@ -120,9 +128,12 @@ router.post('/:id/edit', (req, res) => {
     overall_length: hasSbrSbs ? (overall_length || null) : null,
     optics: optics || null,
     date_acquired: date_acquired || null,
+    is_3d_printed: is_3d_printed ? 1 : 0,
     is_nfa: isNfa ? 1 : 0,
     nfa_type: item_type || null,
+    nfa_form_type: isNfa ? (nfa_form_type || null) : null,
     nfa_form_number: isNfa ? (nfa_form_number || null) : null,
+    nfa_fmi: isNfa ? (nfa_fmi ? 1 : 0) : 0,
     nfa_submit_date: isNfa ? (nfa_submit_date || null) : null,
     nfa_tax_stamp_serial: isNfa ? (nfa_tax_stamp_serial || null) : null,
     nfa_approve_date: isNfa ? (nfa_approve_date || null) : null,

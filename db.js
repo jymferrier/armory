@@ -35,9 +35,12 @@ function initDB() {
       overall_length TEXT,
       optics TEXT,
       date_acquired TEXT,
+      is_3d_printed INTEGER DEFAULT 0,
       is_nfa INTEGER DEFAULT 0,
       nfa_type TEXT,
+      nfa_form_type TEXT,
       nfa_form_number TEXT,
+      nfa_fmi INTEGER DEFAULT 0,
       nfa_submit_date TEXT,
       nfa_tax_stamp_serial TEXT,
       nfa_approve_date TEXT,
@@ -84,6 +87,9 @@ function initDB() {
     "ALTER TABLE firearms ADD COLUMN date_disposed TEXT",
     "ALTER TABLE firearms ADD COLUMN disposal_method TEXT",
     "ALTER TABLE firearms ADD COLUMN overall_length TEXT",
+    "ALTER TABLE firearms ADD COLUMN is_3d_printed INTEGER DEFAULT 0",
+    "ALTER TABLE firearms ADD COLUMN nfa_form_type TEXT",
+    "ALTER TABLE firearms ADD COLUMN nfa_fmi INTEGER DEFAULT 0",
   ];
   for (const sql of migrations) {
     try { db.exec(sql); } catch (_) { /* column already exists */ }
@@ -121,7 +127,9 @@ const firearmsQueries = {
     const firearms = getDB().prepare('SELECT * FROM firearms ORDER BY created_at DESC').all();
     return firearms.map(f => ({
       ...f,
+      is_3d_printed: !!f.is_3d_printed,
       is_nfa: !!f.is_nfa,
+      nfa_fmi: !!f.nfa_fmi,
       is_disposed: !!f.is_disposed,
       primary_photo: getDB().prepare('SELECT filename FROM firearm_photos WHERE firearm_id = ? AND is_primary = 1 LIMIT 1').get(f.id)
         || getDB().prepare('SELECT filename FROM firearm_photos WHERE firearm_id = ? LIMIT 1').get(f.id)
@@ -132,7 +140,9 @@ const firearmsQueries = {
     if (!f) return null;
     return {
       ...f,
+      is_3d_printed: !!f.is_3d_printed,
       is_nfa: !!f.is_nfa,
+      nfa_fmi: !!f.nfa_fmi,
       is_disposed: !!f.is_disposed,
       photos: getDB().prepare('SELECT * FROM firearm_photos WHERE firearm_id = ? ORDER BY is_primary DESC, id ASC').all(id),
       documents: getDB().prepare('SELECT * FROM firearm_documents WHERE firearm_id = ? ORDER BY doc_type, id ASC').all(id)
@@ -142,11 +152,11 @@ const firearmsQueries = {
     const result = getDB().prepare(`
       INSERT INTO firearms (
         manufacturer, model, caliber, serial, barrel_length, overall_length, optics, date_acquired,
-        is_nfa, nfa_type, nfa_form_number, nfa_submit_date, nfa_tax_stamp_serial, nfa_approve_date, nfa_trust_name,
+        is_3d_printed, is_nfa, nfa_type, nfa_form_type, nfa_form_number, nfa_fmi, nfa_submit_date, nfa_tax_stamp_serial, nfa_approve_date, nfa_trust_name,
         is_disposed, date_disposed, disposal_method, notes
       ) VALUES (
         @manufacturer, @model, @caliber, @serial, @barrel_length, @overall_length, @optics, @date_acquired,
-        @is_nfa, @nfa_type, @nfa_form_number, @nfa_submit_date, @nfa_tax_stamp_serial, @nfa_approve_date, @nfa_trust_name,
+        @is_3d_printed, @is_nfa, @nfa_type, @nfa_form_type, @nfa_form_number, @nfa_fmi, @nfa_submit_date, @nfa_tax_stamp_serial, @nfa_approve_date, @nfa_trust_name,
         @is_disposed, @date_disposed, @disposal_method, @notes
       )
     `).run(data);
@@ -158,9 +168,9 @@ const firearmsQueries = {
         manufacturer = @manufacturer, model = @model, caliber = @caliber,
         serial = @serial, barrel_length = @barrel_length, overall_length = @overall_length, optics = @optics,
         date_acquired = @date_acquired,
-        is_nfa = @is_nfa, nfa_type = @nfa_type,
-        nfa_form_number = @nfa_form_number, nfa_submit_date = @nfa_submit_date,
-        nfa_tax_stamp_serial = @nfa_tax_stamp_serial,
+        is_3d_printed = @is_3d_printed, is_nfa = @is_nfa, nfa_type = @nfa_type,
+        nfa_form_type = @nfa_form_type, nfa_form_number = @nfa_form_number, nfa_fmi = @nfa_fmi,
+        nfa_submit_date = @nfa_submit_date, nfa_tax_stamp_serial = @nfa_tax_stamp_serial,
         nfa_approve_date = @nfa_approve_date, nfa_trust_name = @nfa_trust_name,
         is_disposed = @is_disposed, date_disposed = @date_disposed,
         disposal_method = @disposal_method, notes = @notes,
@@ -192,6 +202,7 @@ const firearmsQueries = {
     getDB().prepare('DELETE FROM firearm_documents WHERE id = ?').run(id);
     return doc;
   },
+  distinctManufacturers: () => getDB().prepare('SELECT DISTINCT manufacturer FROM firearms ORDER BY manufacturer ASC').all().map(r => r.manufacturer),
   search: (q) => {
     const like = `%${q}%`;
     return getDB().prepare(`

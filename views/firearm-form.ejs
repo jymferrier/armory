@@ -20,10 +20,23 @@
       <div class="form-band__label">01 / IDENTIFICATION</div>
       <div class="form-band__fields">
 
+        <div class="field field--checkbox">
+          <label class="checkbox-label">
+            <input type="checkbox" name="is_3d_printed" id="is3dPrinted" value="1" class="checkbox-input"
+              <%= firearm && firearm.is_3d_printed ? 'checked' : '' %>
+              onchange="on3dPrintedChange(this.checked)">
+            <span class="checkbox-custom"></span>
+            <span class="checkbox-text">3D PRINTED FIREARM</span>
+          </label>
+        </div>
+
         <div class="field-row">
           <div class="field">
-            <label class="field-label">MANUFACTURER <span class="required">*</span></label>
-            <input type="text" name="manufacturer" class="field-input" value="<%= firearm ? firearm.manufacturer : '' %>" required placeholder="e.g. Smith &amp; Wesson">
+            <label class="field-label"><span id="manufacturerLabelText"><%= (firearm && firearm.is_3d_printed) ? 'CREATOR' : 'MANUFACTURER' %></span> <span class="required">*</span></label>
+            <input type="text" name="manufacturer" class="field-input" list="manufacturerList" value="<%= firearm ? firearm.manufacturer : '' %>" required placeholder="e.g. Smith &amp; Wesson" autocomplete="off">
+            <datalist id="manufacturerList">
+              <% manufacturers.forEach(m => { %><option value="<%= m %>"><% }) %>
+            </datalist>
           </div>
           <div class="field">
             <label class="field-label">MODEL <span class="required">*</span></label>
@@ -49,7 +62,19 @@
           </div>
           <div class="field">
             <label class="field-label">OPTICS / ACCESSORIES</label>
-            <input type="text" name="optics" class="field-input" value="<%= firearm ? (firearm.optics || '') : '' %>" placeholder="e.g. Trijicon MRO, Streamlight TLR-1">
+            <%
+              let initialOpticsTags = [];
+              if (firearm && firearm.optics) {
+                try {
+                  const p = JSON.parse(firearm.optics);
+                  initialOpticsTags = Array.isArray(p) ? p : [firearm.optics];
+                } catch(e) { initialOpticsTags = [firearm.optics]; }
+              }
+            %>
+            <input type="hidden" name="optics" id="opticsHidden" value="<%- JSON.stringify(initialOpticsTags) %>">
+            <div class="tag-input-container" id="opticsTagContainer">
+              <input type="text" class="tag-input-field" id="opticsTagInput" placeholder='e.g. X300, XPS3, "Vortex Razor HD Gen III"'>
+            </div>
           </div>
         </div>
 
@@ -111,13 +136,32 @@
       <div class="form-band__label">02 / NFA</div>
       <div class="form-band__fields">
 
+        <div class="field field--checkbox">
+          <label class="checkbox-label">
+            <input type="checkbox" name="nfa_fmi" id="nfaFmi" value="1" class="checkbox-input"
+              <%= firearm && firearm.nfa_fmi ? 'checked' : '' %>>
+            <span class="checkbox-custom checkbox-custom--nfa"></span>
+            <span class="checkbox-text">FMI (FIREARM MANUFACTURING INTENT)</span>
+          </label>
+        </div>
+
         <div class="field-row">
           <div class="field">
-            <label class="field-label">FORM 1 / FORM 4 NUMBER</label>
+            <label class="field-label">FORM TYPE</label>
+            <select name="nfa_form_type" class="field-select">
+              <option value="">— SELECT —</option>
+              <option value="Form 1" <%= firearm && firearm.nfa_form_type === 'Form 1' ? 'selected' : '' %>>Form 1</option>
+              <option value="Form 4" <%= firearm && firearm.nfa_form_type === 'Form 4' ? 'selected' : '' %>>Form 4</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="field-label">FORM NUMBER</label>
             <input type="text" name="nfa_form_number" class="field-input mono"
               value="<%= firearm ? (firearm.nfa_form_number || '') : '' %>"
               placeholder="e.g. 20240001234">
           </div>
+        </div>
+        <div class="field-row">
           <div class="field">
             <label class="field-label">TAX STAMP / FORM SERIAL</label>
             <input type="text" name="nfa_tax_stamp_serial" class="field-input mono"
@@ -216,6 +260,7 @@
 </div>
 
 <script>
+const initialOpticsTags = <%- JSON.stringify(initialOpticsTags) %>;
 const NFA_TYPES = new Set(['Suppressor/Silencer','Short Barrel Rifle (SBR)','Short Barrel Shotgun (SBS)','Machine Gun','Destructive Device (DD)','Any Other Weapon (AOW)']);
 const OVERALL_LENGTH_TYPES = new Set(['Short Barrel Rifle (SBR)','Short Barrel Shotgun (SBS)']);
 
@@ -225,9 +270,67 @@ function onItemTypeChange(val) {
   document.getElementById('overallLengthRow').style.display = OVERALL_LENGTH_TYPES.has(val) ? '' : 'none';
 }
 
+function on3dPrintedChange(checked) {
+  document.getElementById('manufacturerLabelText').textContent = checked ? 'CREATOR' : 'MANUFACTURER';
+}
+
 function toggleSection(id, show) {
   document.getElementById(id).style.display = show ? 'block' : 'none';
 }
+
+// ── Optics tag input ──────────────────────────────────────
+(function() {
+  const container = document.getElementById('opticsTagContainer');
+  const textInput = document.getElementById('opticsTagInput');
+  const hidden    = document.getElementById('opticsHidden');
+  if (!container) return;
+
+  let tags = initialOpticsTags.slice();
+
+  function renderTags() {
+    container.querySelectorAll('.tag-chip').forEach(el => el.remove());
+    tags.forEach((tag, i) => {
+      const chip = document.createElement('span');
+      chip.className = 'tag-chip';
+      chip.innerHTML = '<span>' + tag.replace(/</g,'&lt;') + '</span>';
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'tag-chip__remove';
+      btn.innerHTML = '&times;';
+      btn.addEventListener('click', () => { tags.splice(i, 1); renderTags(); });
+      chip.appendChild(btn);
+      container.insertBefore(chip, textInput);
+    });
+    hidden.value = JSON.stringify(tags);
+  }
+
+  function addTag(val) {
+    const trimmed = val.trim();
+    if (trimmed && !tags.includes(trimmed)) {
+      tags.push(trimmed);
+      renderTags();
+    }
+    textInput.value = '';
+  }
+
+  textInput.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' || e.key === 'Tab' || e.key === ',') {
+      e.preventDefault();
+      addTag(this.value);
+    } else if (e.key === 'Backspace' && this.value === '' && tags.length) {
+      tags.pop();
+      renderTags();
+    }
+  });
+
+  textInput.addEventListener('blur', function() {
+    if (this.value.trim()) addTag(this.value);
+  });
+
+  container.addEventListener('click', () => textInput.focus());
+
+  renderTags();
+})();
 
 const photoInput = document.getElementById('photoInput');
 if (photoInput) {
