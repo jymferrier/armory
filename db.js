@@ -35,6 +35,10 @@ function initDB() {
       overall_length TEXT,
       optics TEXT,
       date_acquired TEXT,
+      acquired_from TEXT,
+      price_paid TEXT,
+      transfer_date TEXT,
+      ffl_transferred_from TEXT,
       is_3d_printed INTEGER DEFAULT 0,
       is_nfa INTEGER DEFAULT 0,
       nfa_type TEXT,
@@ -99,6 +103,10 @@ function initDB() {
     "ALTER TABLE firearms ADD COLUMN is_3d_printed INTEGER DEFAULT 0",
     "ALTER TABLE firearms ADD COLUMN nfa_form_type TEXT",
     "ALTER TABLE firearms ADD COLUMN nfa_fmi INTEGER DEFAULT 0",
+    "ALTER TABLE firearms ADD COLUMN acquired_from TEXT",
+    "ALTER TABLE firearms ADD COLUMN price_paid TEXT",
+    "ALTER TABLE firearms ADD COLUMN transfer_date TEXT",
+    "ALTER TABLE firearms ADD COLUMN ffl_transferred_from TEXT",
   ];
   for (const sql of migrations) {
     try { db.exec(sql); } catch (_) { /* column already exists */ }
@@ -160,11 +168,13 @@ const firearmsQueries = {
   create: (data) => {
     const result = getDB().prepare(`
       INSERT INTO firearms (
-        manufacturer, model, caliber, serial, barrel_length, overall_length, optics, date_acquired,
+        manufacturer, model, caliber, serial, barrel_length, overall_length, optics,
+        date_acquired, acquired_from, price_paid, transfer_date, ffl_transferred_from,
         is_3d_printed, is_nfa, nfa_type, nfa_form_type, nfa_form_number, nfa_fmi, nfa_submit_date, nfa_tax_stamp_serial, nfa_approve_date, nfa_trust_name,
         is_disposed, date_disposed, disposal_method, notes
       ) VALUES (
-        @manufacturer, @model, @caliber, @serial, @barrel_length, @overall_length, @optics, @date_acquired,
+        @manufacturer, @model, @caliber, @serial, @barrel_length, @overall_length, @optics,
+        @date_acquired, @acquired_from, @price_paid, @transfer_date, @ffl_transferred_from,
         @is_3d_printed, @is_nfa, @nfa_type, @nfa_form_type, @nfa_form_number, @nfa_fmi, @nfa_submit_date, @nfa_tax_stamp_serial, @nfa_approve_date, @nfa_trust_name,
         @is_disposed, @date_disposed, @disposal_method, @notes
       )
@@ -176,7 +186,8 @@ const firearmsQueries = {
       UPDATE firearms SET
         manufacturer = @manufacturer, model = @model, caliber = @caliber,
         serial = @serial, barrel_length = @barrel_length, overall_length = @overall_length, optics = @optics,
-        date_acquired = @date_acquired,
+        date_acquired = @date_acquired, acquired_from = @acquired_from,
+        price_paid = @price_paid, transfer_date = @transfer_date, ffl_transferred_from = @ffl_transferred_from,
         is_3d_printed = @is_3d_printed, is_nfa = @is_nfa, nfa_type = @nfa_type,
         nfa_form_type = @nfa_form_type, nfa_form_number = @nfa_form_number, nfa_fmi = @nfa_fmi,
         nfa_submit_date = @nfa_submit_date, nfa_tax_stamp_serial = @nfa_tax_stamp_serial,
@@ -232,8 +243,8 @@ const trustQueries = {
   create: (data) => getDB().prepare('INSERT INTO trusts (name, settlor_name, settlor_location, agreement_date) VALUES (@name, @settlor_name, @settlor_location, @agreement_date)').run(data),
   update: (id, data) => getDB().prepare('UPDATE trusts SET settlor_name = @settlor_name, settlor_location = @settlor_location, agreement_date = @agreement_date WHERE id = @id').run({ ...data, id }),
   delete: (id) => getDB().prepare('DELETE FROM trusts WHERE id = ?').run(id),
-  nfaItemsForTrust: (name) => getDB().prepare("SELECT * FROM firearms WHERE nfa_trust_name = ? AND is_nfa = 1 ORDER BY manufacturer ASC").all(name).map(f => ({ ...f, is_3d_printed: !!f.is_3d_printed, is_nfa: !!f.is_nfa, nfa_fmi: !!f.nfa_fmi })),
-  distinctTrustNames: () => getDB().prepare("SELECT DISTINCT nfa_trust_name FROM firearms WHERE nfa_trust_name IS NOT NULL AND nfa_trust_name != '' AND is_nfa = 1 ORDER BY nfa_trust_name ASC").all().map(r => r.nfa_trust_name),
+  nfaItemsForTrust: (name) => getDB().prepare("SELECT * FROM firearms WHERE nfa_trust_name = ? ORDER BY manufacturer ASC").all(name).map(f => ({ ...f, is_3d_printed: !!f.is_3d_printed, is_nfa: !!f.is_nfa, nfa_fmi: !!f.nfa_fmi })),
+  distinctTrustNames: () => getDB().prepare("SELECT DISTINCT nfa_trust_name FROM firearms WHERE nfa_trust_name IS NOT NULL AND nfa_trust_name != '' ORDER BY nfa_trust_name ASC").all().map(r => r.nfa_trust_name),
 };
 
 module.exports = { initDB, userQueries, firearmsQueries, trustQueries };

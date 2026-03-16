@@ -88,13 +88,6 @@
           </div>
         </div>
 
-        <div class="field-row field-row--half">
-          <div class="field">
-            <label class="field-label">DATE ACQUIRED</label>
-            <input type="date" name="date_acquired" class="field-input field-input--date" value="<%= firearm ? (firearm.date_acquired || '') : '' %>">
-          </div>
-        </div>
-
         <div class="field-row">
           <div class="field">
             <label class="field-label">ITEM TYPE</label>
@@ -116,6 +109,9 @@
               <% }) %>
             </select>
           </div>
+        </div>
+
+        <div class="field-row field-row--half">
           <div class="field">
             <label class="field-label">TRUST / ENTITY NAME</label>
             <input type="text" name="nfa_trust_name" class="field-input"
@@ -127,13 +123,50 @@
       </div>
     </div>
 
-    <!-- 02: NFA -->
+    <!-- 02: ACQUISITION -->
+    <div class="form-band">
+      <div class="form-band__label">02 / ACQUISITION</div>
+      <div class="form-band__fields">
+
+        <div class="field-row">
+          <div class="field">
+            <label class="field-label">ACQUIRED DATE</label>
+            <input type="date" name="date_acquired" class="field-input field-input--date" value="<%= firearm ? (firearm.date_acquired || '') : '' %>">
+          </div>
+          <div class="field">
+            <label class="field-label">ACQUIRED FROM</label>
+            <input type="text" name="acquired_from" class="field-input" value="<%= firearm ? (firearm.acquired_from || '') : '' %>" placeholder="e.g. GunBroker, Private sale, FFL dealer">
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label class="field-label">PRICE PAID</label>
+            <input type="text" name="price_paid" class="field-input" value="<%= firearm ? (firearm.price_paid || '') : '' %>" placeholder="e.g. $1,200.00">
+          </div>
+          <div class="field">
+            <label class="field-label">TRANSFER DATE</label>
+            <input type="date" name="transfer_date" class="field-input field-input--date" value="<%= firearm ? (firearm.transfer_date || '') : '' %>">
+          </div>
+        </div>
+
+        <div class="field-row field-row--half">
+          <div class="field">
+            <label class="field-label">FFL TRANSFERRED FROM</label>
+            <input type="text" name="ffl_transferred_from" class="field-input" value="<%= firearm ? (firearm.ffl_transferred_from || '') : '' %>" placeholder="e.g. Dealer name, license number">
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- 03: NFA (kept as marker) -->
     <%
       const nfaTypesList = ['Suppressor/Silencer','Short Barrel Rifle (SBR)','Short Barrel Shotgun (SBS)','Machine Gun','Destructive Device (DD)','Any Other Weapon (AOW)'];
       const isNfaOnLoad = firearm && nfaTypesList.includes(firearm.nfa_type);
     %>
     <div class="form-band" id="nfaBand" style="display:<%= isNfaOnLoad ? 'block' : 'none' %>">
-      <div class="form-band__label">02 / NFA</div>
+      <div class="form-band__label">03 / NFA</div>
       <div class="form-band__fields">
 
         <div class="field field--checkbox">
@@ -188,9 +221,9 @@
       </div>
     </div>
 
-    <!-- 03: DISPOSITION -->
+    <!-- 04: DISPOSITION -->
     <div class="form-band">
-      <div class="form-band__label">03 / DISPOSITION</div>
+      <div class="form-band__label">04 / DISPOSITION</div>
       <div class="form-band__fields">
 
         <div class="field field--checkbox">
@@ -222,9 +255,9 @@
       </div>
     </div>
 
-    <!-- 04: NOTES -->
+    <!-- 05: NOTES -->
     <div class="form-band">
-      <div class="form-band__label">04 / NOTES</div>
+      <div class="form-band__label">05 / NOTES</div>
       <div class="form-band__fields">
         <div class="field">
           <label class="field-label">GENERAL NOTES</label>
@@ -234,10 +267,10 @@
       </div>
     </div>
 
-    <!-- 05: PHOTOS (new items only) -->
+    <!-- 06: PHOTOS (new items only) -->
     <% if (!firearm) { %>
     <div class="form-band">
-      <div class="form-band__label">05 / PHOTOS</div>
+      <div class="form-band__label">06 / PHOTOS</div>
       <div class="form-band__fields">
         <div class="file-drop-zone" id="photoDropZone">
           <input type="file" name="photos" multiple accept="image/*" class="file-input" id="photoInput">

@@ -126,12 +126,6 @@
           </div>
         </div>
         <% } %>
-        <% if (firearm.date_acquired) { %>
-        <div class="info-item">
-          <span class="info-label">DATE ACQUIRED</span>
-          <span class="info-value"><%= new Date(firearm.date_acquired + 'T00:00:00').toLocaleDateString('en-US', {year:'numeric',month:'long',day:'numeric'}) %></span>
-        </div>
-        <% } %>
         <% if (firearm.nfa_type) { %>
         <div class="info-item">
           <span class="info-label">ITEM TYPE</span>
@@ -145,6 +139,43 @@
         </div>
         <% } %>
       </div>
+
+      <!-- Acquisition -->
+      <% if (firearm.date_acquired || firearm.acquired_from || firearm.price_paid || firearm.transfer_date || firearm.ffl_transferred_from) { %>
+      <h3 class="section-title mt-lg">ACQUISITION</h3>
+      <div class="info-grid">
+        <% if (firearm.date_acquired) { %>
+        <div class="info-item">
+          <span class="info-label">ACQUIRED DATE</span>
+          <span class="info-value"><%= new Date(firearm.date_acquired + 'T00:00:00').toLocaleDateString('en-US', {year:'numeric',month:'long',day:'numeric'}) %></span>
+        </div>
+        <% } %>
+        <% if (firearm.acquired_from) { %>
+        <div class="info-item">
+          <span class="info-label">ACQUIRED FROM</span>
+          <span class="info-value"><%= firearm.acquired_from %></span>
+        </div>
+        <% } %>
+        <% if (firearm.price_paid) { %>
+        <div class="info-item">
+          <span class="info-label">PRICE PAID</span>
+          <span class="info-value"><%= firearm.price_paid %></span>
+        </div>
+        <% } %>
+        <% if (firearm.transfer_date) { %>
+        <div class="info-item">
+          <span class="info-label">TRANSFER DATE</span>
+          <span class="info-value"><%= new Date(firearm.transfer_date + 'T00:00:00').toLocaleDateString('en-US', {year:'numeric',month:'long',day:'numeric'}) %></span>
+        </div>
+        <% } %>
+        <% if (firearm.ffl_transferred_from) { %>
+        <div class="info-item">
+          <span class="info-label">FFL TRANSFERRED FROM</span>
+          <span class="info-value"><%= firearm.ffl_transferred_from %></span>
+        </div>
+        <% } %>
+      </div>
+      <% } %>
 
       <!-- NFA Details -->
       <% if (firearm.is_nfa) { %>

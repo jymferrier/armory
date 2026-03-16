@@ -51,6 +51,7 @@ router.post('/new', (req, res) => {
 
     const {
       manufacturer, model, caliber, serial, barrel_length, overall_length, optics, date_acquired,
+      acquired_from, price_paid, transfer_date, ffl_transferred_from,
       is_3d_printed,
       item_type, nfa_form_type, nfa_form_number, nfa_fmi, nfa_submit_date, nfa_tax_stamp_serial, nfa_approve_date, nfa_trust_name,
       is_disposed, date_disposed, disposal_method, notes
@@ -67,6 +68,10 @@ router.post('/new', (req, res) => {
       overall_length: hasSbrSbs ? (overall_length || null) : null,
       optics: optics || null,
       date_acquired: date_acquired || null,
+      acquired_from: acquired_from || null,
+      price_paid: price_paid || null,
+      transfer_date: transfer_date || null,
+      ffl_transferred_from: ffl_transferred_from || null,
       is_3d_printed: is_3d_printed ? 1 : 0,
       is_nfa: isNfa ? 1 : 0,
       nfa_type: item_type || null,
@@ -100,10 +105,11 @@ router.get('/export', (req, res) => {
   const columns = [
     'ID', 'Manufacturer', 'Model', 'Caliber', 'Serial Number',
     'Barrel Length', 'Overall Length', 'Optics / Accessories',
-    'Date Acquired', '3D Printed', 'Is NFA', 'Item Type',
+    'Acquired Date', 'Acquired From', 'Price Paid', 'Transfer Date', 'FFL Transferred From',
+    'Trust / Entity Name', '3D Printed', 'Is NFA', 'Item Type',
     'Form Type', 'Form Number', 'FMI',
     'Date Submitted to ATF', 'Tax Stamp / Form Serial', 'ATF Approval Date',
-    'Trust / Entity Name', 'Is Disposed', 'Date Disposed', 'Disposal Method',
+    'Is Disposed', 'Date Disposed', 'Disposal Method',
     'Notes', 'Date Added'
   ];
 
@@ -127,11 +133,12 @@ router.get('/export', (req, res) => {
   const rows = firearms.map(f => [
     f.id, f.manufacturer, f.model, f.caliber, f.serial,
     f.barrel_length, f.overall_length, parseOptics(f.optics),
-    f.date_acquired, f.is_3d_printed ? 'Yes' : 'No',
+    f.date_acquired, f.acquired_from, f.price_paid, f.transfer_date, f.ffl_transferred_from,
+    f.nfa_trust_name, f.is_3d_printed ? 'Yes' : 'No',
     f.is_nfa ? 'Yes' : 'No', f.nfa_type,
     f.nfa_form_type, f.nfa_form_number, f.nfa_fmi ? 'Yes' : 'No',
     f.nfa_submit_date, f.nfa_tax_stamp_serial, f.nfa_approve_date,
-    f.nfa_trust_name, f.is_disposed ? 'Yes' : 'No', f.date_disposed, f.disposal_method,
+    f.is_disposed ? 'Yes' : 'No', f.date_disposed, f.disposal_method,
     f.notes, f.created_at
   ].map(csvCell).join(','));
 
@@ -162,6 +169,7 @@ router.get('/:id/edit', (req, res) => {
 router.post('/:id/edit', (req, res) => {
   const {
     manufacturer, model, caliber, serial, barrel_length, overall_length, optics, date_acquired,
+    acquired_from, price_paid, transfer_date, ffl_transferred_from,
     is_3d_printed,
     item_type, nfa_form_type, nfa_form_number, nfa_fmi, nfa_submit_date, nfa_tax_stamp_serial, nfa_approve_date, nfa_trust_name,
     is_disposed, date_disposed, disposal_method, notes
@@ -178,6 +186,10 @@ router.post('/:id/edit', (req, res) => {
     overall_length: hasSbrSbs ? (overall_length || null) : null,
     optics: optics || null,
     date_acquired: date_acquired || null,
+    acquired_from: acquired_from || null,
+    price_paid: price_paid || null,
+    transfer_date: transfer_date || null,
+    ffl_transferred_from: ffl_transferred_from || null,
     is_3d_printed: is_3d_printed ? 1 : 0,
     is_nfa: isNfa ? 1 : 0,
     nfa_type: item_type || null,
