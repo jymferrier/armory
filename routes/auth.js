@@ -8,6 +8,7 @@ const { userQueries, firearmsQueries } = require('../db');
 const { requireAuth } = require('../middleware/auth');
 const { PHOTO_DIR, DOC_DIR } = require('../middleware/upload');
 
+const archiver = require('archiver');
 const importUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 20 * 1024 * 1024 } }).single('import_file');
 
 // ── Shared helpers ──────────────────────────────────────────────────────────
@@ -240,6 +241,61 @@ router.get('/settings/export/json', requireAuth, (req, res) => {
   res.setHeader('Content-Type', 'application/json');
   res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
   res.send(JSON.stringify(data, null, 2));
+});
+
+// Full export — one folder per item, all photos + docs, zipped
+router.get('/settings/export/full', requireAuth, (req, res) => {
+  const firearms = firearmsQueries.all().map(f => firearmsQueries.findById(f.id)); // get with photos + docs
+
+  const dateStr = new Date().toISOString().slice(0, 10);
+  const filename = `armory-full-export-${dateStr}.zip`;
+
+  res.setHeader('Content-Type', 'application/zip');
+  res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+
+  const archive = archiver('zip', { zlib: { level: 6 } });
+  archive.on('error', err => { if (!res.headersSent) res.status(500).end(); });
+  archive.pipe(res);
+
+  const slug = (f) => {
+    const safe = (s) => (s || '').replace(/[^a-zA-Z0-9 _-]/g, '').trim().replace(/\s+/g, '-').slice(0, 40);
+    return String(f.id).padStart(4, '0') + '-' + safe(f.manufacturer) + '-' + safe(f.model);
+  };
+
+  firearms.forEach(f => {
+    const dir = slug(f);
+
+    // firearm.json — full metadata
+    const meta = { ...f };
+    delete meta.photos;
+    delete meta.documents;
+    try { meta.optics = JSON.parse(f.optics); } catch(e) {}
+    archive.append(JSON.stringify(meta, null, 2), { name: `${dir}/firearm.json` });
+
+    // photos
+    if (f.photos && f.photos.length > 0) {
+      f.photos.forEach(p => {
+        const src = path.join(PHOTO_DIR, p.filename);
+        if (fs.existsSync(src)) {
+          const ext = path.extname(p.original_name || p.filename);
+          const label = p.is_primary ? `primary${ext}` : p.original_name || p.filename;
+          archive.file(src, { name: `${dir}/photos/${label}` });
+        }
+      });
+    }
+
+    // documents
+    if (f.documents && f.documents.length > 0) {
+      f.documents.forEach(d => {
+        const src = path.join(DOC_DIR, d.filename);
+        if (fs.existsSync(src)) {
+          archive.file(src, { name: `${dir}/documents/${d.original_name || d.filename}` });
+        }
+      });
+    }
+  });
+
+  archive.finalize();
 });
 
 // Import
