@@ -37,7 +37,7 @@ router.post('/new', (req, res) => {
 router.get('/:id', (req, res) => {
   const trust = trustQueries.findById(req.params.id);
   if (!trust) return res.status(404).render('error', { message: 'Trust not found', user: req.session.user });
-  const items = trustQueries.nfaItemsForTrust(trust.name);
+  const items = trustQueries.itemsForTrust(trust.name);
   res.render('trust-detail', { user: req.session.user, trust, items, saved: !!req.query.saved });
 });
 
@@ -54,7 +54,7 @@ router.post('/:id', (req, res) => {
 router.get('/:id/assignment', (req, res) => {
   const trust = trustQueries.findById(req.params.id);
   if (!trust) return res.status(404).render('error', { message: 'Trust not found', user: req.session.user });
-  const allItems = trustQueries.nfaItemsForTrust(trust.name);
+  const allItems = trustQueries.itemsForTrust(trust.name);
   const rawIds = [].concat(req.query.items || []).map(Number).filter(Boolean);
   const items = rawIds.length > 0 ? allItems.filter(f => rawIds.includes(f.id)) : allItems;
   res.render('trust-print', { user: req.session.user, trust, items });

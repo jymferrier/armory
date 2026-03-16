@@ -44,13 +44,13 @@
     </div>
   </form>
 
-  <!-- NFA items selection -->
+  <!-- Items selection -->
   <div class="form-band" style="border-top:none;">
-    <div class="form-band__label">NFA ITEMS</div>
+    <div class="form-band__label">ASSIGNED ITEMS</div>
     <div class="form-band__fields">
       <% if (items.length === 0) { %>
         <p style="font-family:var(--font-mono);font-size:0.78rem;color:var(--text-muted);">
-          No NFA items found with trust name "<%= trust.name %>". Assign items to this trust from the firearm edit page.
+          No items assigned to "<%= trust.name %>". Set the Trust / Entity Name on any firearm to assign it here.
         </p>
       <% } else { %>
         <p style="font-family:var(--font-mono);font-size:0.65rem;color:var(--text-dim);margin-bottom:1rem;letter-spacing:0.08em;">

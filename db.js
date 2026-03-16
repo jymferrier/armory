@@ -243,7 +243,7 @@ const trustQueries = {
   create: (data) => getDB().prepare('INSERT INTO trusts (name, settlor_name, settlor_location, agreement_date) VALUES (@name, @settlor_name, @settlor_location, @agreement_date)').run(data),
   update: (id, data) => getDB().prepare('UPDATE trusts SET settlor_name = @settlor_name, settlor_location = @settlor_location, agreement_date = @agreement_date WHERE id = @id').run({ ...data, id }),
   delete: (id) => getDB().prepare('DELETE FROM trusts WHERE id = ?').run(id),
-  nfaItemsForTrust: (name) => getDB().prepare("SELECT * FROM firearms WHERE nfa_trust_name = ? ORDER BY manufacturer ASC").all(name).map(f => ({ ...f, is_3d_printed: !!f.is_3d_printed, is_nfa: !!f.is_nfa, nfa_fmi: !!f.nfa_fmi })),
+  itemsForTrust: (name) => getDB().prepare("SELECT * FROM firearms WHERE nfa_trust_name = ? ORDER BY created_at DESC").all(name).map(f => ({ ...f, is_3d_printed: !!f.is_3d_printed, is_nfa: !!f.is_nfa, nfa_fmi: !!f.nfa_fmi })),
   distinctTrustNames: () => getDB().prepare("SELECT DISTINCT nfa_trust_name FROM firearms WHERE nfa_trust_name IS NOT NULL AND nfa_trust_name != '' ORDER BY nfa_trust_name ASC").all().map(r => r.nfa_trust_name),
 };
 
