@@ -3,7 +3,7 @@ services:
     build: .
     container_name: armory
     ports:
-      - "3000:3000"
+      - "${ARMORY_HOST_PORT:-3000}:3000"
     environment:
       # CHANGE THESE before deploying
       - SESSION_SECRET=replace-with-a-long-random-string-at-least-32-chars
