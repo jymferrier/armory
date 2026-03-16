@@ -54,7 +54,7 @@ router.post('/new', (req, res) => {
       acquired_from, price_paid, transfer_date, ffl_transferred_from,
       is_3d_printed,
       item_type, nfa_form_type, nfa_form_number, nfa_fmi, nfa_submit_date, nfa_tax_stamp_serial, nfa_approve_date, nfa_trust_name,
-      is_disposed, date_disposed, disposal_method, notes
+      is_disposed, date_disposed, disposal_method, notes, round_count
     } = req.body;
 
     const isNfa = NFA_TYPES.has(item_type);
@@ -85,7 +85,8 @@ router.post('/new', (req, res) => {
       is_disposed: is_disposed ? 1 : 0,
       date_disposed: is_disposed ? (date_disposed || null) : null,
       disposal_method: is_disposed ? (disposal_method || null) : null,
-      notes: notes || null
+      notes: notes || null,
+      round_count: parseInt(round_count, 10) || 0
     });
 
     if (req.files && req.files.length > 0) {
@@ -121,7 +122,7 @@ router.post('/:id/edit', (req, res) => {
     acquired_from, price_paid, transfer_date, ffl_transferred_from,
     is_3d_printed,
     item_type, nfa_form_type, nfa_form_number, nfa_fmi, nfa_submit_date, nfa_tax_stamp_serial, nfa_approve_date, nfa_trust_name,
-    is_disposed, date_disposed, disposal_method, notes
+    is_disposed, date_disposed, disposal_method, notes, round_count
   } = req.body;
 
   const isNfa = NFA_TYPES.has(item_type);
@@ -152,8 +153,16 @@ router.post('/:id/edit', (req, res) => {
     is_disposed: is_disposed ? 1 : 0,
     date_disposed: is_disposed ? (date_disposed || null) : null,
     disposal_method: is_disposed ? (disposal_method || null) : null,
-    notes: notes || null
+    notes: notes || null,
+    round_count: parseInt(round_count, 10) || 0
   });
+  res.redirect(`/inventory/${req.params.id}`);
+});
+
+// Log rounds fired
+router.post('/:id/rounds', (req, res) => {
+  const add = parseInt(req.body.add_rounds, 10);
+  if (add > 0) firearmsQueries.addRounds(req.params.id, add);
   res.redirect(`/inventory/${req.params.id}`);
 });
 

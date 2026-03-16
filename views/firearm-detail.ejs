@@ -272,6 +272,20 @@
       </div>
       <% } %>
 
+      <!-- Round Count -->
+      <div class="round-counter mt-lg">
+        <h3 class="section-title">ROUND COUNT</h3>
+        <div class="round-counter__display">
+          <span class="round-counter__total" id="roundTotal"><%= (firearm.round_count || 0).toLocaleString() %></span>
+          <span class="round-counter__label">ROUNDS FIRED</span>
+        </div>
+        <form method="POST" action="/inventory/<%= firearm.id %>/rounds" class="round-counter__form">
+          <input type="number" name="add_rounds" class="round-counter__input field-input mono"
+            min="1" step="1" placeholder="Rounds to add…" autocomplete="off">
+          <button type="submit" class="btn btn--primary btn--sm">+ LOG ROUNDS</button>
+        </form>
+      </div>
+
       <!-- Notes -->
       <% if (firearm.notes) { %>
       <div class="notes-block mt-lg">

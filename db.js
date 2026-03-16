@@ -53,6 +53,7 @@ function initDB() {
       date_disposed TEXT,
       disposal_method TEXT,
       notes TEXT,
+      round_count INTEGER DEFAULT 0,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
@@ -107,6 +108,7 @@ function initDB() {
     "ALTER TABLE firearms ADD COLUMN price_paid TEXT",
     "ALTER TABLE firearms ADD COLUMN transfer_date TEXT",
     "ALTER TABLE firearms ADD COLUMN ffl_transferred_from TEXT",
+    "ALTER TABLE firearms ADD COLUMN round_count INTEGER DEFAULT 0",
   ];
   for (const sql of migrations) {
     try { db.exec(sql); } catch (_) { /* column already exists */ }
@@ -171,12 +173,12 @@ const firearmsQueries = {
         manufacturer, model, caliber, serial, barrel_length, overall_length, optics,
         date_acquired, acquired_from, price_paid, transfer_date, ffl_transferred_from,
         is_3d_printed, is_nfa, nfa_type, nfa_form_type, nfa_form_number, nfa_fmi, nfa_submit_date, nfa_tax_stamp_serial, nfa_approve_date, nfa_trust_name,
-        is_disposed, date_disposed, disposal_method, notes
+        is_disposed, date_disposed, disposal_method, notes, round_count
       ) VALUES (
         @manufacturer, @model, @caliber, @serial, @barrel_length, @overall_length, @optics,
         @date_acquired, @acquired_from, @price_paid, @transfer_date, @ffl_transferred_from,
         @is_3d_printed, @is_nfa, @nfa_type, @nfa_form_type, @nfa_form_number, @nfa_fmi, @nfa_submit_date, @nfa_tax_stamp_serial, @nfa_approve_date, @nfa_trust_name,
-        @is_disposed, @date_disposed, @disposal_method, @notes
+        @is_disposed, @date_disposed, @disposal_method, @notes, @round_count
       )
     `).run(data);
     return result.lastInsertRowid;
@@ -194,11 +196,13 @@ const firearmsQueries = {
         nfa_approve_date = @nfa_approve_date, nfa_trust_name = @nfa_trust_name,
         is_disposed = @is_disposed, date_disposed = @date_disposed,
         disposal_method = @disposal_method, notes = @notes,
-        updated_at = CURRENT_TIMESTAMP
+        round_count = @round_count, updated_at = CURRENT_TIMESTAMP
       WHERE id = @id
     `).run({ ...data, id });
   },
   delete: (id) => getDB().prepare('DELETE FROM firearms WHERE id = ?').run(id),
+  addRounds: (id, count) => getDB().prepare('UPDATE firearms SET round_count = round_count + ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(count, id),
+  setRounds: (id, count) => getDB().prepare('UPDATE firearms SET round_count = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(count, id),
   addPhoto: (firearmId, filename, originalName, isPrimary) => {
     if (isPrimary) {
       getDB().prepare('UPDATE firearm_photos SET is_primary = 0 WHERE firearm_id = ?').run(firearmId);

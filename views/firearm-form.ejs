@@ -260,6 +260,14 @@
     <div class="form-band">
       <div class="form-band__label">05 / NOTES</div>
       <div class="form-band__fields">
+        <div class="field-row field-row--half">
+          <div class="field">
+            <label class="field-label">ROUND COUNT</label>
+            <input type="number" name="round_count" class="field-input mono" min="0" step="1"
+              value="<%= firearm ? (firearm.round_count || 0) : 0 %>"
+              placeholder="0">
+          </div>
+        </div>
         <div class="field">
           <label class="field-label">GENERAL NOTES</label>
           <textarea name="notes" class="field-textarea" rows="5"
