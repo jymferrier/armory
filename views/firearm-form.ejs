@@ -27,13 +27,13 @@
               <%= firearm && firearm.is_3d_printed ? 'checked' : '' %>
               onchange="on3dPrintedChange(this.checked)">
             <span class="checkbox-custom"></span>
-            <span class="checkbox-text">3D PRINTED FIREARM</span>
+            <span class="checkbox-text">3D PRINTED / DIY</span>
           </label>
         </div>
 
         <div class="field-row">
           <div class="field">
-            <label class="field-label"><span id="manufacturerLabelText"><%= (firearm && firearm.is_3d_printed) ? 'CREATOR' : 'MANUFACTURER' %></span> <span class="required">*</span></label>
+            <label class="field-label"><span id="manufacturerLabelText">MANUFACTURER</span> <span class="required">*</span></label>
             <input type="text" name="manufacturer" class="field-input" list="manufacturerList" value="<%= firearm ? firearm.manufacturer : '' %>" required placeholder="e.g. Beretta" autocomplete="off">
             <datalist id="manufacturerList">
               <% manufacturers.forEach(m => { %><option value="<%= m %>"><% }) %>
@@ -344,7 +344,7 @@ function onItemTypeChange(val) {
 }
 
 function on3dPrintedChange(checked) {
-  document.getElementById('manufacturerLabelText').textContent = checked ? 'CREATOR' : 'MANUFACTURER';
+  // label stays MANUFACTURER regardless
 }
 
 function toggleSection(id, show) {
