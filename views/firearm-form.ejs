@@ -312,15 +312,15 @@
     <div class="form-band">
       <div class="form-band__label">06 / PHOTOS</div>
       <div class="form-band__fields">
+        <input type="file" name="photos" multiple accept="image/*" id="photoInput" style="display:none">
         <div class="file-drop-zone" id="photoDropZone">
-          <input type="file" name="photos" multiple accept="image/*" class="file-input" id="photoInput">
           <div class="file-drop-label">
             <span class="file-drop-icon">⊕</span>
-            <span>DROP IMAGES OR CLICK TO BROWSE</span>
-            <span class="file-drop-hint">JPG, PNG, WEBP — MAX 20MB EACH — FIRST IMAGE WILL BE PRIMARY</span>
+            <span>DRAG &amp; DROP OR CLICK TO SELECT</span>
+            <span class="file-drop-hint">JPG, PNG, WEBP, GIF — MAX 20MB EACH — FIRST IMAGE WILL BE PRIMARY</span>
           </div>
-          <div class="file-preview" id="filePreview"></div>
         </div>
+        <div class="file-list" id="fileList"></div>
       </div>
     </div>
     <% } %>
@@ -405,22 +405,6 @@ function toggleSection(id, show) {
   renderTags();
 })();
 
-const photoInput = document.getElementById('photoInput');
-if (photoInput) {
-  photoInput.addEventListener('change', function() {
-    const preview = document.getElementById('filePreview');
-    preview.innerHTML = '';
-    Array.from(this.files).forEach((file, i) => {
-      const reader = new FileReader();
-      reader.onload = e => {
-        const div = document.createElement('div');
-        div.className = 'file-preview-item';
-        div.innerHTML = '<img src="' + e.target.result + '" alt="' + file.name + '"><span class="preview-label">' + (i === 0 ? '★ PRIMARY' : '') + '</span>';
-        preview.appendChild(div);
-      };
-      reader.readAsDataURL(file);
-    });
-  });
-}
+// photo drop zone wired up by main.js
 </script>
 <%- include('partials/footer') %>

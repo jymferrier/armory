@@ -25,11 +25,15 @@ const docStorage = multer.diskStorage({
 });
 
 const photoFilter = (req, file, cb) => {
-  const allowed = /jpeg|jpg|png|gif|webp/;
-  if (allowed.test(path.extname(file.originalname).toLowerCase()) && allowed.test(file.mimetype)) {
+  const extOk  = /jpeg|jpg|png|gif|webp/.test(path.extname(file.originalname).toLowerCase());
+  const mimeOk = /^image\//i.test(file.mimetype);
+  // Accept if EITHER the extension OR the MIME type looks like an image.
+  // Using AND caused legitimate files to be rejected when browsers send
+  // application/octet-stream instead of the correct image MIME type.
+  if (extOk || mimeOk) {
     cb(null, true);
   } else {
-    cb(new Error('Only image files allowed for photos'));
+    cb(new Error('Unsupported file type. Please upload JPG, PNG, WEBP, or GIF.'));
   }
 };
 

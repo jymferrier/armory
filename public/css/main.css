@@ -783,24 +783,20 @@ a:hover { color: var(--text); }
 }
 
 .file-drop-zone {
-  border: 1px dashed var(--border-accent);
+  border: 2px dashed var(--border-accent);
   background: var(--bg);
-  padding: 1.5rem;
+  padding: 1.75rem 1.5rem;
   text-align: center;
-  position: relative;
   cursor: pointer;
-  transition: border-color var(--transition);
+  transition: border-color 0.15s, background 0.15s;
   margin-bottom: 0.5rem;
+  user-select: none;
 }
 
-.file-drop-zone:hover { border-color: var(--accent); }
-
-.file-input {
-  position: absolute;
-  inset: 0;
-  width: 100%; height: 100%;
-  opacity: 0;
-  cursor: pointer;
+.file-drop-zone:hover,
+.file-drop-zone--active {
+  border-color: var(--accent);
+  background: rgba(200,150,60,0.04);
 }
 
 .file-drop-label {
@@ -817,6 +813,57 @@ a:hover { color: var(--text); }
 
 .file-drop-icon { font-size: 1.5rem; color: var(--accent); }
 .file-drop-hint { font-size: 0.62rem; color: var(--text-dim); }
+
+/* File list shown after selection */
+.file-list {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-top: 0.5rem;
+  margin-bottom: 0.25rem;
+}
+
+.file-list-item {
+  display: grid;
+  grid-template-columns: 1rem 1fr auto auto;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.6rem;
+  background: var(--bg-3);
+  border: 1px solid var(--border);
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+}
+
+.file-list-item__primary {
+  color: var(--accent);
+  font-size: 0.65rem;
+  text-align: center;
+}
+
+.file-list-item__name {
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.file-list-item__size {
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.file-list-item__remove {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  font-size: 0.65rem;
+  padding: 0 0.15rem;
+  line-height: 1;
+}
+.file-list-item__remove:hover { color: var(--red); }
 
 .file-input-plain {
   font-family: var(--font-mono);
@@ -838,23 +885,6 @@ a:hover { color: var(--text); }
   padding: 0.3rem 0.75rem;
   cursor: pointer;
   margin-right: 0.75rem;
-}
-
-.file-preview {
-  display: flex; flex-wrap: wrap; gap: 6px;
-  margin-top: 0.75rem;
-}
-
-.file-preview-item {
-  position: relative;
-  width: 80px; height: 56px;
-  border: 1px solid var(--border);
-  overflow: hidden;
-}
-
-.file-preview-item img {
-  width: 100%; height: 100%;
-  object-fit: cover;
 }
 
 .preview-label {

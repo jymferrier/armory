@@ -4,24 +4,74 @@
 
 document.addEventListener('DOMContentLoaded', () => {
 
-  // File drop zone highlight
-  document.querySelectorAll('.file-drop-zone').forEach(zone => {
-    zone.addEventListener('dragover', e => {
-      e.preventDefault();
-      zone.style.borderColor = '#c8963c';
-      zone.style.background = 'rgba(200,150,60,0.05)';
-    });
-    zone.addEventListener('dragleave', () => {
-      zone.style.borderColor = '';
-      zone.style.background = '';
-    });
-    zone.addEventListener('drop', () => {
-      zone.style.borderColor = '';
-      zone.style.background = '';
-    });
-  });
+  // ── Photo drop zone ────────────────────────────────────────
+  const zone    = document.getElementById('photoDropZone');
+  const input   = document.getElementById('photoInput');
+  const listEl  = document.getElementById('fileList');
 
-  // Auto-dismiss alerts after 5s
+  if (zone && input && listEl) {
+    // Click zone → open file picker
+    zone.addEventListener('click', () => input.click());
+
+    // Drag-over visual
+    zone.addEventListener('dragenter', e => { e.preventDefault(); zone.classList.add('file-drop-zone--active'); });
+    zone.addEventListener('dragover',  e => { e.preventDefault(); zone.classList.add('file-drop-zone--active'); });
+    zone.addEventListener('dragleave', e => {
+      if (!zone.contains(e.relatedTarget)) zone.classList.remove('file-drop-zone--active');
+    });
+
+    // Drop: merge dropped files into the hidden input
+    zone.addEventListener('drop', e => {
+      e.preventDefault();
+      zone.classList.remove('file-drop-zone--active');
+      const dt = new DataTransfer();
+      // Keep any previously selected files
+      Array.from(input.files).forEach(f => dt.items.add(f));
+      Array.from(e.dataTransfer.files).forEach(f => dt.items.add(f));
+      input.files = dt.files;
+      renderFileList();
+    });
+
+    // Normal file-picker change
+    input.addEventListener('change', renderFileList);
+
+    function fmtSize(bytes) {
+      return bytes < 1024 * 1024
+        ? Math.round(bytes / 1024) + ' KB'
+        : (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+    }
+
+    function escHtml(str) {
+      return str.replace(/[&<>"']/g, c =>
+        ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])
+      );
+    }
+
+    function renderFileList() {
+      listEl.innerHTML = '';
+      const files = Array.from(input.files);
+      if (!files.length) return;
+
+      files.forEach((file, i) => {
+        const row = document.createElement('div');
+        row.className = 'file-list-item';
+        row.innerHTML =
+          '<span class="file-list-item__primary">' + (i === 0 ? '★' : '') + '</span>' +
+          '<span class="file-list-item__name">' + escHtml(file.name) + '</span>' +
+          '<span class="file-list-item__size">' + fmtSize(file.size) + '</span>' +
+          '<button type="button" class="file-list-item__remove" title="Remove">✕</button>';
+        row.querySelector('.file-list-item__remove').addEventListener('click', () => {
+          const dt = new DataTransfer();
+          Array.from(input.files).filter((_, j) => j !== i).forEach(f => dt.items.add(f));
+          input.files = dt.files;
+          renderFileList();
+        });
+        listEl.appendChild(row);
+      });
+    }
+  }
+
+  // ── Auto-dismiss success alerts after 5s ───────────────────
   document.querySelectorAll('.alert--success').forEach(el => {
     setTimeout(() => {
       el.style.transition = 'opacity 0.5s';
@@ -30,14 +80,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 5000);
   });
 
-  // Confirm dangerous actions
+  // ── Confirm dangerous actions ──────────────────────────────
   document.querySelectorAll('[data-confirm]').forEach(el => {
     el.addEventListener('click', e => {
       if (!confirm(el.dataset.confirm)) e.preventDefault();
     });
   });
 
-  // Highlight active nav link
+  // ── Active nav link highlight ──────────────────────────────
   const currentPath = window.location.pathname;
   document.querySelectorAll('.nav-link').forEach(link => {
     if (link.getAttribute('href') === currentPath) {
@@ -45,38 +95,16 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // NFA checkbox toggle (inline backup if EJS inline script not present)
+  // ── NFA checkbox toggle ────────────────────────────────────
   const nfaCheckbox = document.getElementById('isNfa');
-  const nfaFields = document.getElementById('nfaFields');
+  const nfaFields   = document.getElementById('nfaFields');
   if (nfaCheckbox && nfaFields) {
     nfaCheckbox.addEventListener('change', function () {
       nfaFields.style.display = this.checked ? 'block' : 'none';
     });
   }
 
-  // Photo input preview
-  const photoInput = document.getElementById('photoInput');
-  const filePreview = document.getElementById('filePreview');
-  if (photoInput && filePreview) {
-    photoInput.addEventListener('change', function () {
-      filePreview.innerHTML = '';
-      Array.from(this.files).forEach((file, i) => {
-        const reader = new FileReader();
-        reader.onload = e => {
-          const div = document.createElement('div');
-          div.className = 'file-preview-item';
-          div.innerHTML = `
-            <img src="${e.target.result}" alt="${file.name}">
-            <span class="preview-label">${i === 0 ? '★ PRIMARY' : ''}</span>
-          `;
-          filePreview.appendChild(div);
-        };
-        reader.readAsDataURL(file);
-      });
-    });
-  }
-
-  // Main photo viewer click on thumbs
+  // ── Main photo viewer thumb clicks ─────────────────────────
   document.querySelectorAll('.photo-thumb').forEach(thumb => {
     thumb.addEventListener('click', function () {
       const mainImg = document.getElementById('photoMainImg');
@@ -86,13 +114,11 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // Keyboard shortcut: N = new firearm (when not in input)
+  // ── Keyboard shortcuts ─────────────────────────────────────
   document.addEventListener('keydown', e => {
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
-    if (e.key === 'n' || e.key === 'N') {
-      window.location.href = '/inventory/new';
-    }
-    if (e.key === '/' ) {
+    if (e.key === 'n' || e.key === 'N') window.location.href = '/inventory/new';
+    if (e.key === '/') {
       e.preventDefault();
       const searchInput = document.querySelector('.search-input');
       if (searchInput) searchInput.focus();

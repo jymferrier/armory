@@ -63,14 +63,15 @@
       <div class="upload-section">
         <h3 class="section-title">ADD PHOTOS</h3>
         <form method="POST" action="/inventory/<%= firearm.id %>/photos" enctype="multipart/form-data">
+          <input type="file" name="photos" multiple accept="image/*" id="photoInput" style="display:none">
           <div class="file-drop-zone" id="photoDropZone">
-            <input type="file" name="photos" multiple accept="image/*" class="file-input" id="photoInput">
             <div class="file-drop-label">
               <span class="file-drop-icon">⊕</span>
-              <span>DROP IMAGES OR CLICK TO BROWSE</span>
-              <span class="file-drop-hint">JPG, PNG, WEBP — MAX 20MB EACH</span>
+              <span>DRAG &amp; DROP OR CLICK TO SELECT</span>
+              <span class="file-drop-hint">JPG, PNG, WEBP, GIF — MAX 20MB EACH</span>
             </div>
           </div>
+          <div class="file-list" id="fileList"></div>
           <button type="submit" class="btn btn--primary btn--full mt-sm">UPLOAD PHOTOS</button>
         </form>
       </div>
@@ -366,5 +367,6 @@ function setMainPhoto(src, wrap) {
   document.querySelectorAll('.photo-thumb-wrap').forEach(w => w.classList.remove('photo-thumb-wrap--active'));
   wrap.classList.add('photo-thumb-wrap--active');
 }
+// photo drop zone wired up by main.js
 </script>
 <%- include('partials/footer') %>
