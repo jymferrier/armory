@@ -90,6 +90,12 @@
           <span class="info-label">MODEL</span>
           <span class="info-value"><%= firearm.model %></span>
         </div>
+        <% if (firearm.model_number) { %>
+        <div class="info-item">
+          <span class="info-label">MODEL NUMBER</span>
+          <span class="info-value mono"><%= firearm.model_number %></span>
+        </div>
+        <% } %>
         <% if (firearm.caliber) { %>
         <div class="info-item">
           <span class="info-label">CALIBER</span>

@@ -53,6 +53,7 @@ function initDB() {
       date_disposed TEXT,
       disposal_method TEXT,
       notes TEXT,
+      model_number TEXT,
       round_count INTEGER DEFAULT 0,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -109,6 +110,7 @@ function initDB() {
     "ALTER TABLE firearms ADD COLUMN transfer_date TEXT",
     "ALTER TABLE firearms ADD COLUMN ffl_transferred_from TEXT",
     "ALTER TABLE firearms ADD COLUMN round_count INTEGER DEFAULT 0",
+    "ALTER TABLE firearms ADD COLUMN model_number TEXT",
   ];
   for (const sql of migrations) {
     try { db.exec(sql); } catch (_) { /* column already exists */ }
@@ -170,12 +172,12 @@ const firearmsQueries = {
   create: (data) => {
     const result = getDB().prepare(`
       INSERT INTO firearms (
-        manufacturer, model, caliber, serial, barrel_length, overall_length, optics,
+        manufacturer, model, model_number, caliber, serial, barrel_length, overall_length, optics,
         date_acquired, acquired_from, price_paid, transfer_date, ffl_transferred_from,
         is_3d_printed, is_nfa, nfa_type, nfa_form_type, nfa_form_number, nfa_fmi, nfa_submit_date, nfa_tax_stamp_serial, nfa_approve_date, nfa_trust_name,
         is_disposed, date_disposed, disposal_method, notes, round_count
       ) VALUES (
-        @manufacturer, @model, @caliber, @serial, @barrel_length, @overall_length, @optics,
+        @manufacturer, @model, @model_number, @caliber, @serial, @barrel_length, @overall_length, @optics,
         @date_acquired, @acquired_from, @price_paid, @transfer_date, @ffl_transferred_from,
         @is_3d_printed, @is_nfa, @nfa_type, @nfa_form_type, @nfa_form_number, @nfa_fmi, @nfa_submit_date, @nfa_tax_stamp_serial, @nfa_approve_date, @nfa_trust_name,
         @is_disposed, @date_disposed, @disposal_method, @notes, @round_count
@@ -186,7 +188,7 @@ const firearmsQueries = {
   update: (id, data) => {
     getDB().prepare(`
       UPDATE firearms SET
-        manufacturer = @manufacturer, model = @model, caliber = @caliber,
+        manufacturer = @manufacturer, model = @model, model_number = @model_number, caliber = @caliber,
         serial = @serial, barrel_length = @barrel_length, overall_length = @overall_length, optics = @optics,
         date_acquired = @date_acquired, acquired_from = @acquired_from,
         price_paid = @price_paid, transfer_date = @transfer_date, ffl_transferred_from = @ffl_transferred_from,

@@ -34,14 +34,21 @@
         <div class="field-row">
           <div class="field">
             <label class="field-label"><span id="manufacturerLabelText"><%= (firearm && firearm.is_3d_printed) ? 'CREATOR' : 'MANUFACTURER' %></span> <span class="required">*</span></label>
-            <input type="text" name="manufacturer" class="field-input" list="manufacturerList" value="<%= firearm ? firearm.manufacturer : '' %>" required placeholder="e.g. Smith &amp; Wesson" autocomplete="off">
+            <input type="text" name="manufacturer" class="field-input" list="manufacturerList" value="<%= firearm ? firearm.manufacturer : '' %>" required placeholder="e.g. Beretta" autocomplete="off">
             <datalist id="manufacturerList">
               <% manufacturers.forEach(m => { %><option value="<%= m %>"><% }) %>
             </datalist>
           </div>
           <div class="field">
             <label class="field-label">MODEL <span class="required">*</span></label>
-            <input type="text" name="model" class="field-input" value="<%= firearm ? firearm.model : '' %>" required placeholder="e.g. M&amp;P 9 Shield">
+            <input type="text" name="model" class="field-input" value="<%= firearm ? firearm.model : '' %>" required placeholder="e.g. 92FS">
+          </div>
+        </div>
+
+        <div class="field-row field-row--half">
+          <div class="field">
+            <label class="field-label">MODEL NUMBER</label>
+            <input type="text" name="model_number" class="field-input mono" value="<%= firearm ? (firearm.model_number || '') : '' %>" placeholder="e.g. JS92F300">
           </div>
         </div>
 

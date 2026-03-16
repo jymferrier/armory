@@ -50,7 +50,7 @@ router.post('/new', (req, res) => {
     if (err) return res.render('firearm-form', { user: req.session.user, firearm: null, error: err.message, manufacturers });
 
     const {
-      manufacturer, model, caliber, serial, barrel_length, overall_length, optics, date_acquired,
+      manufacturer, model, model_number, caliber, serial, barrel_length, overall_length, optics, date_acquired,
       acquired_from, price_paid, transfer_date, ffl_transferred_from,
       is_3d_printed,
       item_type, nfa_form_type, nfa_form_number, nfa_fmi, nfa_submit_date, nfa_tax_stamp_serial, nfa_approve_date, nfa_trust_name,
@@ -61,7 +61,7 @@ router.post('/new', (req, res) => {
     const hasSbrSbs = item_type === 'Short Barrel Rifle (SBR)' || item_type === 'Short Barrel Shotgun (SBS)';
 
     const firearmsId = firearmsQueries.create({
-      manufacturer, model,
+      manufacturer, model, model_number: model_number || null,
       caliber: caliber || null,
       serial: serial || null,
       barrel_length: barrel_length || null,
@@ -118,7 +118,7 @@ router.get('/:id/edit', (req, res) => {
 // Update
 router.post('/:id/edit', (req, res) => {
   const {
-    manufacturer, model, caliber, serial, barrel_length, overall_length, optics, date_acquired,
+    manufacturer, model, model_number, caliber, serial, barrel_length, overall_length, optics, date_acquired,
     acquired_from, price_paid, transfer_date, ffl_transferred_from,
     is_3d_printed,
     item_type, nfa_form_type, nfa_form_number, nfa_fmi, nfa_submit_date, nfa_tax_stamp_serial, nfa_approve_date, nfa_trust_name,
@@ -129,7 +129,7 @@ router.post('/:id/edit', (req, res) => {
   const hasSbrSbs = item_type === 'Short Barrel Rifle (SBR)' || item_type === 'Short Barrel Shotgun (SBS)';
 
   firearmsQueries.update(req.params.id, {
-    manufacturer, model,
+    manufacturer, model, model_number: model_number || null,
     caliber: caliber || null,
     serial: serial || null,
     barrel_length: barrel_length || null,
