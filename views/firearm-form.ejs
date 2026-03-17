@@ -13,8 +13,7 @@
 
   <form method="POST" action="/inventory/<%= firearm ? firearm.id + '/edit' : 'new' %>?_csrf=<%= csrfToken %>"
     <% if (!firearm) { %>enctype="multipart/form-data"<% } %>
-    class="firearm-form"
-    onkeydown="if(event.key==='Enter'&&event.target.tagName!=='TEXTAREA'&&event.target.type!=='submit'){event.preventDefault();}">
+    class="firearm-form">
 
     <!-- 01: IDENTIFICATION -->
     <div class="form-band">
@@ -24,8 +23,7 @@
         <div class="field field--checkbox">
           <label class="checkbox-label">
             <input type="checkbox" name="is_3d_printed" id="is3dPrinted" value="1" class="checkbox-input"
-              <%= firearm && firearm.is_3d_printed ? 'checked' : '' %>
-              onchange="on3dPrintedChange(this.checked)">
+              <%= firearm && firearm.is_3d_printed ? 'checked' : '' %>>
             <span class="checkbox-custom"></span>
             <span class="checkbox-text">3D PRINTED / DIY</span>
           </label>
@@ -118,7 +116,7 @@
               ];
               const currentType = firearm ? (firearm.nfa_type || '') : '';
             %>
-            <select name="item_type" id="itemType" class="field-select" onchange="onItemTypeChange(this.value)">
+            <select name="item_type" id="itemType" class="field-select">
               <option value="">— SELECT TYPE —</option>
               <% allItemTypes.forEach(group => { %>
                 <optgroup label="<%= group.group %>">
@@ -270,8 +268,7 @@
         <div class="field field--checkbox">
           <label class="checkbox-label">
             <input type="checkbox" name="is_disposed" id="isDisposed" value="1" class="checkbox-input"
-              <%= firearm && firearm.is_disposed ? 'checked' : '' %>
-              onchange="toggleSection('disposalFields', this.checked)">
+              <%= firearm && firearm.is_disposed ? 'checked' : '' %>>
             <span class="checkbox-custom checkbox-custom--warning"></span>
             <span class="checkbox-text">THIS ITEM HAS BEEN TRANSFERRED / DISPOSED OF</span>
           </label>
@@ -367,6 +364,24 @@ function on3dPrintedChange(checked) {
 function toggleSection(id, show) {
   document.getElementById(id).style.display = show ? 'block' : 'none';
 }
+
+// ── Inline handler replacements ───────────────────────────
+document.addEventListener('DOMContentLoaded', function() {
+  var form = document.querySelector('.firearm-form');
+  if (form) {
+    form.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA' && e.target.type !== 'submit') {
+        e.preventDefault();
+      }
+    });
+  }
+  var is3dPrinted = document.getElementById('is3dPrinted');
+  if (is3dPrinted) is3dPrinted.addEventListener('change', function() { on3dPrintedChange(this.checked); });
+  var itemType = document.getElementById('itemType');
+  if (itemType) itemType.addEventListener('change', function() { onItemTypeChange(this.value); });
+  var isDisposed = document.getElementById('isDisposed');
+  if (isDisposed) isDisposed.addEventListener('change', function() { toggleSection('disposalFields', this.checked); });
+});
 
 // ── Optics tag input ──────────────────────────────────────
 (function() {

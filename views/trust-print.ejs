@@ -178,7 +178,7 @@
 <body>
 
 <div class="screen-actions">
-  <button class="print-btn" onclick="window.print()">⎙ PRINT / SAVE AS PDF</button>
+  <button class="print-btn" id="printBtn">⎙ PRINT / SAVE AS PDF</button>
   <a href="/trusts/<%= trust.id %>">← BACK TO TRUST</a>
 </div>
 
@@ -302,5 +302,8 @@
 </div>
 <% }); %>
 
+<script nonce="<%= cspNonce %>">
+document.getElementById('printBtn').addEventListener('click', function() { window.print(); });
+</script>
 </body>
 </html>

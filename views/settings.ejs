@@ -46,7 +46,7 @@
                   <input type="hidden" name="is_spouse_view" value="<%= u.is_spouse_view ? '0' : '1' %>">
                   <button type="submit" class="btn btn--ghost btn--sm"><%= u.is_spouse_view ? 'REVOKE SPOUSE VIEW' : 'SET SPOUSE VIEW' %></button>
                 </form>
-                <form method="POST" action="/settings/delete-user" onsubmit="return confirm('Delete user <%= u.username %>?')">
+                <form method="POST" action="/settings/delete-user" class="delete-user-form" data-username="<%= u.username %>">
                   <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                   <input type="hidden" name="id" value="<%= u.id %>">
                   <button type="submit" class="btn btn--danger btn--sm">DELETE</button>
@@ -168,7 +168,7 @@
         Permanently delete all inventory records and uploaded files. This cannot be undone.
         Type <strong style="color:var(--text);font-family:var(--font-mono);">BOATING ACCIDENT</strong> to confirm.
       </p>
-      <form method="POST" action="/settings/purge" class="settings-form" onsubmit="return validatePurge(this)">
+      <form method="POST" action="/settings/purge" class="settings-form" id="purgeForm">
         <input type="hidden" name="_csrf" value="<%= csrfToken %>">
         <div class="field">
           <label class="field-label" style="color:var(--red);">CONFIRMATION</label>
@@ -189,5 +189,19 @@ function validatePurge(form) {
   }
   return true;
 }
+document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('.delete-user-form').forEach(function(form) {
+    form.addEventListener('submit', function(e) {
+      var name = this.getAttribute('data-username');
+      if (!confirm('Delete user ' + name + '?')) e.preventDefault();
+    });
+  });
+  var purgeForm = document.getElementById('purgeForm');
+  if (purgeForm) {
+    purgeForm.addEventListener('submit', function(e) {
+      if (!validatePurge(this)) e.preventDefault();
+    });
+  }
+});
 </script>
 <%- include('partials/footer') %>

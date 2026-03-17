@@ -25,12 +25,13 @@ const docStorage = multer.diskStorage({
 });
 
 const photoFilter = (req, file, cb) => {
-  const extOk  = /jpeg|jpg|png|gif|webp/.test(path.extname(file.originalname).toLowerCase());
-  const mimeOk = /^image\//i.test(file.mimetype);
-  // Accept if EITHER the extension OR the MIME type looks like an image.
-  // Using AND caused legitimate files to be rejected when browsers send
-  // application/octet-stream instead of the correct image MIME type.
-  if (extOk || mimeOk) {
+  const ext = path.extname(file.originalname).toLowerCase();
+  const extOk = /^\.(jpeg|jpg|png|gif|webp)$/.test(ext);
+  // Accept explicit image MIME types (no SVG) or application/octet-stream as
+  // a fallback for browsers that don't send the correct MIME type.
+  const mimeOk = /^image\/(jpeg|jpg|png|gif|webp)$/i.test(file.mimetype)
+              || file.mimetype === 'application/octet-stream';
+  if (extOk && mimeOk) {
     cb(null, true);
   } else {
     cb(new Error('Unsupported file type. Please upload JPG, PNG, WEBP, or GIF.'));

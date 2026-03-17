@@ -240,6 +240,7 @@ const firearmsQueries = {
   },
   findPhotoById: (id) => getDB().prepare('SELECT * FROM firearm_photos WHERE id = ?').get(id),
   findDocumentById: (id) => getDB().prepare('SELECT * FROM firearm_documents WHERE id = ?').get(id),
+  findDocumentByFilename: (filename) => getDB().prepare('SELECT * FROM firearm_documents WHERE filename = ?').get(filename),
   distinctManufacturers: () => getDB().prepare('SELECT DISTINCT manufacturer FROM firearms ORDER BY manufacturer ASC').all().map(r => r.manufacturer),
   distinctModels: () => getDB().prepare("SELECT DISTINCT model FROM firearms WHERE model IS NOT NULL AND model != '' ORDER BY model ASC").all().map(r => r.model),
   distinctCalibers: () => getDB().prepare("SELECT DISTINCT caliber FROM firearms WHERE caliber IS NOT NULL AND caliber != '' ORDER BY caliber ASC").all().map(r => r.caliber),

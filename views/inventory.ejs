@@ -12,8 +12,8 @@
         <% if (q) { %><a href="/inventory" class="btn btn--ghost">CLEAR</a><% } %>
       </form>
       <div class="view-toggle" id="viewToggle">
-        <button type="button" class="view-toggle__btn" id="btnGrid" onclick="setView('grid')" title="Grid view">⊞</button>
-        <button type="button" class="view-toggle__btn" id="btnList" onclick="setView('list')" title="List view">≡</button>
+        <button type="button" class="view-toggle__btn" id="btnGrid" title="Grid view">⊞</button>
+        <button type="button" class="view-toggle__btn" id="btnList" title="List view">≡</button>
       </div>
       <a href="/inventory/new" class="btn btn--primary">+ ADD FIREARM</a>
     </div>
@@ -105,6 +105,8 @@ function setView(v) {
   document.getElementById('btnList').classList.toggle('view-toggle__btn--active', v === 'list');
   try { localStorage.setItem('armory_inventory_view', v); } catch(e) {}
 }
+document.getElementById('btnGrid').addEventListener('click', function() { setView('grid'); });
+document.getElementById('btnList').addEventListener('click', function() { setView('list'); });
 (function() {
   var saved = 'grid';
   try { saved = localStorage.getItem('armory_inventory_view') || 'grid'; } catch(e) {}

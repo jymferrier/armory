@@ -13,7 +13,7 @@
     </div>
     <div class="page-actions">
       <a href="/inventory/<%= firearm.id %>/edit" class="btn btn--ghost">EDIT</a>
-      <form method="POST" action="/inventory/<%= firearm.id %>/delete" onsubmit="return confirm('Delete this firearm and all associated files?')">
+      <form method="POST" action="/inventory/<%= firearm.id %>/delete" id="deleteFirearmForm">
         <input type="hidden" name="_csrf" value="<%= csrfToken %>">
         <button type="submit" class="btn btn--danger">DELETE</button>
       </form>
@@ -41,7 +41,7 @@
         <div class="photo-thumbs">
           <% firearm.photos.forEach(p => { %>
             <div class="photo-thumb-wrap <%= p.is_primary ? 'photo-thumb-wrap--active' : '' %>">
-              <img src="/uploads/photos/<%= p.filename %>" class="photo-thumb" onclick="setMainPhoto(this.src, this.closest('.photo-thumb-wrap'))" alt="">
+              <img src="/uploads/photos/<%= p.filename %>" class="photo-thumb" alt="">
               <div class="photo-thumb-actions">
                 <% if (!p.is_primary) { %>
                   <form method="POST" action="/inventory/<%= firearm.id %>/photos/<%= p.id %>/primary">
@@ -51,7 +51,7 @@
                 <% } else { %>
                   <span class="thumb-primary-badge">★</span>
                 <% } %>
-                <form method="POST" action="/inventory/<%= firearm.id %>/photos/<%= p.id %>/delete" onsubmit="return confirm('Delete this photo?')">
+                <form method="POST" action="/inventory/<%= firearm.id %>/photos/<%= p.id %>/delete" class="photo-delete-form">
                   <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                   <button type="submit" class="thumb-btn thumb-btn--delete" title="Delete">✕</button>
                 </form>
@@ -340,7 +340,7 @@
                       <span class="doc-icon">📄</span>
                       <span class="doc-name"><%= doc.original_name %></span>
                     </a>
-                    <form method="POST" action="/inventory/<%= firearm.id %>/documents/<%= doc.id %>/delete" onsubmit="return confirm('Delete this document?')">
+                    <form method="POST" action="/inventory/<%= firearm.id %>/documents/<%= doc.id %>/delete" class="doc-delete-form">
                       <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                       <button type="submit" class="thumb-btn thumb-btn--delete">✕</button>
                     </form>
@@ -383,6 +383,28 @@ function setMainPhoto(src, wrap) {
   document.querySelectorAll('.photo-thumb-wrap').forEach(w => w.classList.remove('photo-thumb-wrap--active'));
   wrap.classList.add('photo-thumb-wrap--active');
 }
+document.addEventListener('DOMContentLoaded', function() {
+  var deleteFirearmForm = document.getElementById('deleteFirearmForm');
+  if (deleteFirearmForm) {
+    deleteFirearmForm.addEventListener('submit', function(e) {
+      if (!confirm('Delete this firearm and all associated files?')) e.preventDefault();
+    });
+  }
+  var thumbsContainer = document.querySelector('.photo-thumbs');
+  if (thumbsContainer) {
+    thumbsContainer.addEventListener('click', function(e) {
+      var thumb = e.target.closest('.photo-thumb');
+      if (thumb) setMainPhoto(thumb.src, thumb.closest('.photo-thumb-wrap'));
+    });
+  }
+  document.addEventListener('submit', function(e) {
+    if (e.target.classList.contains('photo-delete-form')) {
+      if (!confirm('Delete this photo?')) e.preventDefault();
+    } else if (e.target.classList.contains('doc-delete-form')) {
+      if (!confirm('Delete this document?')) e.preventDefault();
+    }
+  });
+});
 // photo drop zone wired up by main.js
 </script>
 <%- include('partials/footer') %>

@@ -76,7 +76,7 @@ app.use(session({
   saveUninitialized: false,
   cookie: {
     httpOnly: true,
-    secure: false,
+    secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
     maxAge: 1000 * 60 * 60 * 8 // 8 hours
   }
@@ -95,6 +95,18 @@ const loginLimiter = rateLimit({
   }
 });
 app.use('/login', loginLimiter);
+
+// Rate limiting for sensitive write endpoints — 20 requests per 15 minutes
+const sensitiveWriteLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  handler: (req, res) => {
+    res.status(429).render('error', { message: 'Too many requests. Please try again in 15 minutes.', user: req.session.user });
+  }
+});
+app.use('/settings/change-password', sensitiveWriteLimiter);
+app.use('/settings/add-user', sensitiveWriteLimiter);
+app.use('/settings/import', sensitiveWriteLimiter);
 
 // Routes
 app.use('/', require('./routes/auth'));
