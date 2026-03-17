@@ -112,6 +112,8 @@ function initDB() {
     "ALTER TABLE firearms ADD COLUMN round_count INTEGER DEFAULT 0",
     "ALTER TABLE firearms ADD COLUMN model_number TEXT",
     "ALTER TABLE firearms ADD COLUMN spouse_price TEXT",
+    "ALTER TABLE users ADD COLUMN is_spouse_view INTEGER DEFAULT 0",
+    "ALTER TABLE firearms ADD COLUMN spouse_visible INTEGER DEFAULT 0",
   ];
   for (const sql of migrations) {
     try { db.exec(sql); } catch (_) { /* column already exists */ }
@@ -135,12 +137,13 @@ const userQueries = {
     const hash = bcrypt.hashSync(password, 10);
     return getDB().prepare('INSERT INTO users (username, password) VALUES (?, ?)').run(username, hash);
   },
-  all: () => getDB().prepare('SELECT id, username, created_at FROM users').all(),
+  all: () => getDB().prepare('SELECT id, username, is_spouse_view, created_at FROM users').all(),
   delete: (id) => getDB().prepare('DELETE FROM users WHERE id = ?').run(id),
   updatePassword: (id, password) => {
     const hash = bcrypt.hashSync(password, 10);
     return getDB().prepare('UPDATE users SET password = ? WHERE id = ?').run(hash, id);
-  }
+  },
+  setSpouseView: (id, value) => getDB().prepare('UPDATE users SET is_spouse_view = ? WHERE id = ?').run(value ? 1 : 0, id),
 };
 
 // Firearm queries
@@ -206,6 +209,12 @@ const firearmsQueries = {
   delete: (id) => getDB().prepare('DELETE FROM firearms WHERE id = ?').run(id),
   addRounds: (id, count) => getDB().prepare('UPDATE firearms SET round_count = round_count + ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(count, id),
   setRounds: (id, count) => getDB().prepare('UPDATE firearms SET round_count = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(count, id),
+  setAllSpouseVisible: (ids) => {
+    const db = getDB();
+    const clear = db.prepare('UPDATE firearms SET spouse_visible = 0');
+    const set   = db.prepare('UPDATE firearms SET spouse_visible = 1 WHERE id = ?');
+    db.transaction(() => { clear.run(); for (const id of ids) set.run(id); })();
+  },
   addPhoto: (firearmId, filename, originalName, isPrimary) => {
     if (isPrimary) {
       getDB().prepare('UPDATE firearm_photos SET is_primary = 0 WHERE firearm_id = ?').run(firearmId);

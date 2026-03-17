@@ -26,22 +26,32 @@
       </form>
     </div>
 
-    <!-- Users -->
+    <!-- Users (admin only) -->
+    <% if (!user.is_spouse_view) { %>
     <div class="settings-card">
       <h2 class="section-title">USERS</h2>
       <div class="user-list">
         <% users.forEach(u => { %>
           <div class="user-item">
-            <div>
+            <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;">
               <span class="user-name"><%= u.username %></span>
               <% if (u.id === user.id) { %><span class="badge">YOU</span><% } %>
+              <% if (u.is_spouse_view) { %><span class="badge" style="background:var(--accent);color:#000;">SPOUSE VIEW</span><% } %>
             </div>
             <% if (u.id !== user.id) { %>
-              <form method="POST" action="/settings/delete-user" onsubmit="return confirm('Delete user <%= u.username %>?')">
-                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-                <input type="hidden" name="id" value="<%= u.id %>">
-                <button type="submit" class="btn btn--danger btn--sm">DELETE</button>
-              </form>
+              <div style="display:flex;gap:0.4rem;flex-wrap:wrap;">
+                <form method="POST" action="/settings/set-spouse-view">
+                  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                  <input type="hidden" name="id" value="<%= u.id %>">
+                  <input type="hidden" name="is_spouse_view" value="<%= u.is_spouse_view ? '0' : '1' %>">
+                  <button type="submit" class="btn btn--ghost btn--sm"><%= u.is_spouse_view ? 'REVOKE SPOUSE VIEW' : 'SET SPOUSE VIEW' %></button>
+                </form>
+                <form method="POST" action="/settings/delete-user" onsubmit="return confirm('Delete user <%= u.username %>?')">
+                  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                  <input type="hidden" name="id" value="<%= u.id %>">
+                  <button type="submit" class="btn btn--danger btn--sm">DELETE</button>
+                </form>
+              </div>
             <% } %>
           </div>
         <% }) %>
@@ -63,6 +73,7 @@
         <button type="submit" class="btn btn--primary">CREATE USER</button>
       </form>
     </div>
+    <% } %>
 
     <!-- Export -->
     <div class="settings-card">
@@ -82,7 +93,8 @@
       <a href="/settings/export/full" class="btn btn--primary">↓ EXPORT FULL ARCHIVE (.ZIP)</a>
     </div>
 
-    <!-- Import -->
+    <!-- Import (admin only) -->
+    <% if (!user.is_spouse_view) { %>
     <div class="settings-card">
       <h2 class="section-title">IMPORT INVENTORY</h2>
       <p style="font-family:var(--font-mono);font-size:0.72rem;color:var(--text-muted);margin-bottom:1.25rem;">
@@ -109,9 +121,46 @@
         <button type="submit" class="btn btn--primary">↑ IMPORT FULL ARCHIVE</button>
       </form>
     </div>
+    <% } %>
   </div>
 
-  <!-- Danger Zone -->
+  <!-- Spouse Visibility (admin only) -->
+  <% if (!user.is_spouse_view) { %>
+  <div style="margin-top:2px;">
+    <div class="settings-card">
+      <h2 class="section-title">SPOUSE VISIBILITY</h2>
+      <p style="font-family:var(--font-mono);font-size:0.72rem;color:var(--text-muted);margin-bottom:1.25rem;">
+        Select which inventory items are visible to spouse view accounts. Price shown to spouse view accounts will use the "What Spouse Thinks I Paid" value, falling back to actual price paid.
+      </p>
+      <% if (allFirearms.length === 0) { %>
+        <p style="font-family:var(--font-mono);font-size:0.78rem;color:var(--text-muted);">No items in inventory.</p>
+      <% } else { %>
+        <form method="POST" action="/settings/spouse-items">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <% allFirearms.forEach(f => { %>
+          <label class="trust-item-row" style="display:flex;align-items:center;gap:1rem;padding:0.65rem 0.75rem;border:1px solid var(--border);margin-bottom:3px;background:var(--bg-3);cursor:pointer;">
+            <input type="checkbox" name="items" value="<%= f.id %>" <%= f.spouse_visible ? 'checked' : '' %> style="width:16px;height:16px;flex-shrink:0;accent-color:var(--accent);">
+            <div style="flex:1;min-width:0;">
+              <div style="font-family:var(--font-display);font-size:1.1rem;letter-spacing:0.05em;"><%= f.manufacturer %> <span style="color:var(--accent)"><%= f.model %></span></div>
+              <div style="font-family:var(--font-mono);font-size:0.65rem;color:var(--text-muted);margin-top:0.1rem;">
+                <% if (f.nfa_type) { %><span style="color:var(--nfa-red)"><%= f.nfa_type %></span><% } %>
+                <% if (f.serial) { %> · S/N: <%= f.serial %><% } %>
+                <% if (f.date_acquired) { %> · Acquired: <%= f.date_acquired %><% } %>
+              </div>
+            </div>
+          </label>
+          <% }) %>
+          <div style="margin-top:1.25rem;display:flex;gap:0.75rem;align-items:center;">
+            <button type="submit" class="btn btn--primary">SAVE VISIBILITY</button>
+          </div>
+        </form>
+      <% } %>
+    </div>
+  </div>
+  <% } %>
+
+  <!-- Danger Zone (admin only) -->
+  <% if (!user.is_spouse_view) { %>
   <div style="margin-top:2px;">
     <div class="settings-card" style="border:1px solid var(--red-dim);background:rgba(192,57,43,0.04);">
       <h2 class="section-title" style="color:var(--red);">⚠ DANGER ZONE</h2>
@@ -129,6 +178,7 @@
       </form>
     </div>
   </div>
+  <% } %>
 </div>
 <script nonce="<%= cspNonce %>">
 function validatePurge(form) {

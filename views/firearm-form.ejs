@@ -162,6 +162,14 @@
           </div>
         </div>
 
+        <% if (isSpouseView) { %>
+        <div class="field-row field-row--half">
+          <div class="field">
+            <label class="field-label">PRICE PAID</label>
+            <input type="text" name="price_paid" class="field-input" value="<%= firearm ? (firearm.spouse_price || '') : '' %>" placeholder="e.g. 1200">
+          </div>
+        </div>
+        <% } else { %>
         <div class="field-row">
           <div class="field">
             <label class="field-label">PRICE PAID</label>
@@ -172,6 +180,7 @@
             <input type="text" name="spouse_price" class="field-input" value="<%= firearm ? (firearm.spouse_price || '') : '' %>" placeholder="e.g. 200">
           </div>
         </div>
+        <% } %>
         <div class="field-row">
           <div class="field field-row--half">
             <label class="field-label">TRANSFER DATE</label>

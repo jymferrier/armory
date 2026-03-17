@@ -5,7 +5,7 @@ const path = require('path');
 const fs = require('fs');
 const router = express.Router();
 const { userQueries, firearmsQueries, trustQueries } = require('../db');
-const { requireAuth } = require('../middleware/auth');
+const { requireAuth, requireAdmin } = require('../middleware/auth');
 const { PHOTO_DIR, DOC_DIR } = require('../middleware/upload');
 
 const archiver = require('archiver');
@@ -157,7 +157,7 @@ router.post('/login', (req, res) => {
   // Regenerate session on login to prevent session fixation
   req.session.regenerate((err) => {
     if (err) return res.render('login', { error: 'Session error. Please try again.' });
-    req.session.user = { id: user.id, username: user.username };
+    req.session.user = { id: user.id, username: user.username, is_spouse_view: !!user.is_spouse_view };
     // Validate returnTo: must be a relative path, not an open redirect
     const safeTo = (typeof returnTo === 'string' && returnTo.startsWith('/') && !returnTo.startsWith('//'))
       ? returnTo : '/inventory';
@@ -170,34 +170,38 @@ router.get('/logout', (req, res) => {
 });
 
 // User management (admin only - first user is admin)
+function settingsLocals(sessionUser) {
+  return {
+    user: sessionUser,
+    users: userQueries.all(),
+    allFirearms: firearmsQueries.all(),
+  };
+}
+
 router.get('/settings', requireAuth, (req, res) => {
-  const users = userQueries.all();
-  res.render('settings', { user: req.session.user, users, message: null });
+  res.render('settings', { ...settingsLocals(req.session.user), message: null });
 });
 
-router.post('/settings/add-user', requireAuth, (req, res) => {
+router.post('/settings/add-user', requireAuth, requireAdmin, (req, res) => {
   const { username, password } = req.body;
-  const users = userQueries.all();
   if (!username || !/^[a-zA-Z0-9_]{1,50}$/.test(username)) {
-    return res.render('settings', { user: req.session.user, users, message: { type: 'error', text: 'Username must be 1–50 characters: letters, numbers, and underscores only.' } });
+    return res.render('settings', { ...settingsLocals(req.session.user), message: { type: 'error', text: 'Username must be 1–50 characters: letters, numbers, and underscores only.' } });
   }
   if (!password || password.length < 8) {
-    return res.render('settings', { user: req.session.user, users, message: { type: 'error', text: 'Password must be at least 8 characters.' } });
+    return res.render('settings', { ...settingsLocals(req.session.user), message: { type: 'error', text: 'Password must be at least 8 characters.' } });
   }
   try {
     userQueries.create(username, password);
-    const updatedUsers = userQueries.all();
-    res.render('settings', { user: req.session.user, users: updatedUsers, message: { type: 'success', text: `User "${username}" created` } });
+    res.render('settings', { ...settingsLocals(req.session.user), message: { type: 'success', text: `User "${username}" created` } });
   } catch (e) {
-    res.render('settings', { user: req.session.user, users, message: { type: 'error', text: 'Username already exists' } });
+    res.render('settings', { ...settingsLocals(req.session.user), message: { type: 'error', text: 'Username already exists' } });
   }
 });
 
-router.post('/settings/delete-user', requireAuth, (req, res) => {
+router.post('/settings/delete-user', requireAuth, requireAdmin, (req, res) => {
   const { id } = req.body;
   if (parseInt(id) === req.session.user.id) {
-    const users = userQueries.all();
-    return res.render('settings', { user: req.session.user, users, message: { type: 'error', text: 'Cannot delete your own account' } });
+    return res.render('settings', { ...settingsLocals(req.session.user), message: { type: 'error', text: 'Cannot delete your own account' } });
   }
   userQueries.delete(id);
   res.redirect('/settings');
@@ -206,21 +210,36 @@ router.post('/settings/delete-user', requireAuth, (req, res) => {
 router.post('/settings/change-password', requireAuth, (req, res) => {
   const { current_password, new_password } = req.body;
   const user = userQueries.findByUsername(req.session.user.username);
-  const users = userQueries.all();
   if (!new_password || new_password.length < 8) {
-    return res.render('settings', { user: req.session.user, users, message: { type: 'error', text: 'New password must be at least 8 characters.' } });
+    return res.render('settings', { ...settingsLocals(req.session.user), message: { type: 'error', text: 'New password must be at least 8 characters.' } });
   }
   if (!bcrypt.compareSync(current_password, user.password)) {
-    return res.render('settings', { user: req.session.user, users, message: { type: 'error', text: 'Current password is incorrect' } });
+    return res.render('settings', { ...settingsLocals(req.session.user), message: { type: 'error', text: 'Current password is incorrect' } });
   }
   userQueries.updatePassword(req.session.user.id, new_password);
   // Regenerate session so other active sessions with the old password can't be reused
   req.session.regenerate((err) => {
-    if (err) return res.render('settings', { user: req.session.user, users, message: { type: 'error', text: 'Password updated but session reset failed.' } });
-    req.session.user = { id: user.id, username: user.username };
-    const updatedUsers = userQueries.all();
-    res.render('settings', { user: req.session.user, users: updatedUsers, message: { type: 'success', text: 'Password updated successfully.' } });
+    if (err) return res.render('settings', { ...settingsLocals(req.session.user), message: { type: 'error', text: 'Password updated but session reset failed.' } });
+    req.session.user = { id: user.id, username: user.username, is_spouse_view: !!user.is_spouse_view };
+    res.render('settings', { ...settingsLocals(req.session.user), message: { type: 'success', text: 'Password updated successfully.' } });
   });
+});
+
+// Set/unset spouse view for a user (admin only)
+router.post('/settings/set-spouse-view', requireAuth, requireAdmin, (req, res) => {
+  const { id, is_spouse_view } = req.body;
+  if (parseInt(id) === req.session.user.id) {
+    return res.render('settings', { ...settingsLocals(req.session.user), message: { type: 'error', text: 'Cannot change your own account type.' } });
+  }
+  userQueries.setSpouseView(id, parseInt(is_spouse_view));
+  res.redirect('/settings');
+});
+
+// Save spouse-visible item selection (admin only)
+router.post('/settings/spouse-items', requireAuth, requireAdmin, (req, res) => {
+  const ids = [].concat(req.body.items || []).map(Number).filter(Boolean);
+  firearmsQueries.setAllSpouseVisible(ids);
+  res.render('settings', { ...settingsLocals(req.session.user), message: { type: 'success', text: 'Spouse visibility updated.' } });
 });
 
 // Export CSV
@@ -323,10 +342,9 @@ router.get('/settings/export/full', requireAuth, (req, res) => {
 });
 
 // Import
-router.post('/settings/import', requireAuth, (req, res) => {
+router.post('/settings/import', requireAuth, requireAdmin, (req, res) => {
   importUpload(req, res, (err) => {
-    const users = userQueries.all();
-    const fail = (text) => res.render('settings', { user: req.session.user, users, message: { type: 'error', text } });
+    const fail = (text) => res.render('settings', { ...settingsLocals(req.session.user), message: { type: 'error', text } });
 
     if (err) return fail('Upload error: ' + err.message);
     if (!req.file) return fail('No file selected.');
@@ -358,15 +376,14 @@ router.post('/settings/import', requireAuth, (req, res) => {
       try { firearmsQueries.create(record); imported++; } catch (e) { /* skip bad rows */ }
     }
 
-    res.render('settings', { user: req.session.user, users, message: { type: 'success', text: `Imported ${imported} of ${records.length} records.` } });
+    res.render('settings', { ...settingsLocals(req.session.user), message: { type: 'success', text: `Imported ${imported} of ${records.length} records.` } });
   });
 });
 
 // Import ZIP archive
-router.post('/settings/import/zip', requireAuth, (req, res) => {
+router.post('/settings/import/zip', requireAuth, requireAdmin, (req, res) => {
   zipImportUpload(req, res, (err) => {
-    const users = userQueries.all();
-    const fail = (text) => res.render('settings', { user: req.session.user, users, message: { type: 'error', text } });
+    const fail = (text) => res.render('settings', { ...settingsLocals(req.session.user), message: { type: 'error', text } });
 
     if (err) return fail('Upload error: ' + err.message);
     if (!req.file) return fail('No file selected.');
@@ -465,14 +482,13 @@ router.post('/settings/import/zip', requireAuth, (req, res) => {
     }
 
     const skippedNote = skipped ? `, ${skipped} folder${skipped !== 1 ? 's' : ''} skipped` : '';
-    res.render('settings', { user: req.session.user, users, message: { type: 'success', text: `ZIP import complete: ${imported} item${imported !== 1 ? 's' : ''} imported${skippedNote}.` } });
+    res.render('settings', { ...settingsLocals(req.session.user), message: { type: 'success', text: `ZIP import complete: ${imported} item${imported !== 1 ? 's' : ''} imported${skippedNote}.` } });
   });
 });
 
 // Purge database
-router.post('/settings/purge', requireAuth, (req, res) => {
-  const users = userQueries.all();
-  const fail = (text) => res.render('settings', { user: req.session.user, users, message: { type: 'error', text } });
+router.post('/settings/purge', requireAuth, requireAdmin, (req, res) => {
+  const fail = (text) => res.render('settings', { ...settingsLocals(req.session.user), message: { type: 'error', text } });
 
   if (req.body.confirm !== 'BOATING ACCIDENT') return fail('Incorrect confirmation. Type BOATING ACCIDENT exactly to proceed.');
 
@@ -499,7 +515,7 @@ router.post('/settings/purge', requireAuth, (req, res) => {
   // Delete all trust records
   trustQueries.all().forEach(t => trustQueries.delete(t.id));
 
-  res.render('settings', { user: req.session.user, users, message: { type: 'success', text: 'All inventory and trust records have been purged.' } });
+  res.render('settings', { ...settingsLocals(req.session.user), message: { type: 'success', text: 'All inventory and trust records have been purged.' } });
 });
 
 module.exports = router;

@@ -151,7 +151,8 @@
       </div>
 
       <!-- Acquisition -->
-      <% if (firearm.date_acquired || firearm.acquired_from || firearm.price_paid || firearm.transfer_date || firearm.ffl_transferred_from) { %>
+      <% const showAcquisition = !!(firearm.date_acquired || firearm.acquired_from || firearm.transfer_date || firearm.ffl_transferred_from || (isSpouseView ? (firearm.spouse_price || firearm.price_paid) : firearm.price_paid)); %>
+      <% if (showAcquisition) { %>
       <h3 class="section-title mt-lg">ACQUISITION</h3>
       <div class="info-grid">
         <% if (firearm.date_acquired) { %>
@@ -166,17 +167,27 @@
           <span class="info-value"><%= firearm.acquired_from %></span>
         </div>
         <% } %>
-        <% if (firearm.price_paid) { %>
-        <div class="info-item">
-          <span class="info-label">PRICE PAID</span>
-          <span class="info-value">$<%= parseFloat(firearm.price_paid).toLocaleString('en-US', {minimumFractionDigits:2,maximumFractionDigits:2}) %></span>
-        </div>
-        <% } %>
-        <% if (firearm.spouse_price) { %>
-        <div class="info-item">
-          <span class="info-label">WHAT SPOUSE THINKS I PAID</span>
-          <span class="info-value">$<%= parseFloat(firearm.spouse_price).toLocaleString('en-US', {minimumFractionDigits:2,maximumFractionDigits:2}) %></span>
-        </div>
+        <% if (isSpouseView) { %>
+          <% const displayPrice = firearm.spouse_price || firearm.price_paid; %>
+          <% if (displayPrice) { %>
+          <div class="info-item">
+            <span class="info-label">PRICE PAID</span>
+            <span class="info-value">$<%= parseFloat(displayPrice).toLocaleString('en-US', {minimumFractionDigits:2,maximumFractionDigits:2}) %></span>
+          </div>
+          <% } %>
+        <% } else { %>
+          <% if (firearm.price_paid) { %>
+          <div class="info-item">
+            <span class="info-label">PRICE PAID</span>
+            <span class="info-value">$<%= parseFloat(firearm.price_paid).toLocaleString('en-US', {minimumFractionDigits:2,maximumFractionDigits:2}) %></span>
+          </div>
+          <% } %>
+          <% if (firearm.spouse_price) { %>
+          <div class="info-item">
+            <span class="info-label">WHAT SPOUSE THINKS I PAID</span>
+            <span class="info-value">$<%= parseFloat(firearm.spouse_price).toLocaleString('en-US', {minimumFractionDigits:2,maximumFractionDigits:2}) %></span>
+          </div>
+          <% } %>
         <% } %>
         <% if (firearm.transfer_date) { %>
         <div class="info-item">

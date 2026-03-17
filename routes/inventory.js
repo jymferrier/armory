@@ -32,6 +32,7 @@ router.use(requireAuth);
 
 // List
 router.get('/', (req, res) => {
+  const isSpouseView = !!req.session.user.is_spouse_view;
   const { q } = req.query;
   let firearms;
   if (q) {
@@ -40,7 +41,10 @@ router.get('/', (req, res) => {
   } else {
     firearms = firearmsQueries.all();
   }
-  res.render('inventory', { user: req.session.user, firearms, q: q || '' });
+  if (isSpouseView) {
+    firearms = firearms.filter(f => f.spouse_visible);
+  }
+  res.render('inventory', { user: req.session.user, firearms, q: q || '', isSpouseView });
 });
 
 function getFormSuggestions() {
@@ -57,14 +61,14 @@ function getFormSuggestions() {
 
 // New form
 router.get('/new', (req, res) => {
-  res.render('firearm-form', { user: req.session.user, firearm: null, error: null, ...getFormSuggestions() });
+  res.render('firearm-form', { user: req.session.user, firearm: null, error: null, isSpouseView: !!req.session.user.is_spouse_view, ...getFormSuggestions() });
 });
 
 // Create
 router.post('/new', (req, res) => {
   photoUpload(req, res, (err) => {
     const manufacturers = firearmsQueries.distinctManufacturers();
-    if (err) return res.render('firearm-form', { user: req.session.user, firearm: null, error: err.message, ...getFormSuggestions() });
+    if (err) return res.render('firearm-form', { user: req.session.user, firearm: null, error: err.message, isSpouseView: !!req.session.user.is_spouse_view, ...getFormSuggestions() });
 
     const {
       manufacturer, model, model_number, caliber, serial, barrel_length, overall_length, optics, date_acquired,
@@ -74,6 +78,7 @@ router.post('/new', (req, res) => {
       is_disposed, date_disposed, disposal_method, notes, round_count
     } = req.body;
 
+    const isSpouseView = !!req.session.user.is_spouse_view;
     const isNfa = NFA_TYPES.has(item_type);
     const hasSbrSbs = item_type === 'Short Barrel Rifle (SBR)' || item_type === 'Short Barrel Shotgun (SBS)';
 
@@ -86,8 +91,8 @@ router.post('/new', (req, res) => {
       optics: optics || null,
       date_acquired: date_acquired || null,
       acquired_from: acquired_from || null,
-      price_paid: sanitizePrice(price_paid),
-      spouse_price: sanitizePrice(spouse_price),
+      price_paid: isSpouseView ? null : sanitizePrice(price_paid),
+      spouse_price: isSpouseView ? sanitizePrice(price_paid) : sanitizePrice(spouse_price),
       transfer_date: transfer_date || null,
       ffl_transferred_from: ffl_transferred_from || null,
       is_3d_printed: is_3d_printed ? 1 : 0,
@@ -122,18 +127,34 @@ router.post('/new', (req, res) => {
 router.get('/:id', (req, res) => {
   const firearm = firearmsQueries.findById(req.params.id);
   if (!firearm) return res.status(404).render('error', { message: 'Firearm not found', user: req.session.user });
-  res.render('firearm-detail', { user: req.session.user, firearm });
+  if (req.session.user.is_spouse_view && !firearm.spouse_visible) {
+    return res.status(404).render('error', { message: 'Firearm not found', user: req.session.user });
+  }
+  res.render('firearm-detail', { user: req.session.user, firearm, isSpouseView: !!req.session.user.is_spouse_view });
 });
 
 // Edit form
 router.get('/:id/edit', (req, res) => {
   const firearm = firearmsQueries.findById(req.params.id);
   if (!firearm) return res.status(404).render('error', { message: 'Firearm not found', user: req.session.user });
-  res.render('firearm-form', { user: req.session.user, firearm, error: null, ...getFormSuggestions() });
+  if (req.session.user.is_spouse_view && !firearm.spouse_visible) {
+    return res.status(404).render('error', { message: 'Firearm not found', user: req.session.user });
+  }
+  res.render('firearm-form', { user: req.session.user, firearm, error: null, isSpouseView: !!req.session.user.is_spouse_view, ...getFormSuggestions() });
 });
 
 // Update
 router.post('/:id/edit', (req, res) => {
+  const isSpouseView = !!req.session.user.is_spouse_view;
+  let existingPricePaid = null;
+  if (isSpouseView) {
+    const existing = firearmsQueries.findById(req.params.id);
+    if (!existing || !existing.spouse_visible) {
+      return res.status(403).render('error', { message: 'Forbidden', user: req.session.user });
+    }
+    existingPricePaid = existing.price_paid;
+  }
+
   const {
     manufacturer, model, model_number, caliber, serial, barrel_length, overall_length, optics, date_acquired,
     acquired_from, price_paid, spouse_price, transfer_date, ffl_transferred_from,
@@ -154,8 +175,8 @@ router.post('/:id/edit', (req, res) => {
     optics: optics || null,
     date_acquired: date_acquired || null,
     acquired_from: acquired_from || null,
-    price_paid: price_paid || null,
-    spouse_price: spouse_price || null,
+    price_paid: isSpouseView ? existingPricePaid : (price_paid || null),
+    spouse_price: isSpouseView ? sanitizePrice(price_paid) : sanitizePrice(spouse_price),
     transfer_date: transfer_date || null,
     ffl_transferred_from: ffl_transferred_from || null,
     is_3d_printed: is_3d_printed ? 1 : 0,
