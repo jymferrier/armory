@@ -122,8 +122,20 @@
       margin-bottom: 0.75rem;
       font-size: 11pt;
     }
-    .notary-state span { display: flex; align-items: center; gap: 0.5rem; }
-    .notary-state span::after { content: ')'; margin-left: 2rem; }
+    .notary-state span {
+      display: flex;
+      align-items: flex-end;
+      gap: 0;
+      margin-bottom: 0.3rem;
+    }
+    .notary-state span .state-label { white-space: nowrap; }
+    .notary-state span .state-blank {
+      flex: 1;
+      border-bottom: 1px solid #000;
+      margin: 0 0.4rem;
+      min-width: 2in;
+    }
+    .notary-state span .state-paren { white-space: nowrap; }
     .notary-acknowledge { margin-bottom: 1rem; text-align: justify; }
     .notary-footer {
       display: flex;
@@ -138,20 +150,7 @@
     .stamp-box {
       width: 2.4in;
       height: 2.4in;
-      border: 1px dashed #aaa;
       flex-shrink: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-    }
-    .stamp-box-label {
-      font-size: 8.5pt;
-      color: #aaa;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      line-height: 1.6;
-      font-family: 'Times New Roman', Times, serif;
     }
     .doc-footer {
       text-align: right;
@@ -277,8 +276,8 @@
 
   <div class="notary-section">
     <div class="notary-state">
-      <span>State of &nbsp;</span>
-      <span>County of </span>
+      <span><span class="state-label">State of</span><span class="state-blank"></span><span class="state-paren">)</span></span>
+      <span><span class="state-label">County of</span><span class="state-blank"></span><span class="state-paren">)</span></span>
     </div>
 
     <p class="notary-acknowledge">
@@ -291,9 +290,7 @@
         <div class="sig-label">Signature of notarial officer</div>
         <div class="sig-label">My commission expires:___________</div>
       </div>
-      <div class="stamp-box">
-        <div class="stamp-box-label">Notary<br>Seal / Stamp</div>
-      </div>
+      <div class="stamp-box"></div>
     </div>
   </div>
 
