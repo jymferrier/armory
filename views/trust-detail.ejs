@@ -26,6 +26,9 @@
     <div class="form-band">
       <div class="form-band__label">TRUST DETAILS</div>
       <div class="form-band__fields">
+        <p style="font-family:var(--font-mono);font-size:0.72rem;color:var(--text-muted);margin-bottom:1rem;line-height:1.5;">
+          ⚠ Settlor Name, Settlor Location, and Trust Agreement Date must all be completed before an assignment sheet can be generated.
+        </p>
         <div class="field-row">
           <div class="field">
             <label class="field-label">SETTLOR NAME</label>
@@ -94,17 +97,28 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
+  // Disable the generate button until all three trust detail fields are filled
+  var settlorNameInput    = document.querySelector('[name="settlor_name"]');
+  var settlorLocationInput = document.querySelector('[name="settlor_location"]');
+  var agreementDateInput  = document.querySelector('[name="agreement_date"]');
   var generateBtn = document.getElementById('generateBtn');
+
+  function updateGenerateBtn() {
+    if (!generateBtn) return;
+    var ready = settlorNameInput    && settlorNameInput.value.trim()
+             && settlorLocationInput && settlorLocationInput.value.trim()
+             && agreementDateInput  && agreementDateInput.value;
+    generateBtn.disabled = !ready;
+    generateBtn.title = ready ? '' : 'Complete all Trust Details fields above before generating';
+  }
+
+  [settlorNameInput, settlorLocationInput, agreementDateInput].forEach(function(el) {
+    if (el) el.addEventListener('input', updateGenerateBtn);
+  });
+  updateGenerateBtn();
+
   if (generateBtn) {
     generateBtn.addEventListener('click', function() {
-      var missing = [];
-      <% if (!trust.settlor_name) { %>missing.push('Settlor Name');<% } %>
-      <% if (!trust.settlor_location) { %>missing.push('Settlor Location');<% } %>
-      <% if (!trust.agreement_date) { %>missing.push('Trust Agreement Date');<% } %>
-      if (missing.length > 0) {
-        alert('Please fill in the following trust details before generating:\n\n\u2022 ' + missing.join('\n\u2022 '));
-        return;
-      }
       var checked = Array.from(document.querySelectorAll('.item-checkbox:checked')).map(function(cb) { return cb.value; });
       if (checked.length === 0) { alert('Select at least one item.'); return; }
       var url = '/trusts/<%= trust.id %>/assignment?' + checked.map(function(id) { return 'items=' + id; }).join('&');

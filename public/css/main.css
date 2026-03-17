@@ -220,6 +220,7 @@ a:hover { color: var(--text); }
   font-weight: 500;
 }
 .btn--primary:hover { background: #d4a44a; border-color: #d4a44a; color: var(--bg); }
+.btn:disabled, .btn[disabled] { opacity: 0.35; cursor: not-allowed; pointer-events: none; }
 
 .btn--ghost { border-color: var(--border-accent); color: var(--text-muted); }
 .btn--ghost:hover { border-color: var(--text); color: var(--text); }
