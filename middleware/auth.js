@@ -1,5 +1,13 @@
+const { userQueries } = require('../db');
+
 function requireAuth(req, res, next) {
   if (req.session && req.session.user) {
+    // Re-validate session version on every request so that role changes and
+    // other admin actions take effect immediately rather than at session expiry.
+    const dbVersion = userQueries.getSessionVersion(req.session.user.id);
+    if (dbVersion !== (req.session.user.session_version || 0)) {
+      return req.session.destroy(() => res.redirect('/login'));
+    }
     return next();
   }
   req.session.returnTo = req.originalUrl;

@@ -12,6 +12,10 @@ const { csrfMiddleware } = require('./middleware/csrf');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+if (process.env.NODE_ENV !== 'production') {
+  console.warn('WARNING: NODE_ENV is not set to "production". Session cookies will not be flagged Secure. Set NODE_ENV=production for production deployments.');
+}
+
 // Init DB
 initDB();
 
@@ -37,12 +41,15 @@ app.use(helmet({
       objectSrc:  ["'none'"],
       frameSrc:   ["'none'"],
     }
-  }
+  },
+  // Only send HSTS in production (requires HTTPS to be effective)
+  hsts: process.env.NODE_ENV === 'production'
+    ? { maxAge: 31536000, includeSubDomains: true }
+    : false,
 }));
 
-// Static files
+// Static files (CSS, JS, fonts only — uploads are served through authenticated API routes)
 app.use(express.static(path.join(__dirname, 'public')));
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Body parsing
 app.use(express.urlencoded({ extended: true }));

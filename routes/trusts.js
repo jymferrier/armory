@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { trustQueries } = require('../db');
-const { requireAuth } = require('../middleware/auth');
+const { requireAuth, requireAdmin } = require('../middleware/auth');
 
 router.use(requireAuth);
 
@@ -15,13 +15,13 @@ router.get('/', (req, res) => {
 });
 
 // New trust form
-router.get('/new', (req, res) => {
+router.get('/new', requireAdmin, (req, res) => {
   const suggestions = trustQueries.distinctTrustNames();
   res.render('trust-form', { user: req.session.user, trust: null, suggestions, error: null });
 });
 
 // Create trust
-router.post('/new', (req, res) => {
+router.post('/new', requireAdmin, (req, res) => {
   const { name, settlor_name, settlor_location, agreement_date } = req.body;
   try {
     trustQueries.create({ name: name.trim(), settlor_name: settlor_name || null, settlor_location: settlor_location || null, agreement_date: agreement_date || null });
@@ -42,7 +42,7 @@ router.get('/:id', (req, res) => {
 });
 
 // Update metadata
-router.post('/:id', (req, res) => {
+router.post('/:id', requireAdmin, (req, res) => {
   const trust = trustQueries.findById(req.params.id);
   if (!trust) return res.status(404).render('error', { message: 'Trust not found', user: req.session.user });
   const { settlor_name, settlor_location, agreement_date } = req.body;
@@ -70,7 +70,7 @@ router.get('/:id/assignment', (req, res) => {
 });
 
 // Delete
-router.post('/:id/delete', (req, res) => {
+router.post('/:id/delete', requireAdmin, (req, res) => {
   trustQueries.delete(req.params.id);
   res.redirect('/trusts');
 });

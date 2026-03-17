@@ -11,9 +11,10 @@
     <div class="alert alert--error"><%= error %></div>
   <% } %>
 
-  <form method="POST" action="/inventory/<%= firearm ? firearm.id + '/edit' : 'new' %>?_csrf=<%= csrfToken %>"
+  <form method="POST" action="/inventory/<%= firearm ? firearm.id + '/edit' : 'new' %>"
     <% if (!firearm) { %>enctype="multipart/form-data"<% } %>
     class="firearm-form">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
 
     <!-- 01: IDENTIFICATION -->
     <div class="form-band">

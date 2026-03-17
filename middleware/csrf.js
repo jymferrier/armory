@@ -16,6 +16,11 @@ function csrfMiddleware(req, res, next) {
   // Only validate on state-changing methods
   if (['GET', 'HEAD', 'OPTIONS'].includes(req.method)) return next();
 
+  // Multipart/form-data: req.body is not yet populated (multer hasn't run).
+  // Each multipart route validates the token itself after calling multer.
+  const ct = req.headers['content-type'] || '';
+  if (ct.startsWith('multipart/form-data')) return next();
+
   const token = req.query._csrf || req.body._csrf || req.headers['x-csrf-token'];
   if (!token || !req.session || token !== req.session.csrfToken) {
     return res.status(403).render('error', {
@@ -26,4 +31,10 @@ function csrfMiddleware(req, res, next) {
   next();
 }
 
-module.exports = { generateToken, csrfMiddleware };
+// Call this inside multer callbacks after the body has been parsed.
+function validateCsrf(req) {
+  const token = req.body._csrf || req.headers['x-csrf-token'];
+  return !!(token && req.session && token === req.session.csrfToken);
+}
+
+module.exports = { generateToken, csrfMiddleware, validateCsrf };

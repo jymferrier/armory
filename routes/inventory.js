@@ -3,8 +3,12 @@ const router = express.Router();
 const path = require('path');
 const fs = require('fs');
 const { firearmsQueries } = require('../db');
-const { requireAuth } = require('../middleware/auth');
+const { requireAuth, requireAdmin } = require('../middleware/auth');
+const { validateCsrf } = require('../middleware/csrf');
 const { uploadPhotos, uploadDocs, PHOTO_DIR, DOC_DIR } = require('../middleware/upload');
+
+// Cap string field length to prevent oversized inputs
+const cap = (val, max) => (val && typeof val === 'string') ? val.slice(0, max) : val;
 
 const sanitizePrice = (val) => {
   if (!val) return null;
@@ -60,13 +64,14 @@ function getFormSuggestions() {
 }
 
 // New form
-router.get('/new', (req, res) => {
+router.get('/new', requireAdmin, (req, res) => {
   res.render('firearm-form', { user: req.session.user, firearm: null, error: null, isSpouseView: !!req.session.user.is_spouse_view, ...getFormSuggestions() });
 });
 
 // Create
-router.post('/new', (req, res) => {
+router.post('/new', requireAdmin, (req, res) => {
   photoUpload(req, res, (err) => {
+    if (!validateCsrf(req)) return res.status(403).render('error', { message: 'Security token validation failed.', user: req.session.user });
     const manufacturers = firearmsQueries.distinctManufacturers();
     if (err) return res.render('firearm-form', { user: req.session.user, firearm: null, error: err.message, isSpouseView: !!req.session.user.is_spouse_view, ...getFormSuggestions() });
 
@@ -83,32 +88,33 @@ router.post('/new', (req, res) => {
     const hasSbrSbs = item_type === 'Short Barrel Rifle (SBR)' || item_type === 'Short Barrel Shotgun (SBS)';
 
     const firearmsId = firearmsQueries.create({
-      manufacturer, model, model_number: model_number || null,
-      caliber: caliber || null,
-      serial: serial || null,
-      barrel_length: barrel_length || null,
-      overall_length: hasSbrSbs ? (overall_length || null) : null,
+      manufacturer: cap(manufacturer, 200), model: cap(model, 200),
+      model_number: cap(model_number, 100) || null,
+      caliber: cap(caliber, 100) || null,
+      serial: cap(serial, 100) || null,
+      barrel_length: cap(barrel_length, 50) || null,
+      overall_length: hasSbrSbs ? (cap(overall_length, 50) || null) : null,
       optics: optics || null,
       date_acquired: date_acquired || null,
-      acquired_from: acquired_from || null,
+      acquired_from: cap(acquired_from, 500) || null,
       price_paid: isSpouseView ? null : sanitizePrice(price_paid),
       spouse_price: isSpouseView ? sanitizePrice(price_paid) : sanitizePrice(spouse_price),
       transfer_date: transfer_date || null,
-      ffl_transferred_from: ffl_transferred_from || null,
+      ffl_transferred_from: cap(ffl_transferred_from, 500) || null,
       is_3d_printed: is_3d_printed ? 1 : 0,
       is_nfa: isNfa ? 1 : 0,
       nfa_type: item_type || null,
       nfa_form_type: isNfa ? (nfa_form_type || null) : null,
-      nfa_form_number: isNfa ? (nfa_form_number || null) : null,
+      nfa_form_number: isNfa ? (cap(nfa_form_number, 100) || null) : null,
       nfa_fmi: isNfa ? (nfa_fmi ? 1 : 0) : 0,
       nfa_submit_date: isNfa ? (nfa_submit_date || null) : null,
-      nfa_tax_stamp_serial: isNfa ? (nfa_tax_stamp_serial || null) : null,
+      nfa_tax_stamp_serial: isNfa ? (cap(nfa_tax_stamp_serial, 100) || null) : null,
       nfa_approve_date: isNfa ? (nfa_approve_date || null) : null,
-      nfa_trust_name: nfa_trust_name || null,
+      nfa_trust_name: cap(nfa_trust_name, 500) || null,
       is_disposed: is_disposed ? 1 : 0,
       date_disposed: is_disposed ? (date_disposed || null) : null,
-      disposal_method: is_disposed ? (disposal_method || null) : null,
-      notes: notes || null,
+      disposal_method: is_disposed ? (cap(disposal_method, 500) || null) : null,
+      notes: cap(notes, 10000) || null,
       round_count: parseInt(round_count, 10) || 0
     });
 
@@ -134,7 +140,7 @@ router.get('/:id', (req, res) => {
 });
 
 // Edit form
-router.get('/:id/edit', (req, res) => {
+router.get('/:id/edit', requireAdmin, (req, res) => {
   const firearm = firearmsQueries.findById(req.params.id);
   if (!firearm) return res.status(404).render('error', { message: 'Firearm not found', user: req.session.user });
   if (req.session.user.is_spouse_view && !firearm.spouse_visible) {
@@ -144,7 +150,7 @@ router.get('/:id/edit', (req, res) => {
 });
 
 // Update
-router.post('/:id/edit', (req, res) => {
+router.post('/:id/edit', requireAdmin, (req, res) => {
   const isSpouseView = !!req.session.user.is_spouse_view;
   let existingPricePaid = null;
   if (isSpouseView) {
@@ -167,46 +173,47 @@ router.post('/:id/edit', (req, res) => {
   const hasSbrSbs = item_type === 'Short Barrel Rifle (SBR)' || item_type === 'Short Barrel Shotgun (SBS)';
 
   firearmsQueries.update(req.params.id, {
-    manufacturer, model, model_number: model_number || null,
-    caliber: caliber || null,
-    serial: serial || null,
-    barrel_length: barrel_length || null,
-    overall_length: hasSbrSbs ? (overall_length || null) : null,
+    manufacturer: cap(manufacturer, 200), model: cap(model, 200),
+    model_number: cap(model_number, 100) || null,
+    caliber: cap(caliber, 100) || null,
+    serial: cap(serial, 100) || null,
+    barrel_length: cap(barrel_length, 50) || null,
+    overall_length: hasSbrSbs ? (cap(overall_length, 50) || null) : null,
     optics: optics || null,
     date_acquired: date_acquired || null,
-    acquired_from: acquired_from || null,
+    acquired_from: cap(acquired_from, 500) || null,
     price_paid: isSpouseView ? existingPricePaid : (price_paid || null),
     spouse_price: isSpouseView ? sanitizePrice(price_paid) : sanitizePrice(spouse_price),
     transfer_date: transfer_date || null,
-    ffl_transferred_from: ffl_transferred_from || null,
+    ffl_transferred_from: cap(ffl_transferred_from, 500) || null,
     is_3d_printed: is_3d_printed ? 1 : 0,
     is_nfa: isNfa ? 1 : 0,
     nfa_type: item_type || null,
     nfa_form_type: isNfa ? (nfa_form_type || null) : null,
-    nfa_form_number: isNfa ? (nfa_form_number || null) : null,
+    nfa_form_number: isNfa ? (cap(nfa_form_number, 100) || null) : null,
     nfa_fmi: isNfa ? (nfa_fmi ? 1 : 0) : 0,
     nfa_submit_date: isNfa ? (nfa_submit_date || null) : null,
-    nfa_tax_stamp_serial: isNfa ? (nfa_tax_stamp_serial || null) : null,
+    nfa_tax_stamp_serial: isNfa ? (cap(nfa_tax_stamp_serial, 100) || null) : null,
     nfa_approve_date: isNfa ? (nfa_approve_date || null) : null,
-    nfa_trust_name: nfa_trust_name || null,
+    nfa_trust_name: cap(nfa_trust_name, 500) || null,
     is_disposed: is_disposed ? 1 : 0,
     date_disposed: is_disposed ? (date_disposed || null) : null,
-    disposal_method: is_disposed ? (disposal_method || null) : null,
-    notes: notes || null,
+    disposal_method: is_disposed ? (cap(disposal_method, 500) || null) : null,
+    notes: cap(notes, 10000) || null,
     round_count: parseInt(round_count, 10) || 0
   });
   res.redirect(`/inventory/${req.params.id}`);
 });
 
 // Log rounds fired
-router.post('/:id/rounds', (req, res) => {
+router.post('/:id/rounds', requireAdmin, (req, res) => {
   const add = parseInt(req.body.add_rounds, 10);
   if (add > 0) firearmsQueries.addRounds(req.params.id, add);
   res.redirect(`/inventory/${req.params.id}`);
 });
 
 // Delete
-router.post('/:id/delete', (req, res) => {
+router.post('/:id/delete', requireAdmin, (req, res) => {
   const firearm = firearmsQueries.findById(req.params.id);
   if (firearm) {
     [...firearm.photos, ...firearm.documents].forEach(f => {
@@ -220,8 +227,9 @@ router.post('/:id/delete', (req, res) => {
 });
 
 // Upload photos
-router.post('/:id/photos', (req, res) => {
+router.post('/:id/photos', requireAdmin, (req, res) => {
   photoUpload(req, res, (err) => {
+    if (!validateCsrf(req)) return res.status(403).render('error', { message: 'Security token validation failed.', user: req.session.user });
     if (err) return res.redirect(`/inventory/${req.params.id}?photoError=${encodeURIComponent(err.message)}`);
     if (req.files && req.files.length > 0) {
       const existing = firearmsQueries.findById(req.params.id);
@@ -235,7 +243,7 @@ router.post('/:id/photos', (req, res) => {
 });
 
 // Set primary photo
-router.post('/:id/photos/:photoId/primary', (req, res) => {
+router.post('/:id/photos/:photoId/primary', requireAdmin, (req, res) => {
   const photo = firearmsQueries.findPhotoById(req.params.photoId);
   if (!photo || photo.firearm_id !== parseInt(req.params.id, 10))
     return res.status(403).render('error', { message: 'Forbidden', user: req.session.user });
@@ -244,7 +252,7 @@ router.post('/:id/photos/:photoId/primary', (req, res) => {
 });
 
 // Delete photo
-router.post('/:id/photos/:photoId/delete', (req, res) => {
+router.post('/:id/photos/:photoId/delete', requireAdmin, (req, res) => {
   const photo = firearmsQueries.findPhotoById(req.params.photoId);
   if (!photo || photo.firearm_id !== parseInt(req.params.id, 10))
     return res.status(403).render('error', { message: 'Forbidden', user: req.session.user });
@@ -255,8 +263,9 @@ router.post('/:id/photos/:photoId/delete', (req, res) => {
 });
 
 // Upload documents
-router.post('/:id/documents', (req, res) => {
+router.post('/:id/documents', requireAdmin, (req, res) => {
   docUpload(req, res, (err) => {
+    if (!validateCsrf(req)) return res.status(403).render('error', { message: 'Security token validation failed.', user: req.session.user });
     if (err) return res.redirect(`/inventory/${req.params.id}?docError=${encodeURIComponent(err.message)}`);
     const fields = { atf_form: 'ATF Form', form5320: 'Form 5320', additional_docs: 'Additional Document' };
     Object.entries(fields).forEach(([field, label]) => {
@@ -271,7 +280,7 @@ router.post('/:id/documents', (req, res) => {
 });
 
 // Delete document
-router.post('/:id/documents/:docId/delete', (req, res) => {
+router.post('/:id/documents/:docId/delete', requireAdmin, (req, res) => {
   const doc = firearmsQueries.findDocumentById(req.params.docId);
   if (!doc || doc.firearm_id !== parseInt(req.params.id, 10))
     return res.status(403).render('error', { message: 'Forbidden', user: req.session.user });

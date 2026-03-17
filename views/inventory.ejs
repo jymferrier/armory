@@ -34,7 +34,7 @@
           <a href="/inventory/<%= f.id %>" class="firearm-card">
             <div class="firearm-card__photo">
               <% if (f.primary_photo) { %>
-                <img src="/uploads/photos/<%= f.primary_photo.filename %>" alt="<%= f.manufacturer %> <%= f.model %>">
+                <img src="/api/photo/<%= f.primary_photo.filename %>" alt="<%= f.manufacturer %> <%= f.model %>">
               <% } else { %>
                 <div class="firearm-card__no-photo">NO PHOTO</div>
               <% } %>
@@ -69,7 +69,7 @@
           <a href="/inventory/<%= f.id %>" class="firearm-row">
             <div class="firearm-row__thumb">
               <% if (f.primary_photo) { %>
-                <img src="/uploads/photos/<%= f.primary_photo.filename %>" alt="">
+                <img src="/api/photo/<%= f.primary_photo.filename %>" alt="">
               <% } else { %>
                 <div class="firearm-row__no-photo">NO PHOTO</div>
               <% } %>

@@ -36,12 +36,12 @@
     <div class="detail-photos">
       <% if (firearm.photos.length > 0) { %>
         <div class="photo-main" id="photoMain">
-          <img src="/uploads/photos/<%= (firearm.photos.find(p=>p.is_primary) || firearm.photos[0]).filename %>" alt="Primary photo" id="photoMainImg">
+          <img src="/api/photo/<%= (firearm.photos.find(p=>p.is_primary) || firearm.photos[0]).filename %>" alt="Primary photo" id="photoMainImg">
         </div>
         <div class="photo-thumbs">
           <% firearm.photos.forEach(p => { %>
             <div class="photo-thumb-wrap <%= p.is_primary ? 'photo-thumb-wrap--active' : '' %>">
-              <img src="/uploads/photos/<%= p.filename %>" class="photo-thumb" alt="">
+              <img src="/api/photo/<%= p.filename %>" class="photo-thumb" alt="">
               <div class="photo-thumb-actions">
                 <% if (!p.is_primary) { %>
                   <form method="POST" action="/inventory/<%= firearm.id %>/photos/<%= p.id %>/primary">
@@ -65,7 +65,8 @@
 
       <div class="upload-section">
         <h3 class="section-title">ADD PHOTOS</h3>
-        <form method="POST" action="/inventory/<%= firearm.id %>/photos?_csrf=<%= csrfToken %>" enctype="multipart/form-data">
+        <form method="POST" action="/inventory/<%= firearm.id %>/photos" enctype="multipart/form-data">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
           <input type="file" name="photos" multiple accept="image/*" id="photoInput" style="display:none">
           <div class="file-drop-zone" id="photoDropZone">
             <div class="file-drop-label">
@@ -353,7 +354,8 @@
           <p class="no-docs">No documents uploaded</p>
         <% } %>
 
-        <form method="POST" action="/inventory/<%= firearm.id %>/documents?_csrf=<%= csrfToken %>" enctype="multipart/form-data" class="doc-upload-form">
+        <form method="POST" action="/inventory/<%= firearm.id %>/documents" enctype="multipart/form-data" class="doc-upload-form">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
           <% if (firearm.is_nfa) { %>
           <div class="field">
             <label class="field-label">ATF FORM(S)</label>

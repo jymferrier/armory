@@ -6,13 +6,45 @@ const fs = require('fs');
 const router = express.Router();
 const { userQueries, firearmsQueries, trustQueries } = require('../db');
 const { requireAuth, requireAdmin } = require('../middleware/auth');
+const { validateCsrf } = require('../middleware/csrf');
 const { PHOTO_DIR, DOC_DIR } = require('../middleware/upload');
+const { audit } = require('../middleware/audit');
 
 const archiver = require('archiver');
 const AdmZip = require('adm-zip');
 const { v4: uuidv4 } = require('uuid');
 const importUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 20 * 1024 * 1024 } }).single('import_file');
 const zipImportUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 500 * 1024 * 1024 } }).single('import_zip');
+
+// ── Account lockout (in-memory; resets on restart) ──────────────────────────
+const failedLogins = new Map();
+const LOCKOUT_THRESHOLD = 10;
+const LOCKOUT_MS = 15 * 60 * 1000;
+
+function isLockedOut(username) {
+  const entry = failedLogins.get(username.toLowerCase());
+  if (!entry) return false;
+  if (entry.lockedUntil && Date.now() < entry.lockedUntil) return true;
+  if (entry.lockedUntil) failedLogins.delete(username.toLowerCase());
+  return false;
+}
+function recordFailedLogin(username) {
+  const key = username.toLowerCase();
+  const entry = failedLogins.get(key) || { count: 0, lockedUntil: null };
+  entry.count++;
+  if (entry.count >= LOCKOUT_THRESHOLD) entry.lockedUntil = Date.now() + LOCKOUT_MS;
+  failedLogins.set(key, entry);
+}
+function clearFailedLogins(username) { failedLogins.delete(username.toLowerCase()); }
+
+// ── Password complexity ──────────────────────────────────────────────────────
+function validatePasswordComplexity(password) {
+  if (!password || password.length < 8) return 'Password must be at least 8 characters.';
+  if (!/[a-zA-Z]/.test(password)) return 'Password must contain at least one letter.';
+  if (!/[0-9!@#$%^&*()\-_=+[\]{};:'",.<>/?\\|`~]/.test(password))
+    return 'Password must contain at least one number or special character.';
+  return null;
+}
 
 // ── Shared helpers ──────────────────────────────────────────────────────────
 
@@ -149,15 +181,31 @@ router.get('/login', (req, res) => {
 
 router.post('/login', (req, res) => {
   const { username, password } = req.body;
+
+  if (isLockedOut(username)) {
+    audit(req, 'LOGIN_LOCKED', username);
+    return res.render('login', { error: 'Account locked due to too many failed attempts. Try again in 15 minutes.' });
+  }
+
   const user = userQueries.findByUsername(username);
   if (!user || !bcrypt.compareSync(password, user.password)) {
+    recordFailedLogin(username);
+    audit(req, 'LOGIN_FAILURE', username);
     return res.render('login', { error: 'Invalid username or password' });
   }
+
+  clearFailedLogins(username);
   const returnTo = req.session.returnTo || '/inventory';
   // Regenerate session on login to prevent session fixation
   req.session.regenerate((err) => {
     if (err) return res.render('login', { error: 'Session error. Please try again.' });
-    req.session.user = { id: user.id, username: user.username, is_spouse_view: !!user.is_spouse_view };
+    req.session.user = {
+      id: user.id,
+      username: user.username,
+      is_spouse_view: !!user.is_spouse_view,
+      session_version: user.session_version || 0
+    };
+    audit(req, 'LOGIN_SUCCESS', username);
     // Validate returnTo: must be a relative path, not an open redirect
     const safeTo = (typeof returnTo === 'string' && returnTo.startsWith('/') && !returnTo.startsWith('//'))
       ? returnTo : '/inventory';
@@ -166,6 +214,7 @@ router.post('/login', (req, res) => {
 });
 
 router.get('/logout', (req, res) => {
+  audit(req, 'LOGOUT', '');
   req.session.destroy(() => res.redirect('/login'));
 });
 
@@ -187,11 +236,13 @@ router.post('/settings/add-user', requireAuth, requireAdmin, (req, res) => {
   if (!username || !/^[a-zA-Z0-9_]{1,50}$/.test(username)) {
     return res.render('settings', { ...settingsLocals(req.session.user), message: { type: 'error', text: 'Username must be 1–50 characters: letters, numbers, and underscores only.' } });
   }
-  if (!password || password.length < 8) {
-    return res.render('settings', { ...settingsLocals(req.session.user), message: { type: 'error', text: 'Password must be at least 8 characters.' } });
+  const complexityError = validatePasswordComplexity(password);
+  if (complexityError) {
+    return res.render('settings', { ...settingsLocals(req.session.user), message: { type: 'error', text: complexityError } });
   }
   try {
     userQueries.create(username, password);
+    audit(req, 'USER_CREATE', username);
     res.render('settings', { ...settingsLocals(req.session.user), message: { type: 'success', text: `User "${username}" created` } });
   } catch (e) {
     res.render('settings', { ...settingsLocals(req.session.user), message: { type: 'error', text: 'Username already exists' } });
@@ -203,24 +254,31 @@ router.post('/settings/delete-user', requireAuth, requireAdmin, (req, res) => {
   if (parseInt(id) === req.session.user.id) {
     return res.render('settings', { ...settingsLocals(req.session.user), message: { type: 'error', text: 'Cannot delete your own account' } });
   }
+  const target = userQueries.all().find(u => u.id === parseInt(id));
   userQueries.delete(id);
+  audit(req, 'USER_DELETE', target ? target.username : `id=${id}`);
   res.redirect('/settings');
 });
 
 router.post('/settings/change-password', requireAuth, (req, res) => {
   const { current_password, new_password } = req.body;
   const user = userQueries.findByUsername(req.session.user.username);
-  if (!new_password || new_password.length < 8) {
-    return res.render('settings', { ...settingsLocals(req.session.user), message: { type: 'error', text: 'New password must be at least 8 characters.' } });
+  const complexityError = validatePasswordComplexity(new_password);
+  if (complexityError) {
+    return res.render('settings', { ...settingsLocals(req.session.user), message: { type: 'error', text: complexityError } });
   }
   if (!bcrypt.compareSync(current_password, user.password)) {
+    audit(req, 'PASSWORD_CHANGE_FAIL', user.username);
     return res.render('settings', { ...settingsLocals(req.session.user), message: { type: 'error', text: 'Current password is incorrect' } });
   }
   userQueries.updatePassword(req.session.user.id, new_password);
-  // Regenerate session so other active sessions with the old password can't be reused
+  // Increment session_version to invalidate all other active sessions for this user
+  userQueries.incrementSessionVersion(req.session.user.id);
+  audit(req, 'PASSWORD_CHANGE', user.username);
+  // Regenerate current session
   req.session.regenerate((err) => {
     if (err) return res.render('settings', { ...settingsLocals(req.session.user), message: { type: 'error', text: 'Password updated but session reset failed.' } });
-    req.session.user = { id: user.id, username: user.username, is_spouse_view: !!user.is_spouse_view };
+    req.session.user = { id: user.id, username: user.username, is_spouse_view: !!user.is_spouse_view, session_version: (user.session_version || 0) + 1 };
     res.render('settings', { ...settingsLocals(req.session.user), message: { type: 'success', text: 'Password updated successfully.' } });
   });
 });
@@ -232,6 +290,10 @@ router.post('/settings/set-spouse-view', requireAuth, requireAdmin, (req, res) =
     return res.render('settings', { ...settingsLocals(req.session.user), message: { type: 'error', text: 'Cannot change your own account type.' } });
   }
   userQueries.setSpouseView(id, parseInt(is_spouse_view));
+  // Bump session_version so the affected user's active sessions are invalidated immediately
+  userQueries.incrementSessionVersion(id);
+  const target = userQueries.all().find(u => u.id === parseInt(id));
+  audit(req, 'ROLE_CHANGE', `${target ? target.username : 'id=' + id} spouse_view=${is_spouse_view}`);
   res.redirect('/settings');
 });
 
@@ -245,6 +307,7 @@ router.post('/settings/spouse-items', requireAuth, requireAdmin, (req, res) => {
 // Export CSV
 router.get('/settings/export/csv', requireAuth, (req, res) => {
   const firearms = firearmsQueries.all();
+  audit(req, 'EXPORT_CSV', `${firearms.length} records`);
   const csv = [CSV_COLUMNS.map(csvCell).join(','), ...buildCsvRows(firearms)].join('\r\n');
   const filename = `armory-export-${new Date().toISOString().slice(0, 10)}.csv`;
   res.setHeader('Content-Type', 'text/csv');
@@ -255,6 +318,7 @@ router.get('/settings/export/csv', requireAuth, (req, res) => {
 // Export JSON
 router.get('/settings/export/json', requireAuth, (req, res) => {
   const firearms = firearmsQueries.all();
+  audit(req, 'EXPORT_JSON', `${firearms.length} records`);
   const data = {
     version: '1.0',
     exported_at: new Date().toISOString(),
@@ -288,6 +352,7 @@ router.get('/settings/export/json', requireAuth, (req, res) => {
 
 // Full export — one folder per item, all photos + docs, zipped
 router.get('/settings/export/full', requireAuth, (req, res) => {
+  audit(req, 'EXPORT_FULL', '');
   const firearms = firearmsQueries.all().map(f => firearmsQueries.findById(f.id)); // get with photos + docs
 
   const dateStr = new Date().toISOString().slice(0, 10);
@@ -346,7 +411,8 @@ router.post('/settings/import', requireAuth, requireAdmin, (req, res) => {
   importUpload(req, res, (err) => {
     const fail = (text) => res.render('settings', { ...settingsLocals(req.session.user), message: { type: 'error', text } });
 
-    if (err) return fail('Upload error: ' + err.message);
+    if (!validateCsrf(req)) return res.status(403).render('error', { message: 'Security token validation failed.', user: req.session.user });
+    if (err) return fail('Upload error. Check the file and try again.');
     if (!req.file) return fail('No file selected.');
 
     const ext = path.extname(req.file.originalname).toLowerCase();
@@ -368,7 +434,7 @@ router.post('/settings/import', requireAuth, requireAdmin, (req, res) => {
         return fail('Unsupported file type. Please upload a .csv or .json file.');
       }
     } catch (e) {
-      return fail('Failed to parse file: ' + e.message);
+      return fail('Failed to parse file. Ensure it is a valid CSV or JSON export.');
     }
 
     let imported = 0;
@@ -376,6 +442,7 @@ router.post('/settings/import', requireAuth, requireAdmin, (req, res) => {
       try { firearmsQueries.create(record); imported++; } catch (e) { /* skip bad rows */ }
     }
 
+    audit(req, 'IMPORT', `${imported}/${records.length} records`);
     res.render('settings', { ...settingsLocals(req.session.user), message: { type: 'success', text: `Imported ${imported} of ${records.length} records.` } });
   });
 });
@@ -385,12 +452,13 @@ router.post('/settings/import/zip', requireAuth, requireAdmin, (req, res) => {
   zipImportUpload(req, res, (err) => {
     const fail = (text) => res.render('settings', { ...settingsLocals(req.session.user), message: { type: 'error', text } });
 
-    if (err) return fail('Upload error: ' + err.message);
+    if (!validateCsrf(req)) return res.status(403).render('error', { message: 'Security token validation failed.', user: req.session.user });
+    if (err) return fail('Upload error. Check the file and try again.');
     if (!req.file) return fail('No file selected.');
 
     let zip;
     try { zip = new AdmZip(req.file.buffer); }
-    catch (e) { return fail('Invalid ZIP file: ' + e.message); }
+    catch (e) { return fail('Invalid or corrupted ZIP file.'); }
 
     // Zip bomb protection
     const entries = zip.getEntries();
@@ -482,6 +550,7 @@ router.post('/settings/import/zip', requireAuth, requireAdmin, (req, res) => {
     }
 
     const skippedNote = skipped ? `, ${skipped} folder${skipped !== 1 ? 's' : ''} skipped` : '';
+    audit(req, 'IMPORT_ZIP', `${imported} items imported`);
     res.render('settings', { ...settingsLocals(req.session.user), message: { type: 'success', text: `ZIP import complete: ${imported} item${imported !== 1 ? 's' : ''} imported${skippedNote}.` } });
   });
 });
@@ -515,6 +584,7 @@ router.post('/settings/purge', requireAuth, requireAdmin, (req, res) => {
   // Delete all trust records
   trustQueries.all().forEach(t => trustQueries.delete(t.id));
 
+  audit(req, 'PURGE', 'ALL INVENTORY AND TRUST DATA DELETED');
   res.render('settings', { ...settingsLocals(req.session.user), message: { type: 'success', text: 'All inventory and trust records have been purged.' } });
 });
 

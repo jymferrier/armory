@@ -1,5 +1,6 @@
 const Database = require('better-sqlite3');
 const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 
@@ -114,6 +115,7 @@ function initDB() {
     "ALTER TABLE firearms ADD COLUMN spouse_price TEXT",
     "ALTER TABLE users ADD COLUMN is_spouse_view INTEGER DEFAULT 0",
     "ALTER TABLE firearms ADD COLUMN spouse_visible INTEGER DEFAULT 0",
+    "ALTER TABLE users ADD COLUMN session_version INTEGER DEFAULT 0",
   ];
   for (const sql of migrations) {
     try { db.exec(sql); } catch (_) { /* column already exists */ }
@@ -123,10 +125,23 @@ function initDB() {
   const existing = db.prepare('SELECT id FROM users LIMIT 1').get();
   if (!existing) {
     const defaultUser = process.env.DEFAULT_USER || 'admin';
-    const defaultPass = process.env.DEFAULT_PASS || 'armory123';
-    const hash = bcrypt.hashSync(defaultPass, 10);
+    let defaultPass = process.env.DEFAULT_PASS;
+    if (!defaultPass) {
+      // No password configured — generate a strong random one and print it once.
+      // The operator MUST record this and change it after first login.
+      defaultPass = crypto.randomBytes(16).toString('hex');
+      console.log('=============================================================');
+      console.log('ARMORY — DEFAULT ADMIN ACCOUNT CREATED');
+      console.log(`  Username : ${defaultUser}`);
+      console.log(`  Password : ${defaultPass}`);
+      console.log('  Set DEFAULT_USER and DEFAULT_PASS env vars to configure.');
+      console.log('  CHANGE THIS PASSWORD AFTER FIRST LOGIN.');
+      console.log('=============================================================');
+    } else {
+      console.log(`Default user created: ${defaultUser} — change password after first login`);
+    }
+    const hash = bcrypt.hashSync(defaultPass, 12);
     db.prepare('INSERT INTO users (username, password) VALUES (?, ?)').run(defaultUser, hash);
-    console.log(`Default user created: ${defaultUser} — override with DEFAULT_USER / DEFAULT_PASS env vars`);
   }
 }
 
@@ -134,16 +149,21 @@ function initDB() {
 const userQueries = {
   findByUsername: (username) => getDB().prepare('SELECT * FROM users WHERE username = ?').get(username),
   create: (username, password) => {
-    const hash = bcrypt.hashSync(password, 10);
+    const hash = bcrypt.hashSync(password, 12);
     return getDB().prepare('INSERT INTO users (username, password) VALUES (?, ?)').run(username, hash);
   },
   all: () => getDB().prepare('SELECT id, username, is_spouse_view, created_at FROM users').all(),
   delete: (id) => getDB().prepare('DELETE FROM users WHERE id = ?').run(id),
   updatePassword: (id, password) => {
-    const hash = bcrypt.hashSync(password, 10);
+    const hash = bcrypt.hashSync(password, 12);
     return getDB().prepare('UPDATE users SET password = ? WHERE id = ?').run(hash, id);
   },
   setSpouseView: (id, value) => getDB().prepare('UPDATE users SET is_spouse_view = ? WHERE id = ?').run(value ? 1 : 0, id),
+  getSessionVersion: (id) => {
+    const row = getDB().prepare('SELECT session_version FROM users WHERE id = ?').get(id);
+    return row ? (row.session_version || 0) : 0;
+  },
+  incrementSessionVersion: (id) => getDB().prepare('UPDATE users SET session_version = session_version + 1 WHERE id = ?').run(id),
 };
 
 // Firearm queries
@@ -239,6 +259,7 @@ const firearmsQueries = {
     return doc;
   },
   findPhotoById: (id) => getDB().prepare('SELECT * FROM firearm_photos WHERE id = ?').get(id),
+  findPhotoByFilename: (filename) => getDB().prepare('SELECT * FROM firearm_photos WHERE filename = ?').get(filename),
   findDocumentById: (id) => getDB().prepare('SELECT * FROM firearm_documents WHERE id = ?').get(id),
   findDocumentByFilename: (filename) => getDB().prepare('SELECT * FROM firearm_documents WHERE filename = ?').get(filename),
   distinctManufacturers: () => getDB().prepare('SELECT DISTINCT manufacturer FROM firearms ORDER BY manufacturer ASC').all().map(r => r.manufacturer),

@@ -21,6 +21,7 @@
         <div class="field">
           <label class="field-label">NEW PASSWORD</label>
           <input type="password" name="new_password" class="field-input" required minlength="8">
+          <p style="font-family:var(--font-mono);font-size:0.65rem;color:var(--text-muted);margin-top:0.4rem;">Min 8 characters · at least one letter · at least one number or special character</p>
         </div>
         <button type="submit" class="btn btn--ghost">UPDATE PASSWORD</button>
       </form>
@@ -69,6 +70,7 @@
         <div class="field">
           <label class="field-label">PASSWORD</label>
           <input type="password" name="password" class="field-input" required minlength="8">
+          <p style="font-family:var(--font-mono);font-size:0.65rem;color:var(--text-muted);margin-top:0.4rem;">Min 8 characters · at least one letter · at least one number or special character</p>
         </div>
         <button type="submit" class="btn btn--primary">CREATE USER</button>
       </form>
@@ -100,7 +102,8 @@
       <p style="font-family:var(--font-mono);font-size:0.72rem;color:var(--text-muted);margin-bottom:1.25rem;">
         Import records from a CSV or JSON file. Existing records are not overwritten — all imported rows are added as new items.
       </p>
-      <form method="POST" action="/settings/import?_csrf=<%= csrfToken %>" enctype="multipart/form-data" class="settings-form">
+      <form method="POST" action="/settings/import" enctype="multipart/form-data" class="settings-form">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
         <div class="field">
           <label class="field-label">SELECT FILE (.csv or .json)</label>
           <input type="file" name="import_file" accept=".csv,.json" class="file-input-plain" required>
@@ -113,7 +116,8 @@
       <p style="font-family:var(--font-mono);font-size:0.72rem;color:var(--text-muted);margin-bottom:1.25rem;">
         Import from a full archive ZIP. Restores all item metadata, photos, and documents. Items are added as new records — no existing items are overwritten.
       </p>
-      <form method="POST" action="/settings/import/zip?_csrf=<%= csrfToken %>" enctype="multipart/form-data" class="settings-form">
+      <form method="POST" action="/settings/import/zip" enctype="multipart/form-data" class="settings-form">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
         <div class="field">
           <label class="field-label">SELECT ZIP FILE</label>
           <input type="file" name="import_zip" accept=".zip" class="file-input-plain" required>

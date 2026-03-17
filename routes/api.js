@@ -3,10 +3,20 @@ const router = express.Router();
 const path = require('path');
 const fs = require('fs');
 const { requireAuth } = require('../middleware/auth');
-const { DOC_DIR } = require('../middleware/upload');
+const { DOC_DIR, PHOTO_DIR } = require('../middleware/upload');
 const { firearmsQueries } = require('../db');
 
 router.use(requireAuth);
+
+// Serve a photo — authenticated; verify record exists in DB
+router.get('/photo/:filename', (req, res) => {
+  const filename = path.basename(req.params.filename);
+  const photo = firearmsQueries.findPhotoByFilename(filename);
+  if (!photo) return res.status(404).end();
+  const filepath = path.join(PHOTO_DIR, filename);
+  if (!fs.existsSync(filepath)) return res.status(404).end();
+  res.sendFile(filepath);
+});
 
 // Download a document — verify record exists in DB before serving
 router.get('/document/:filename', (req, res) => {
