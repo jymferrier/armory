@@ -4,7 +4,7 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const router = express.Router();
-const { userQueries, firearmsQueries } = require('../db');
+const { userQueries, firearmsQueries, trustQueries } = require('../db');
 const { requireAuth } = require('../middleware/auth');
 const { PHOTO_DIR, DOC_DIR } = require('../middleware/upload');
 
@@ -460,7 +460,10 @@ router.post('/settings/purge', requireAuth, (req, res) => {
   // Delete all firearm records (cascade handles photos + documents)
   firearmsQueries.all().forEach(f => firearmsQueries.delete(f.id));
 
-  res.render('settings', { user: req.session.user, users, message: { type: 'success', text: 'All inventory records have been purged.' } });
+  // Delete all trust records
+  trustQueries.all().forEach(t => trustQueries.delete(t.id));
+
+  res.render('settings', { user: req.session.user, users, message: { type: 'success', text: 'All inventory and trust records have been purged.' } });
 });
 
 module.exports = router;
