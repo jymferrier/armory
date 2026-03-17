@@ -15,6 +15,9 @@
   <% if (saved) { %>
   <div class="alert alert--success">Trust details saved.</div>
   <% } %>
+  <% if (locals.detailsRequired) { %>
+  <div class="alert alert--error">Cannot generate assignment sheet — please fill in the following fields first: <strong><%= detailsRequired %></strong></div>
+  <% } %>
 
   <!-- Trust metadata -->
   <form method="POST" action="/trusts/<%= trust.id %>" class="firearm-form" style="margin-bottom:2px;">
@@ -82,6 +85,14 @@
 
 <script>
 function generateAssignment() {
+  const missing = [];
+  <% if (!trust.settlor_name) { %>missing.push('Settlor Name');<% } %>
+  <% if (!trust.settlor_location) { %>missing.push('Settlor Location');<% } %>
+  <% if (!trust.agreement_date) { %>missing.push('Trust Agreement Date');<% } %>
+  if (missing.length > 0) {
+    alert('Please fill in the following trust details before generating:\n\n• ' + missing.join('\n• '));
+    return;
+  }
   const checked = Array.from(document.querySelectorAll('.item-checkbox:checked')).map(cb => cb.value);
   if (checked.length === 0) { alert('Select at least one item.'); return; }
   const url = '/trusts/<%= trust.id %>/assignment?' + checked.map(id => 'items=' + id).join('&');
