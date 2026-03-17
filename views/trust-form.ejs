@@ -9,7 +9,7 @@
 
   <% if (error) { %><div class="alert alert--error"><%= error %></div><% } %>
 
-  <form method="POST" action="/trusts/new" class="firearm-form">
+  <form method="POST" action="/trusts/new?_csrf=<%= csrfToken %>" class="firearm-form">
     <div class="form-band">
       <div class="form-band__label">TRUST INFO</div>
       <div class="form-band__fields">

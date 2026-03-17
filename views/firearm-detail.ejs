@@ -13,7 +13,7 @@
     </div>
     <div class="page-actions">
       <a href="/inventory/<%= firearm.id %>/edit" class="btn btn--ghost">EDIT</a>
-      <form method="POST" action="/inventory/<%= firearm.id %>/delete" onsubmit="return confirm('Delete this firearm and all associated files?')">
+      <form method="POST" action="/inventory/<%= firearm.id %>/delete?_csrf=<%= csrfToken %>" onsubmit="return confirm('Delete this firearm and all associated files?')">
         <button type="submit" class="btn btn--danger">DELETE</button>
       </form>
     </div>
@@ -43,13 +43,13 @@
               <img src="/uploads/photos/<%= p.filename %>" class="photo-thumb" onclick="setMainPhoto(this.src, this.closest('.photo-thumb-wrap'))" alt="">
               <div class="photo-thumb-actions">
                 <% if (!p.is_primary) { %>
-                  <form method="POST" action="/inventory/<%= firearm.id %>/photos/<%= p.id %>/primary">
+                  <form method="POST" action="/inventory/<%= firearm.id %>/photos/<%= p.id %>/primary?_csrf=<%= csrfToken %>">
                     <button type="submit" class="thumb-btn thumb-btn--primary" title="Set as primary">★</button>
                   </form>
                 <% } else { %>
                   <span class="thumb-primary-badge">★</span>
                 <% } %>
-                <form method="POST" action="/inventory/<%= firearm.id %>/photos/<%= p.id %>/delete" onsubmit="return confirm('Delete this photo?')">
+                <form method="POST" action="/inventory/<%= firearm.id %>/photos/<%= p.id %>/delete?_csrf=<%= csrfToken %>" onsubmit="return confirm('Delete this photo?')">
                   <button type="submit" class="thumb-btn thumb-btn--delete" title="Delete">✕</button>
                 </form>
               </div>
@@ -62,7 +62,7 @@
 
       <div class="upload-section">
         <h3 class="section-title">ADD PHOTOS</h3>
-        <form method="POST" action="/inventory/<%= firearm.id %>/photos" enctype="multipart/form-data">
+        <form method="POST" action="/inventory/<%= firearm.id %>/photos?_csrf=<%= csrfToken %>" enctype="multipart/form-data">
           <input type="file" name="photos" multiple accept="image/*" id="photoInput" style="display:none">
           <div class="file-drop-zone" id="photoDropZone">
             <div class="file-drop-label">
@@ -292,7 +292,7 @@
           <span class="round-counter__total" id="roundTotal"><%= (firearm.round_count || 0).toLocaleString() %></span>
           <span class="round-counter__label">ROUNDS FIRED</span>
         </div>
-        <form method="POST" action="/inventory/<%= firearm.id %>/rounds" class="round-counter__form">
+        <form method="POST" action="/inventory/<%= firearm.id %>/rounds?_csrf=<%= csrfToken %>" class="round-counter__form">
           <input type="number" name="add_rounds" class="round-counter__input field-input mono"
             min="1" step="1" placeholder="Rounds to add…" autocomplete="off">
           <button type="submit" class="btn btn--primary btn--sm">+ LOG ROUNDS</button>
@@ -325,7 +325,7 @@
                       <span class="doc-icon">📄</span>
                       <span class="doc-name"><%= doc.original_name %></span>
                     </a>
-                    <form method="POST" action="/inventory/<%= firearm.id %>/documents/<%= doc.id %>/delete" onsubmit="return confirm('Delete this document?')">
+                    <form method="POST" action="/inventory/<%= firearm.id %>/documents/<%= doc.id %>/delete?_csrf=<%= csrfToken %>" onsubmit="return confirm('Delete this document?')">
                       <button type="submit" class="thumb-btn thumb-btn--delete">✕</button>
                     </form>
                   </div>
@@ -337,7 +337,7 @@
           <p class="no-docs">No documents uploaded</p>
         <% } %>
 
-        <form method="POST" action="/inventory/<%= firearm.id %>/documents" enctype="multipart/form-data" class="doc-upload-form">
+        <form method="POST" action="/inventory/<%= firearm.id %>/documents?_csrf=<%= csrfToken %>" enctype="multipart/form-data" class="doc-upload-form">
           <% if (firearm.is_nfa) { %>
           <div class="field">
             <label class="field-label">ATF FORM(S)</label>

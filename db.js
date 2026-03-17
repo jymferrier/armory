@@ -124,7 +124,7 @@ function initDB() {
     const defaultPass = process.env.DEFAULT_PASS || 'armory123';
     const hash = bcrypt.hashSync(defaultPass, 10);
     db.prepare('INSERT INTO users (username, password) VALUES (?, ?)').run(defaultUser, hash);
-    console.log(`Default user created: ${defaultUser} / ${defaultPass}`);
+    console.log(`Default user created: ${defaultUser} — override with DEFAULT_USER / DEFAULT_PASS env vars`);
   }
 }
 

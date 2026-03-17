@@ -11,7 +11,7 @@
     <div class="alert alert--error"><%= error %></div>
   <% } %>
 
-  <form method="POST" action="/inventory/<%= firearm ? firearm.id + '/edit' : 'new' %>"
+  <form method="POST" action="/inventory/<%= firearm ? firearm.id + '/edit' : 'new' %>?_csrf=<%= csrfToken %>"
     <% if (!firearm) { %>enctype="multipart/form-data"<% } %>
     class="firearm-form"
     onkeydown="if(event.key==='Enter'&&event.target.tagName!=='TEXTAREA'&&event.target.type!=='submit'){event.preventDefault();}">

@@ -153,10 +153,16 @@ router.post('/login', (req, res) => {
   if (!user || !bcrypt.compareSync(password, user.password)) {
     return res.render('login', { error: 'Invalid username or password' });
   }
-  req.session.user = { id: user.id, username: user.username };
   const returnTo = req.session.returnTo || '/inventory';
-  delete req.session.returnTo;
-  res.redirect(returnTo);
+  // Regenerate session on login to prevent session fixation
+  req.session.regenerate((err) => {
+    if (err) return res.render('login', { error: 'Session error. Please try again.' });
+    req.session.user = { id: user.id, username: user.username };
+    // Validate returnTo: must be a relative path, not an open redirect
+    const safeTo = (typeof returnTo === 'string' && returnTo.startsWith('/') && !returnTo.startsWith('//'))
+      ? returnTo : '/inventory';
+    res.redirect(safeTo);
+  });
 });
 
 router.get('/logout', (req, res) => {
@@ -171,12 +177,15 @@ router.get('/settings', requireAuth, (req, res) => {
 
 router.post('/settings/add-user', requireAuth, (req, res) => {
   const { username, password } = req.body;
+  const users = userQueries.all();
+  if (!password || password.length < 8) {
+    return res.render('settings', { user: req.session.user, users, message: { type: 'error', text: 'Password must be at least 8 characters.' } });
+  }
   try {
     userQueries.create(username, password);
-    const users = userQueries.all();
-    res.render('settings', { user: req.session.user, users, message: { type: 'success', text: `User "${username}" created` } });
+    const updatedUsers = userQueries.all();
+    res.render('settings', { user: req.session.user, users: updatedUsers, message: { type: 'success', text: `User "${username}" created` } });
   } catch (e) {
-    const users = userQueries.all();
     res.render('settings', { user: req.session.user, users, message: { type: 'error', text: 'Username already exists' } });
   }
 });
@@ -195,11 +204,20 @@ router.post('/settings/change-password', requireAuth, (req, res) => {
   const { current_password, new_password } = req.body;
   const user = userQueries.findByUsername(req.session.user.username);
   const users = userQueries.all();
+  if (!new_password || new_password.length < 8) {
+    return res.render('settings', { user: req.session.user, users, message: { type: 'error', text: 'New password must be at least 8 characters.' } });
+  }
   if (!bcrypt.compareSync(current_password, user.password)) {
     return res.render('settings', { user: req.session.user, users, message: { type: 'error', text: 'Current password is incorrect' } });
   }
   userQueries.updatePassword(req.session.user.id, new_password);
-  res.render('settings', { user: req.session.user, users, message: { type: 'success', text: 'Password updated successfully' } });
+  // Regenerate session so other active sessions with the old password can't be reused
+  req.session.regenerate((err) => {
+    if (err) return res.render('settings', { user: req.session.user, users, message: { type: 'error', text: 'Password updated but session reset failed.' } });
+    req.session.user = { id: user.id, username: user.username };
+    const updatedUsers = userQueries.all();
+    res.render('settings', { user: req.session.user, users: updatedUsers, message: { type: 'success', text: 'Password updated successfully.' } });
+  });
 });
 
 // Export CSV
@@ -353,6 +371,21 @@ router.post('/settings/import/zip', requireAuth, (req, res) => {
     let zip;
     try { zip = new AdmZip(req.file.buffer); }
     catch (e) { return fail('Invalid ZIP file: ' + e.message); }
+
+    // Zip bomb protection
+    const entries = zip.getEntries();
+    const MAX_ENTRIES = 5000;
+    const MAX_UNCOMPRESSED = 500 * 1024 * 1024; // 500 MB
+    if (entries.length > MAX_ENTRIES) {
+      return fail(`ZIP contains too many entries (${entries.length}). Maximum allowed is ${MAX_ENTRIES}.`);
+    }
+    let totalUncompressed = 0;
+    for (const e of entries) {
+      totalUncompressed += (e.header && e.header.size) ? e.header.size : 0;
+      if (totalUncompressed > MAX_UNCOMPRESSED) {
+        return fail('ZIP uncompressed content exceeds the 500 MB safety limit.');
+      }
+    }
 
     const VALID_DOC_TYPES = new Set(['atf_form', 'form5320', 'additional_docs']);
 
