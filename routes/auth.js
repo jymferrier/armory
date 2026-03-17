@@ -438,7 +438,7 @@ router.post('/settings/purge', requireAuth, (req, res) => {
   const users = userQueries.all();
   const fail = (text) => res.render('settings', { user: req.session.user, users, message: { type: 'error', text } });
 
-  if (req.body.confirm !== 'PURGE') return fail('Incorrect confirmation. Type PURGE exactly to proceed.');
+  if (req.body.confirm !== 'BOATING ACCIDENT') return fail('Incorrect confirmation. Type BOATING ACCIDENT exactly to proceed.');
 
   // Delete all photo and document files
   const firearms = firearmsQueries.all();

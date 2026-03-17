@@ -114,12 +114,12 @@
       <h2 class="section-title" style="color:var(--red);">⚠ DANGER ZONE</h2>
       <p style="font-family:var(--font-mono);font-size:0.72rem;color:var(--text-muted);margin-bottom:1.25rem;">
         Permanently delete all inventory records and uploaded files. This cannot be undone.
-        Type <strong style="color:var(--text);font-family:var(--font-mono);">PURGE</strong> to confirm.
+        Type <strong style="color:var(--text);font-family:var(--font-mono);">BOATING ACCIDENT</strong> to confirm.
       </p>
       <form method="POST" action="/settings/purge" class="settings-form" onsubmit="return validatePurge(this)">
         <div class="field">
           <label class="field-label" style="color:var(--red);">CONFIRMATION</label>
-          <input type="text" name="confirm" class="field-input mono" placeholder='Type PURGE to confirm' autocomplete="off">
+          <input type="text" name="confirm" class="field-input mono" placeholder='Type BOATING ACCIDENT to confirm' autocomplete="off">
         </div>
         <button type="submit" class="btn btn--danger">PURGE ALL INVENTORY</button>
       </form>
@@ -129,8 +129,8 @@
 <script>
 function validatePurge(form) {
   const val = form.querySelector('input[name="confirm"]').value;
-  if (val !== 'PURGE') {
-    alert('You must type PURGE exactly to confirm.');
+  if (val !== 'BOATING ACCIDENT') {
+    alert('You must type BOATING ACCIDENT exactly to confirm.');
     return false;
   }
   return true;
