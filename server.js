@@ -55,9 +55,20 @@ if (!sessionSecret) {
   console.warn('WARNING: SESSION_SECRET env var is not set. Generated a random ephemeral secret — all sessions will be invalidated on restart. Set SESSION_SECRET to a strong random value.');
 }
 
+// Open sessions DB and migrate schema if it was created by the old connect-sqlite3
+// library (which used column "expired") — better-sqlite3-session-store expects "expire".
+const sessionDb = new Database(path.join(__dirname, 'data', 'sessions.db'));
+(function migrateSessionSchema() {
+  const cols = sessionDb.prepare("PRAGMA table_info('sessions')").all().map(c => c.name);
+  if (cols.includes('expired') && !cols.includes('expire')) {
+    console.log('Migrating sessions table from connect-sqlite3 schema to better-sqlite3-session-store schema...');
+    sessionDb.exec('DROP TABLE sessions');
+  }
+})();
+
 app.use(session({
   store: new BetterSqliteStore({
-    client: new Database(path.join(__dirname, 'data', 'sessions.db')),
+    client: sessionDb,
     expired: { clear: true, intervalMs: 15 * 60 * 1000 }
   }),
   secret: sessionSecret,
