@@ -178,6 +178,9 @@ router.get('/settings', requireAuth, (req, res) => {
 router.post('/settings/add-user', requireAuth, (req, res) => {
   const { username, password } = req.body;
   const users = userQueries.all();
+  if (!username || !/^[a-zA-Z0-9_]{1,50}$/.test(username)) {
+    return res.render('settings', { user: req.session.user, users, message: { type: 'error', text: 'Username must be 1–50 characters: letters, numbers, and underscores only.' } });
+  }
   if (!password || password.length < 8) {
     return res.render('settings', { user: req.session.user, users, message: { type: 'error', text: 'Password must be at least 8 characters.' } });
   }

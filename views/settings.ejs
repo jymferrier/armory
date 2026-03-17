@@ -12,7 +12,8 @@
     <!-- Change password -->
     <div class="settings-card">
       <h2 class="section-title">CHANGE PASSWORD</h2>
-      <form method="POST" action="/settings/change-password?_csrf=<%= csrfToken %>" class="settings-form">
+      <form method="POST" action="/settings/change-password" class="settings-form">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
         <div class="field">
           <label class="field-label">CURRENT PASSWORD</label>
           <input type="password" name="current_password" class="field-input" required>
@@ -36,7 +37,8 @@
               <% if (u.id === user.id) { %><span class="badge">YOU</span><% } %>
             </div>
             <% if (u.id !== user.id) { %>
-              <form method="POST" action="/settings/delete-user?_csrf=<%= csrfToken %>" onsubmit="return confirm('Delete user <%= u.username %>?')">
+              <form method="POST" action="/settings/delete-user" onsubmit="return confirm('Delete user <%= u.username %>?')">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                 <input type="hidden" name="id" value="<%= u.id %>">
                 <button type="submit" class="btn btn--danger btn--sm">DELETE</button>
               </form>
@@ -48,7 +50,8 @@
       <div class="divider"></div>
 
       <h3 class="section-title">ADD USER</h3>
-      <form method="POST" action="/settings/add-user?_csrf=<%= csrfToken %>" class="settings-form">
+      <form method="POST" action="/settings/add-user" class="settings-form">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
         <div class="field">
           <label class="field-label">USERNAME</label>
           <input type="text" name="username" class="field-input" required>
@@ -116,7 +119,8 @@
         Permanently delete all inventory records and uploaded files. This cannot be undone.
         Type <strong style="color:var(--text);font-family:var(--font-mono);">BOATING ACCIDENT</strong> to confirm.
       </p>
-      <form method="POST" action="/settings/purge?_csrf=<%= csrfToken %>" class="settings-form" onsubmit="return validatePurge(this)">
+      <form method="POST" action="/settings/purge" class="settings-form" onsubmit="return validatePurge(this)">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
         <div class="field">
           <label class="field-label" style="color:var(--red);">CONFIRMATION</label>
           <input type="text" name="confirm" class="field-input mono" placeholder='Type BOATING ACCIDENT to confirm' autocomplete="off">
@@ -126,7 +130,7 @@
     </div>
   </div>
 </div>
-<script>
+<script nonce="<%= cspNonce %>">
 function validatePurge(form) {
   const val = form.querySelector('input[name="confirm"]').value;
   if (val !== 'BOATING ACCIDENT') {

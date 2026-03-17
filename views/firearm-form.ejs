@@ -88,7 +88,7 @@
                 } catch(e) { initialOpticsTags = [firearm.optics]; }
               }
             %>
-            <input type="hidden" name="optics" id="opticsHidden" value="<%- JSON.stringify(initialOpticsTags) %>">
+            <input type="hidden" name="optics" id="opticsHidden" value="<%= JSON.stringify(initialOpticsTags) %>">
             <datalist id="opticsTagList">
               <% opticsTags.forEach(t => { %><option value="<%= t %>"><% }) %>
             </datalist>
@@ -332,8 +332,16 @@
   </form>
 </div>
 
-<script>
-const initialOpticsTags = <%- JSON.stringify(initialOpticsTags) %>;
+<script nonce="<%= cspNonce %>">
+<%
+function safeJSON(val) {
+  return JSON.stringify(val)
+    .replace(/</g, '\\u003c')
+    .replace(/>/g, '\\u003e')
+    .replace(/&/g, '\\u0026');
+}
+%>
+const initialOpticsTags = <%- safeJSON(initialOpticsTags) %>;
 const NFA_TYPES = new Set(['Suppressor/Silencer','Short Barrel Rifle (SBR)','Short Barrel Shotgun (SBS)','Machine Gun','Destructive Device (DD)','Any Other Weapon (AOW)']);
 const OVERALL_LENGTH_TYPES = new Set(['Short Barrel Rifle (SBR)','Short Barrel Shotgun (SBS)']);
 

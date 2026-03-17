@@ -9,7 +9,8 @@
 
   <% if (error) { %><div class="alert alert--error"><%= error %></div><% } %>
 
-  <form method="POST" action="/trusts/new?_csrf=<%= csrfToken %>" class="firearm-form">
+  <form method="POST" action="/trusts/new" class="firearm-form">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
     <div class="form-band">
       <div class="form-band__label">TRUST INFO</div>
       <div class="form-band__fields">
@@ -46,7 +47,7 @@
     </div>
   </form>
 </div>
-<script>
+<script nonce="<%= cspNonce %>">
   const urlName = new URLSearchParams(window.location.search).get('name');
   if (urlName) document.querySelector('[name="name"]').value = urlName;
 </script>

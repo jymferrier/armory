@@ -19,7 +19,8 @@
       <% if (error) { %>
         <div class="alert alert--error"><%= error %></div>
       <% } %>
-      <form method="POST" action="/login?_csrf=<%= csrfToken %>" class="login-form">
+      <form method="POST" action="/login" class="login-form">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
         <div class="field">
           <label class="field-label">USERNAME</label>
           <input type="text" name="username" class="field-input" autocomplete="username" autofocus required>

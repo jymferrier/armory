@@ -13,7 +13,8 @@
     </div>
     <div class="page-actions">
       <a href="/inventory/<%= firearm.id %>/edit" class="btn btn--ghost">EDIT</a>
-      <form method="POST" action="/inventory/<%= firearm.id %>/delete?_csrf=<%= csrfToken %>" onsubmit="return confirm('Delete this firearm and all associated files?')">
+      <form method="POST" action="/inventory/<%= firearm.id %>/delete" onsubmit="return confirm('Delete this firearm and all associated files?')">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
         <button type="submit" class="btn btn--danger">DELETE</button>
       </form>
     </div>
@@ -43,13 +44,15 @@
               <img src="/uploads/photos/<%= p.filename %>" class="photo-thumb" onclick="setMainPhoto(this.src, this.closest('.photo-thumb-wrap'))" alt="">
               <div class="photo-thumb-actions">
                 <% if (!p.is_primary) { %>
-                  <form method="POST" action="/inventory/<%= firearm.id %>/photos/<%= p.id %>/primary?_csrf=<%= csrfToken %>">
+                  <form method="POST" action="/inventory/<%= firearm.id %>/photos/<%= p.id %>/primary">
+                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                     <button type="submit" class="thumb-btn thumb-btn--primary" title="Set as primary">★</button>
                   </form>
                 <% } else { %>
                   <span class="thumb-primary-badge">★</span>
                 <% } %>
-                <form method="POST" action="/inventory/<%= firearm.id %>/photos/<%= p.id %>/delete?_csrf=<%= csrfToken %>" onsubmit="return confirm('Delete this photo?')">
+                <form method="POST" action="/inventory/<%= firearm.id %>/photos/<%= p.id %>/delete" onsubmit="return confirm('Delete this photo?')">
+                  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                   <button type="submit" class="thumb-btn thumb-btn--delete" title="Delete">✕</button>
                 </form>
               </div>
@@ -292,7 +295,8 @@
           <span class="round-counter__total" id="roundTotal"><%= (firearm.round_count || 0).toLocaleString() %></span>
           <span class="round-counter__label">ROUNDS FIRED</span>
         </div>
-        <form method="POST" action="/inventory/<%= firearm.id %>/rounds?_csrf=<%= csrfToken %>" class="round-counter__form">
+        <form method="POST" action="/inventory/<%= firearm.id %>/rounds" class="round-counter__form">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
           <input type="number" name="add_rounds" class="round-counter__input field-input mono"
             min="1" step="1" placeholder="Rounds to add…" autocomplete="off">
           <button type="submit" class="btn btn--primary btn--sm">+ LOG ROUNDS</button>
@@ -325,7 +329,8 @@
                       <span class="doc-icon">📄</span>
                       <span class="doc-name"><%= doc.original_name %></span>
                     </a>
-                    <form method="POST" action="/inventory/<%= firearm.id %>/documents/<%= doc.id %>/delete?_csrf=<%= csrfToken %>" onsubmit="return confirm('Delete this document?')">
+                    <form method="POST" action="/inventory/<%= firearm.id %>/documents/<%= doc.id %>/delete" onsubmit="return confirm('Delete this document?')">
+                      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                       <button type="submit" class="thumb-btn thumb-btn--delete">✕</button>
                     </form>
                   </div>
@@ -361,7 +366,7 @@
   </div>
 </div>
 
-<script>
+<script nonce="<%= cspNonce %>">
 function setMainPhoto(src, wrap) {
   document.getElementById('photoMainImg').src = src;
   document.querySelectorAll('.photo-thumb-wrap').forEach(w => w.classList.remove('photo-thumb-wrap--active'));

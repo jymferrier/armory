@@ -97,7 +97,7 @@
   <% } %>
 </div>
 
-<script>
+<script nonce="<%= cspNonce %>">
 function setView(v) {
   document.getElementById('viewGrid').style.display = v === 'grid' ? '' : 'none';
   document.getElementById('viewList').style.display = v === 'list' ? '' : 'none';

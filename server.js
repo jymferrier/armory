@@ -1,7 +1,9 @@
 const express = require('express');
 const session = require('express-session');
-const SQLiteStore = require('connect-sqlite3')(session);
+const BetterSqliteStore = require('better-sqlite3-session-store')(session);
+const Database = require('better-sqlite3');
 const path = require('path');
+const crypto = require('crypto');
 const rateLimit = require('express-rate-limit');
 const helmet = require('helmet');
 const { initDB } = require('./db');
@@ -17,12 +19,18 @@ initDB();
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
+// Generate CSP nonce per request (allows specific inline scripts without 'unsafe-inline')
+app.use((req, res, next) => {
+  res.locals.cspNonce = crypto.randomBytes(16).toString('base64');
+  next();
+});
+
 // Security headers
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc:  ["'self'", "'unsafe-inline'"],
+      scriptSrc:  ["'self'", (req, res) => `'nonce-${res.locals.cspNonce}'`],
       styleSrc:   ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
       fontSrc:    ["'self'", 'https://fonts.gstatic.com'],
       imgSrc:     ["'self'", 'data:', 'blob:'],
@@ -40,14 +48,19 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
-// Session
-const sessionSecret = process.env.SESSION_SECRET;
+// Session secret — fail loudly if not configured; never use a known fallback
+let sessionSecret = process.env.SESSION_SECRET;
 if (!sessionSecret) {
-  console.warn('WARNING: SESSION_SECRET env var is not set. Using insecure default — set SESSION_SECRET before exposing this app externally.');
+  sessionSecret = crypto.randomBytes(32).toString('hex');
+  console.warn('WARNING: SESSION_SECRET env var is not set. Generated a random ephemeral secret — all sessions will be invalidated on restart. Set SESSION_SECRET to a strong random value.');
 }
+
 app.use(session({
-  store: new SQLiteStore({ db: 'sessions.db', dir: './data' }),
-  secret: sessionSecret || 'armory-secret-change-in-prod',
+  store: new BetterSqliteStore({
+    client: new Database(path.join(__dirname, 'data', 'sessions.db')),
+    expired: { clear: true, intervalMs: 15 * 60 * 1000 }
+  }),
+  secret: sessionSecret,
   resave: false,
   saveUninitialized: false,
   cookie: {

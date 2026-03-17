@@ -215,17 +215,21 @@ router.post('/:id/photos', (req, res) => {
 
 // Set primary photo
 router.post('/:id/photos/:photoId/primary', (req, res) => {
+  const photo = firearmsQueries.findPhotoById(req.params.photoId);
+  if (!photo || photo.firearm_id !== parseInt(req.params.id, 10))
+    return res.status(403).render('error', { message: 'Forbidden', user: req.session.user });
   firearmsQueries.setPrimaryPhoto(req.params.photoId, req.params.id);
   res.redirect(`/inventory/${req.params.id}`);
 });
 
 // Delete photo
 router.post('/:id/photos/:photoId/delete', (req, res) => {
-  const photo = firearmsQueries.deletePhoto(req.params.photoId);
-  if (photo) {
-    const fp = path.join(PHOTO_DIR, photo.filename);
-    if (fs.existsSync(fp)) fs.unlinkSync(fp);
-  }
+  const photo = firearmsQueries.findPhotoById(req.params.photoId);
+  if (!photo || photo.firearm_id !== parseInt(req.params.id, 10))
+    return res.status(403).render('error', { message: 'Forbidden', user: req.session.user });
+  firearmsQueries.deletePhoto(req.params.photoId);
+  const fp = path.join(PHOTO_DIR, photo.filename);
+  if (fs.existsSync(fp)) fs.unlinkSync(fp);
   res.redirect(`/inventory/${req.params.id}`);
 });
 
@@ -247,11 +251,12 @@ router.post('/:id/documents', (req, res) => {
 
 // Delete document
 router.post('/:id/documents/:docId/delete', (req, res) => {
-  const doc = firearmsQueries.deleteDocument(req.params.docId);
-  if (doc) {
-    const fp = path.join(DOC_DIR, doc.filename);
-    if (fs.existsSync(fp)) fs.unlinkSync(fp);
-  }
+  const doc = firearmsQueries.findDocumentById(req.params.docId);
+  if (!doc || doc.firearm_id !== parseInt(req.params.id, 10))
+    return res.status(403).render('error', { message: 'Forbidden', user: req.session.user });
+  firearmsQueries.deleteDocument(req.params.docId);
+  const fp = path.join(DOC_DIR, doc.filename);
+  if (fs.existsSync(fp)) fs.unlinkSync(fp);
   res.redirect(`/inventory/${req.params.id}`);
 });
 
