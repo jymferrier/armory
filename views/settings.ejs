@@ -77,7 +77,8 @@
     </div>
     <% } %>
 
-    <!-- Export -->
+    <!-- Export (admin only) -->
+    <% if (!user.is_spouse_view) { %>
     <div class="settings-card">
       <h2 class="section-title">EXPORT INVENTORY</h2>
       <p style="font-family:var(--font-mono);font-size:0.72rem;color:var(--text-muted);margin-bottom:1.25rem;">
@@ -94,6 +95,7 @@
       </p>
       <a href="/settings/export/full" class="btn btn--primary">↓ EXPORT FULL ARCHIVE (.ZIP)</a>
     </div>
+    <% } %>
 
     <!-- Import (admin only) -->
     <% if (!user.is_spouse_view) { %>

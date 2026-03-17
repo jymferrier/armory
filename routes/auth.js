@@ -305,7 +305,7 @@ router.post('/settings/spouse-items', requireAuth, requireAdmin, (req, res) => {
 });
 
 // Export CSV
-router.get('/settings/export/csv', requireAuth, (req, res) => {
+router.get('/settings/export/csv', requireAuth, requireAdmin, (req, res) => {
   const firearms = firearmsQueries.all();
   audit(req, 'EXPORT_CSV', `${firearms.length} records`);
   const csv = [CSV_COLUMNS.map(csvCell).join(','), ...buildCsvRows(firearms)].join('\r\n');
@@ -316,7 +316,7 @@ router.get('/settings/export/csv', requireAuth, (req, res) => {
 });
 
 // Export JSON
-router.get('/settings/export/json', requireAuth, (req, res) => {
+router.get('/settings/export/json', requireAuth, requireAdmin, (req, res) => {
   const firearms = firearmsQueries.all();
   audit(req, 'EXPORT_JSON', `${firearms.length} records`);
   const data = {
@@ -351,7 +351,7 @@ router.get('/settings/export/json', requireAuth, (req, res) => {
 });
 
 // Full export — one folder per item, all photos + docs, zipped
-router.get('/settings/export/full', requireAuth, (req, res) => {
+router.get('/settings/export/full', requireAuth, requireAdmin, (req, res) => {
   audit(req, 'EXPORT_FULL', '');
   const firearms = firearmsQueries.all().map(f => firearmsQueries.findById(f.id)); // get with photos + docs
 
