@@ -6,7 +6,7 @@
       <h1 class="page-title"><%= trust.name.toUpperCase() %></h1>
     </div>
     <div class="page-actions">
-      <form method="POST" action="/trusts/<%= trust.id %>/delete" onsubmit="return confirm('Delete this trust?')">
+      <form method="POST" action="/trusts/<%= trust.id %>/delete" id="deleteTrustForm">
         <input type="hidden" name="_csrf" value="<%= csrfToken %>">
         <button type="submit" class="btn btn--danger btn--sm">DELETE TRUST</button>
       </form>
@@ -76,9 +76,9 @@
         <% }) %>
 
         <div style="margin-top:1.25rem;display:flex;gap:0.75rem;align-items:center;">
-          <button type="button" id="generateBtn" class="btn btn--primary" onclick="generateAssignment()">GENERATE ASSIGNMENT DOCUMENT</button>
-          <button type="button" class="btn btn--ghost btn--sm" onclick="toggleAll(true)">SELECT ALL</button>
-          <button type="button" class="btn btn--ghost btn--sm" onclick="toggleAll(false)">DESELECT ALL</button>
+          <button type="button" id="generateBtn" class="btn btn--primary">GENERATE ASSIGNMENT DOCUMENT</button>
+          <button type="button" id="selectAllBtn" class="btn btn--ghost btn--sm">SELECT ALL</button>
+          <button type="button" id="deselectAllBtn" class="btn btn--ghost btn--sm">DESELECT ALL</button>
         </div>
       <% } %>
     </div>
@@ -86,22 +86,45 @@
 </div>
 
 <script nonce="<%= cspNonce %>">
-function generateAssignment() {
-  const missing = [];
-  <% if (!trust.settlor_name) { %>missing.push('Settlor Name');<% } %>
-  <% if (!trust.settlor_location) { %>missing.push('Settlor Location');<% } %>
-  <% if (!trust.agreement_date) { %>missing.push('Trust Agreement Date');<% } %>
-  if (missing.length > 0) {
-    alert('Please fill in the following trust details before generating:\n\n• ' + missing.join('\n• '));
-    return;
+document.addEventListener('DOMContentLoaded', function() {
+  var deleteForm = document.getElementById('deleteTrustForm');
+  if (deleteForm) {
+    deleteForm.addEventListener('submit', function(e) {
+      if (!confirm('Delete this trust?')) e.preventDefault();
+    });
   }
-  const checked = Array.from(document.querySelectorAll('.item-checkbox:checked')).map(cb => cb.value);
-  if (checked.length === 0) { alert('Select at least one item.'); return; }
-  const url = '/trusts/<%= trust.id %>/assignment?' + checked.map(id => 'items=' + id).join('&');
-  window.open(url, '_blank');
-}
-function toggleAll(state) {
-  document.querySelectorAll('.item-checkbox').forEach(cb => cb.checked = state);
-}
+
+  var generateBtn = document.getElementById('generateBtn');
+  if (generateBtn) {
+    generateBtn.addEventListener('click', function() {
+      var missing = [];
+      <% if (!trust.settlor_name) { %>missing.push('Settlor Name');<% } %>
+      <% if (!trust.settlor_location) { %>missing.push('Settlor Location');<% } %>
+      <% if (!trust.agreement_date) { %>missing.push('Trust Agreement Date');<% } %>
+      if (missing.length > 0) {
+        alert('Please fill in the following trust details before generating:\n\n\u2022 ' + missing.join('\n\u2022 '));
+        return;
+      }
+      var checked = Array.from(document.querySelectorAll('.item-checkbox:checked')).map(function(cb) { return cb.value; });
+      if (checked.length === 0) { alert('Select at least one item.'); return; }
+      var url = '/trusts/<%= trust.id %>/assignment?' + checked.map(function(id) { return 'items=' + id; }).join('&');
+      window.open(url, '_blank');
+    });
+  }
+
+  var selectAllBtn = document.getElementById('selectAllBtn');
+  if (selectAllBtn) {
+    selectAllBtn.addEventListener('click', function() {
+      document.querySelectorAll('.item-checkbox').forEach(function(cb) { cb.checked = true; });
+    });
+  }
+
+  var deselectAllBtn = document.getElementById('deselectAllBtn');
+  if (deselectAllBtn) {
+    deselectAllBtn.addEventListener('click', function() {
+      document.querySelectorAll('.item-checkbox').forEach(function(cb) { cb.checked = false; });
+    });
+  }
+});
 </script>
 <%- include('partials/footer') %>
