@@ -41,7 +41,7 @@
       max-width: 8.5in;
       margin: 2rem auto;
       background: white;
-      padding: 1in 1in 1.25in;
+      padding: 1in 1in 1in;
       box-shadow: 0 4px 30px rgba(0,0,0,0.3);
     }
     .doc-title {
@@ -90,7 +90,7 @@
       text-align: justify;
     }
     .doc-acknowledge {
-      margin-bottom: 1.75rem;
+      margin-bottom: 1.5rem;
     }
     .doc-settlor-name {
       font-weight: bold;
@@ -111,7 +111,10 @@
       font-size: 10pt;
       margin-top: 0.15rem;
     }
-    .notary-section { margin-top: 1rem; }
+    /* Notary section: sig on left, stamp box on right */
+    .notary-section {
+      margin-top: 1rem;
+    }
     .notary-state {
       display: flex;
       flex-direction: column;
@@ -121,21 +124,54 @@
     }
     .notary-state span { display: flex; align-items: center; gap: 0.5rem; }
     .notary-state span::after { content: ')'; margin-left: 2rem; }
-    .notary-acknowledge { margin-bottom: 1.5rem; text-align: justify; }
-    .notary-sig .sig-line { margin-top: 1.5rem; }
-    .notary-sig .sig-label { font-size: 10pt; }
+    .notary-acknowledge { margin-bottom: 1rem; text-align: justify; }
+    .notary-footer {
+      display: flex;
+      align-items: flex-end;
+      gap: 1.5rem;
+    }
+    .notary-sig-col {
+      flex: 1;
+    }
+    .notary-sig-col .sig-line { margin-top: 1.5rem; }
+    .notary-sig-col .sig-label { font-size: 10pt; }
+    .stamp-box {
+      width: 2.4in;
+      height: 2.4in;
+      border: 1px dashed #aaa;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+    }
+    .stamp-box-label {
+      font-size: 8.5pt;
+      color: #aaa;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      line-height: 1.6;
+      font-family: 'Times New Roman', Times, serif;
+    }
     .doc-footer {
       text-align: right;
       font-style: italic;
       font-size: 10pt;
-      margin-top: 2rem;
+      margin-top: 1.5rem;
       padding-top: 0.5rem;
       border-top: 1px solid #ccc;
     }
     @media print {
       body { background: white; }
       .screen-actions { display: none; }
-      .paper { margin: 0; box-shadow: none; max-width: none; padding: 0; }
+      .paper {
+        margin: 0;
+        box-shadow: none;
+        max-width: none;
+        padding: 0;
+        page-break-after: always;
+      }
+      .paper:last-child { page-break-after: avoid; }
       @page { margin: 1in; size: letter portrait; }
     }
   </style>
@@ -158,12 +194,32 @@
     agreementDateStr = d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: '2-digit' });
   }
 
+  const ITEMS_PER_PAGE = 10;
   const MIN_ROWS = 5;
-  const totalRows = Math.max(items.length, MIN_ROWS);
+
+  // Split items into pages of up to 10
+  const pages = [];
+  if (items.length === 0) {
+    pages.push([]);
+  } else {
+    for (let i = 0; i < items.length; i += ITEMS_PER_PAGE) {
+      pages.push(items.slice(i, i + ITEMS_PER_PAGE));
+    }
+  }
+  const totalPages = pages.length;
 %>
 
+<% pages.forEach(function(pageItems, pageIdx) {
+     const pageNum = pageIdx + 1;
+     const rowOffset = pageIdx * ITEMS_PER_PAGE;
+     const rowCount = Math.max(pageItems.length, MIN_ROWS);
+%>
 <div class="paper">
-  <div class="doc-title">ASSIGNMENT TO THE <%= trustNameUpper %></div>
+
+  <div class="doc-title">
+    ASSIGNMENT TO THE <%= trustNameUpper %>
+    <% if (totalPages > 1) { %> &mdash; PAGE <%= pageNum %> OF <%= totalPages %><% } %>
+  </div>
 
   <p class="doc-intro">
     I, <%= settlor %>, of <%= location %>, Settlor, hereby GRANT, CONVEY, TRANSFER, and ASSIGN to the
@@ -181,8 +237,9 @@
       </tr>
     </thead>
     <tbody>
-      <% for (let i = 0; i < totalRows; i++) {
-           const item = items[i] || null;
+      <% for (let i = 0; i < rowCount; i++) {
+           const item = pageItems[i] || null;
+           const globalNum = rowOffset + i + 1;
            let purchaseDate = '';
            if (item && item.date_acquired) {
              const d = new Date(item.date_acquired + 'T00:00:00');
@@ -190,7 +247,7 @@
            }
       %>
       <tr>
-        <td class="row-num"><%= i + 1 %>.</td>
+        <td class="row-num"><%= globalNum %>.</td>
         <td class="col-make"><%= item ? item.manufacturer : '' %></td>
         <td class="col-model"><%= item ? item.model : '' %></td>
         <td class="col-serial"><%= item ? (item.serial || '') : '' %></td>
@@ -228,15 +285,25 @@
       This instrument was acknowledged before me on the ___ day of _______, 20__ by <%= settlor %>.
     </p>
 
-    <div class="notary-sig">
-      <div class="sig-line"></div>
-      <div class="sig-label">Signature of notarial officer</div>
-      <div class="sig-label">My commission expires:___________</div>
+    <div class="notary-footer">
+      <div class="notary-sig-col">
+        <div class="sig-line"></div>
+        <div class="sig-label">Signature of notarial officer</div>
+        <div class="sig-label">My commission expires:___________</div>
+      </div>
+      <div class="stamp-box">
+        <div class="stamp-box-label">Notary<br>Seal / Stamp</div>
+      </div>
     </div>
   </div>
 
-  <div class="doc-footer">ASSIGNMENT TO THE <%= trustNameUpper %></div>
+  <div class="doc-footer">
+    ASSIGNMENT TO THE <%= trustNameUpper %>
+    <% if (totalPages > 1) { %> &mdash; Page <%= pageNum %> of <%= totalPages %><% } %>
+  </div>
+
 </div>
+<% }); %>
 
 </body>
 </html>
