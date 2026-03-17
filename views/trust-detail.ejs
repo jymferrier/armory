@@ -52,6 +52,45 @@
     </div>
   </form>
 
+  <!-- Trust Documents -->
+  <div class="form-band" style="border-top:none;">
+    <div class="form-band__label">TRUST DOCUMENTS</div>
+    <div class="form-band__fields">
+      <% if (locals.docError) { %>
+        <div class="alert alert--error" style="margin-bottom:1rem;"><%= docError %></div>
+      <% } %>
+      <% if (trust.documents && trust.documents.length > 0) { %>
+        <div style="margin-bottom:1.25rem;">
+          <% trust.documents.forEach(doc => { %>
+            <div style="display:flex;align-items:center;gap:0.75rem;padding:0.5rem 0.75rem;border:1px solid var(--border);margin-bottom:3px;background:var(--bg-3);">
+              <span style="font-family:var(--font-mono);font-size:0.78rem;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><%= doc.original_name || doc.filename %></span>
+              <a href="/api/trust-document/<%= doc.filename %>" class="btn btn--ghost btn--sm">↓ DOWNLOAD</a>
+              <% if (!user.is_spouse_view) { %>
+              <form method="POST" action="/trusts/<%= trust.id %>/documents/<%= doc.id %>/delete" class="trust-doc-delete-form" data-name="<%= doc.original_name || doc.filename %>">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                <button type="submit" class="btn btn--danger btn--sm">DELETE</button>
+              </form>
+              <% } %>
+            </div>
+          <% }) %>
+        </div>
+      <% } else { %>
+        <p style="font-family:var(--font-mono);font-size:0.78rem;color:var(--text-muted);margin-bottom:1.25rem;">No documents attached to this trust.</p>
+      <% } %>
+      <% if (!user.is_spouse_view) { %>
+      <form method="POST" action="/trusts/<%= trust.id %>/documents" enctype="multipart/form-data">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <div class="field">
+          <label class="field-label">ATTACH DOCUMENT</label>
+          <input type="file" name="trust_doc" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" class="file-input-plain" required>
+          <p style="font-family:var(--font-mono);font-size:0.65rem;color:var(--text-muted);margin-top:0.4rem;">PDF, images, or Word documents · Max 50 MB</p>
+        </div>
+        <button type="submit" class="btn btn--primary btn--sm">↑ UPLOAD DOCUMENT</button>
+      </form>
+      <% } %>
+    </div>
+  </div>
+
   <!-- Items selection -->
   <div class="form-band" style="border-top:none;">
     <div class="form-band__label">ASSIGNED ITEMS</div>
@@ -96,6 +135,13 @@ document.addEventListener('DOMContentLoaded', function() {
       if (!confirm('Delete this trust?')) e.preventDefault();
     });
   }
+
+  document.querySelectorAll('.trust-doc-delete-form').forEach(function(form) {
+    form.addEventListener('submit', function(e) {
+      var name = this.getAttribute('data-name');
+      if (!confirm('Delete document "' + name + '"?')) e.preventDefault();
+    });
+  });
 
   // Disable the generate button until all three trust detail fields are filled
   var settlorNameInput    = document.querySelector('[name="settlor_name"]');

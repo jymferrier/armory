@@ -88,6 +88,15 @@ function initDB() {
       agreement_date TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
+
+    CREATE TABLE IF NOT EXISTS trust_documents (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      trust_id INTEGER NOT NULL,
+      filename TEXT NOT NULL,
+      original_name TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (trust_id) REFERENCES trusts(id) ON DELETE CASCADE
+    );
   `);
 
   // Migrate existing databases — safely add new columns if they don't exist
@@ -292,13 +301,29 @@ const firearmsQueries = {
 
 const trustQueries = {
   all: () => getDB().prepare('SELECT * FROM trusts ORDER BY name ASC').all(),
-  findById: (id) => getDB().prepare('SELECT * FROM trusts WHERE id = ?').get(id),
+  findById: (id) => {
+    const t = getDB().prepare('SELECT * FROM trusts WHERE id = ?').get(id);
+    if (!t) return null;
+    return {
+      ...t,
+      documents: getDB().prepare('SELECT * FROM trust_documents WHERE trust_id = ? ORDER BY id ASC').all(id)
+    };
+  },
   findByName: (name) => getDB().prepare('SELECT * FROM trusts WHERE name = ?').get(name),
   create: (data) => getDB().prepare('INSERT INTO trusts (name, settlor_name, settlor_location, agreement_date) VALUES (@name, @settlor_name, @settlor_location, @agreement_date)').run(data),
   update: (id, data) => getDB().prepare('UPDATE trusts SET settlor_name = @settlor_name, settlor_location = @settlor_location, agreement_date = @agreement_date WHERE id = @id').run({ ...data, id }),
   delete: (id) => getDB().prepare('DELETE FROM trusts WHERE id = ?').run(id),
   itemsForTrust: (name) => getDB().prepare("SELECT * FROM firearms WHERE nfa_trust_name = ? ORDER BY created_at DESC").all(name).map(f => ({ ...f, is_3d_printed: !!f.is_3d_printed, is_nfa: !!f.is_nfa, nfa_fmi: !!f.nfa_fmi })),
   distinctTrustNames: () => getDB().prepare("SELECT DISTINCT nfa_trust_name FROM firearms WHERE nfa_trust_name IS NOT NULL AND nfa_trust_name != '' ORDER BY nfa_trust_name ASC").all().map(r => r.nfa_trust_name),
+  addDocument: (trustId, filename, originalName) =>
+    getDB().prepare('INSERT INTO trust_documents (trust_id, filename, original_name) VALUES (?, ?, ?)').run(trustId, filename, originalName),
+  findDocumentById: (id) => getDB().prepare('SELECT * FROM trust_documents WHERE id = ?').get(id),
+  findDocumentByFilename: (filename) => getDB().prepare('SELECT * FROM trust_documents WHERE filename = ?').get(filename),
+  deleteDocument: (id) => {
+    const doc = getDB().prepare('SELECT * FROM trust_documents WHERE id = ?').get(id);
+    getDB().prepare('DELETE FROM trust_documents WHERE id = ?').run(id);
+    return doc;
+  },
 };
 
 module.exports = { initDB, userQueries, firearmsQueries, trustQueries };
