@@ -58,7 +58,7 @@ Spouse View accounts are read-only. They can browse, they can look at photos, th
 **Requirements:** Docker and Docker Compose
 
 ```bash
-git clone https://github.com/yourusername/armory.git
+git clone https://github.com/jymferrier/armory.git
 cd armory
 docker compose up -d
 ```
