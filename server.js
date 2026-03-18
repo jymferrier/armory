@@ -12,9 +12,6 @@ const { csrfMiddleware } = require('./middleware/csrf');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-if (process.env.NODE_ENV !== 'production') {
-  console.warn('WARNING: NODE_ENV is not set to "production". Session cookies will not be flagged Secure. Set NODE_ENV=production for production deployments.');
-}
 
 // Init DB
 initDB();

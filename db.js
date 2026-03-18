@@ -134,21 +134,13 @@ function initDB() {
   const existing = db.prepare('SELECT id FROM users LIMIT 1').get();
   if (!existing) {
     const defaultUser = process.env.DEFAULT_USER || 'admin';
-    let defaultPass = process.env.DEFAULT_PASS;
-    if (!defaultPass) {
-      // No password configured — generate a strong random one and print it once.
-      // The operator MUST record this and change it after first login.
-      defaultPass = crypto.randomBytes(16).toString('hex');
-      console.log('=============================================================');
-      console.log('ARMORY — DEFAULT ADMIN ACCOUNT CREATED');
-      console.log(`  Username : ${defaultUser}`);
-      console.log(`  Password : ${defaultPass}`);
-      console.log('  Set DEFAULT_USER and DEFAULT_PASS env vars to configure.');
-      console.log('  CHANGE THIS PASSWORD AFTER FIRST LOGIN.');
-      console.log('=============================================================');
-    } else {
-      console.log(`Default user created: ${defaultUser} — change password after first login`);
-    }
+    const defaultPass = process.env.DEFAULT_PASS || crypto.randomBytes(16).toString('hex');
+    console.log('=============================================================');
+    console.log('ARMORY — INITIAL ADMIN ACCOUNT CREATED');
+    console.log(`  Username : ${defaultUser}`);
+    console.log(`  Password : ${defaultPass}`);
+    console.log('  CHANGE THIS PASSWORD AFTER FIRST LOGIN.');
+    console.log('=============================================================');
     const hash = bcrypt.hashSync(defaultPass, 12);
     db.prepare('INSERT INTO users (username, password) VALUES (?, ?)').run(defaultUser, hash);
   }
