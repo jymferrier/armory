@@ -56,7 +56,7 @@ Spouse View accounts are read-only. They can browse, they can look at photos, th
 **Requirements:** Docker and Docker Compose
 
 ```bash
-git clone https://github.com/jymferrier/armory.git
+git clone https://github.com/yourusername/armory.git
 cd armory
 docker compose up -d
 ```
@@ -137,6 +137,9 @@ npx nodemon server.js
 ---
 
 ## Screenshots
+
+### Login
+![Login](screenshots/01-login.png)
 
 ### Inventory — Grid View
 ![Inventory Grid](screenshots/02-inventory-grid.png)
