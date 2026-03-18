@@ -45,7 +45,7 @@ When you create a second user account and flag it as **Spouse View**, that accou
 1. Only the items you've explicitly marked as visible
 2. **Your "What Spouse Thinks I Paid" value** instead of what you actually paid
 
-So if you paid $2,800 for a suppressor and $600 in tax stamp fees and four months of your life waiting for the ATF to process paperwork, your spouse's account shows whatever number doesn't start a conversation. You're welcome.
+So if you paid $2,800 for a suppressor and $200 in tax stamp fees and four months of your life waiting for the ATF to process paperwork, your spouse's account shows whatever number doesn't start a conversation. You're welcome.
 
 Spouse View accounts are read-only. They can browse, they can look at photos, they cannot add items, delete items, or see the Settings page where all the other items are hiding. It's not deception. It's *information architecture*.
 
