@@ -37,6 +37,7 @@ app.use(helmet({
       imgSrc:     ["'self'", 'data:', 'blob:'],
       objectSrc:  ["'none'"],
       frameSrc:   ["'none'"],
+      upgradeInsecureRequests: null,
     }
   },
   // Only send HSTS in production (requires HTTPS to be effective)

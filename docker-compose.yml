@@ -12,7 +12,7 @@ services:
       # If DEFAULT_PASS is unset, a random password is generated and printed to the
       # container logs on first run — check with: docker logs armory
       - DEFAULT_USER=admin
-      # - DEFAULT_PASS=changeme
+      - DEFAULT_PASS=armory123
       - PORT=3000
     volumes:
       # Persist SQLite database
