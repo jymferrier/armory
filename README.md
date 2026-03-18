@@ -1,5 +1,7 @@
 # ARMORY — Firearms Inventory System
 
+Licensed under the [PolyForm Noncommercial License 1.0.0](LICENSE). Free for personal use. Commercial use is not permitted.
+
 Ever shot a machine gun on peyote? Nahh neither have I, but I've absolutely gotten drunk and fired up GunBroker at 1am, only to be genuinely surprised three weeks later when my FFL calls to let me know something came in. "A what? A... oh. Oh yeah. Yeah I'll be right there."
 
 This app is for people like us. People who need a spreadsheet but refuse to use Excel like an adult.
