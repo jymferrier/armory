@@ -280,14 +280,22 @@ const firearmsQueries = {
   },
   search: (q) => {
     const like = `%${q}%`;
-    return getDB().prepare(`
-      SELECT f.*, fp.filename as primary_photo_filename
+    const firearms = getDB().prepare(`
+      SELECT f.*
       FROM firearms f
-      LEFT JOIN firearm_photos fp ON fp.firearm_id = f.id AND fp.is_primary = 1
       WHERE f.manufacturer LIKE ? OR f.model LIKE ? OR f.serial LIKE ? OR f.caliber LIKE ?
          OR f.optics LIKE ? OR f.notes LIKE ? OR f.nfa_type LIKE ?
       ORDER BY f.created_at DESC
     `).all(like, like, like, like, like, like, like);
+    return firearms.map(f => ({
+      ...f,
+      is_3d_printed: !!f.is_3d_printed,
+      is_nfa: !!f.is_nfa,
+      nfa_fmi: !!f.nfa_fmi,
+      is_disposed: !!f.is_disposed,
+      primary_photo: getDB().prepare('SELECT filename FROM firearm_photos WHERE firearm_id = ? AND is_primary = 1 LIMIT 1').get(f.id)
+        || getDB().prepare('SELECT filename FROM firearm_photos WHERE firearm_id = ? LIMIT 1').get(f.id)
+    }));
   }
 };
 
