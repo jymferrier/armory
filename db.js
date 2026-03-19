@@ -289,8 +289,10 @@ const firearmsQueries = {
       FROM firearms f
       WHERE f.manufacturer LIKE ? OR f.model LIKE ? OR f.serial LIKE ? OR f.caliber LIKE ?
          OR f.optics LIKE ? OR f.notes LIKE ? OR f.nfa_type LIKE ?
+         OR f.nfa_form_number LIKE ? OR f.nfa_tax_stamp_serial LIKE ?
+         OR f.nfa_trust_name LIKE ? OR f.acquired_from LIKE ? OR f.model_number LIKE ?
       ORDER BY f.created_at DESC
-    `).all(like, like, like, like, like, like, like);
+    `).all(like, like, like, like, like, like, like, like, like, like, like, like);
     return firearms.map(f => ({
       ...f,
       is_3d_printed: !!f.is_3d_printed,
