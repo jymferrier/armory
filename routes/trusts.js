@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const path = require('path');
 const fs = require('fs');
-const { trustQueries } = require('../db');
+const { trustQueries, firearmsQueries } = require('../db');
 const { requireAuth, requireAdmin } = require('../middleware/auth');
 const { validateCsrf } = require('../middleware/csrf');
 const { uploadDocs, DOC_DIR } = require('../middleware/upload');
@@ -28,9 +28,9 @@ router.get('/new', requireAdmin, (req, res) => {
 
 // Create trust
 router.post('/new', requireAdmin, (req, res) => {
-  const { name, settlor_name, settlor_location, agreement_date } = req.body;
+  const { name, settlor_name, settlor_location, agreement_date, notes } = req.body;
   try {
-    trustQueries.create({ name: name.trim(), settlor_name: settlor_name || null, settlor_location: settlor_location || null, agreement_date: agreement_date || null });
+    trustQueries.create({ name: name.trim(), settlor_name: settlor_name || null, settlor_location: settlor_location || null, agreement_date: agreement_date || null, notes: notes || null });
     const trust = trustQueries.findByName(name.trim());
     res.redirect('/trusts/' + trust.id);
   } catch(e) {
@@ -51,8 +51,8 @@ router.get('/:id', (req, res) => {
 router.post('/:id', requireAdmin, (req, res) => {
   const trust = trustQueries.findById(req.params.id);
   if (!trust) return res.status(404).render('error', { message: 'Trust not found', user: req.session.user });
-  const { settlor_name, settlor_location, agreement_date } = req.body;
-  trustQueries.update(req.params.id, { settlor_name: settlor_name || null, settlor_location: settlor_location || null, agreement_date: agreement_date || null });
+  const { settlor_name, settlor_location, agreement_date, notes } = req.body;
+  trustQueries.update(req.params.id, { settlor_name: settlor_name || null, settlor_location: settlor_location || null, agreement_date: agreement_date || null, notes: notes || null });
   res.redirect('/trusts/' + req.params.id + '?saved=1');
 });
 
@@ -75,7 +75,25 @@ router.get('/:id/assignment', (req, res) => {
   res.render('trust-print', { user: req.session.user, trust, items });
 });
 
-// Upload trust document
+// Upload primary trust document (replaces existing)
+router.post('/:id/trust-document', requireAdmin, (req, res) => {
+  trustDocUpload(req, res, (err) => {
+    if (!validateCsrf(req)) return res.status(403).render('error', { message: 'Security token validation failed.', user: req.session.user });
+    const trust = trustQueries.findById(req.params.id);
+    if (!trust) return res.status(404).render('error', { message: 'Trust not found', user: req.session.user });
+    if (err) return res.redirect(`/trusts/${req.params.id}?docError=${encodeURIComponent(err.message)}`);
+    if (!req.file) return res.redirect(`/trusts/${req.params.id}`);
+    // Delete old primary doc file if it exists
+    const oldDocs = trustQueries.replaceTrustDoc(req.params.id, req.file.filename, req.file.originalname);
+    oldDocs.forEach(doc => {
+      const fp = path.join(DOC_DIR, doc.filename);
+      if (fs.existsSync(fp)) fs.unlinkSync(fp);
+    });
+    res.redirect(`/trusts/${req.params.id}`);
+  });
+});
+
+// Upload additional trust document
 router.post('/:id/documents', requireAdmin, (req, res) => {
   trustDocUpload(req, res, (err) => {
     if (!validateCsrf(req)) return res.status(403).render('error', { message: 'Security token validation failed.', user: req.session.user });
@@ -83,12 +101,12 @@ router.post('/:id/documents', requireAdmin, (req, res) => {
     if (!trust) return res.status(404).render('error', { message: 'Trust not found', user: req.session.user });
     if (err) return res.redirect(`/trusts/${req.params.id}?docError=${encodeURIComponent(err.message)}`);
     if (!req.file) return res.redirect(`/trusts/${req.params.id}`);
-    trustQueries.addDocument(req.params.id, req.file.filename, req.file.originalname);
+    trustQueries.addDocument(req.params.id, req.file.filename, req.file.originalname, 'additional');
     res.redirect(`/trusts/${req.params.id}`);
   });
 });
 
-// Delete trust document
+// Delete trust document (primary or additional)
 router.post('/:id/documents/:docId/delete', requireAdmin, (req, res) => {
   const doc = trustQueries.findDocumentById(req.params.docId);
   if (!doc || doc.trust_id !== parseInt(req.params.id, 10))
@@ -96,6 +114,17 @@ router.post('/:id/documents/:docId/delete', requireAdmin, (req, res) => {
   trustQueries.deleteDocument(req.params.docId);
   const fp = path.join(DOC_DIR, doc.filename);
   if (fs.existsSync(fp)) fs.unlinkSync(fp);
+  res.redirect(`/trusts/${req.params.id}`);
+});
+
+// Toggle trust_assigned flag on a firearm
+router.post('/:id/firearms/:firearmsId/assign', requireAdmin, (req, res) => {
+  const trust = trustQueries.findById(req.params.id);
+  if (!trust) return res.status(404).render('error', { message: 'Trust not found', user: req.session.user });
+  const firearm = firearmsQueries.findById(req.params.firearmsId);
+  if (!firearm || firearm.nfa_trust_name !== trust.name)
+    return res.status(403).render('error', { message: 'Forbidden', user: req.session.user });
+  firearmsQueries.setTrustAssigned(req.params.firearmsId, !firearm.trust_assigned);
   res.redirect(`/trusts/${req.params.id}`);
 });
 

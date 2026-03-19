@@ -125,6 +125,9 @@ function initDB() {
     "ALTER TABLE users ADD COLUMN is_spouse_view INTEGER DEFAULT 0",
     "ALTER TABLE firearms ADD COLUMN spouse_visible INTEGER DEFAULT 0",
     "ALTER TABLE users ADD COLUMN session_version INTEGER DEFAULT 0",
+    "ALTER TABLE firearms ADD COLUMN trust_assigned INTEGER DEFAULT 0",
+    "ALTER TABLE trusts ADD COLUMN notes TEXT",
+    "ALTER TABLE trust_documents ADD COLUMN doc_type TEXT DEFAULT 'additional'",
   ];
   for (const sql of migrations) {
     try { db.exec(sql); } catch (_) { /* column already exists */ }
@@ -278,6 +281,7 @@ const firearmsQueries = {
     });
     return [...tags].sort((a, b) => a.localeCompare(b));
   },
+  setTrustAssigned: (id, value) => getDB().prepare('UPDATE firearms SET trust_assigned = ? WHERE id = ?').run(value ? 1 : 0, id),
   search: (q) => {
     const like = `%${q}%`;
     const firearms = getDB().prepare(`
@@ -304,19 +308,28 @@ const trustQueries = {
   findById: (id) => {
     const t = getDB().prepare('SELECT * FROM trusts WHERE id = ?').get(id);
     if (!t) return null;
+    const docs = getDB().prepare('SELECT * FROM trust_documents WHERE trust_id = ? ORDER BY id ASC').all(id);
     return {
       ...t,
-      documents: getDB().prepare('SELECT * FROM trust_documents WHERE trust_id = ? ORDER BY id ASC').all(id)
+      trust_doc: docs.find(d => d.doc_type === 'trust_document') || null,
+      additional_docs: docs.filter(d => d.doc_type !== 'trust_document'),
     };
   },
   findByName: (name) => getDB().prepare('SELECT * FROM trusts WHERE name = ?').get(name),
-  create: (data) => getDB().prepare('INSERT INTO trusts (name, settlor_name, settlor_location, agreement_date) VALUES (@name, @settlor_name, @settlor_location, @agreement_date)').run(data),
-  update: (id, data) => getDB().prepare('UPDATE trusts SET settlor_name = @settlor_name, settlor_location = @settlor_location, agreement_date = @agreement_date WHERE id = @id').run({ ...data, id }),
+  create: (data) => getDB().prepare('INSERT INTO trusts (name, settlor_name, settlor_location, agreement_date, notes) VALUES (@name, @settlor_name, @settlor_location, @agreement_date, @notes)').run(data),
+  update: (id, data) => getDB().prepare('UPDATE trusts SET settlor_name = @settlor_name, settlor_location = @settlor_location, agreement_date = @agreement_date, notes = @notes WHERE id = @id').run({ ...data, id }),
   delete: (id) => getDB().prepare('DELETE FROM trusts WHERE id = ?').run(id),
-  itemsForTrust: (name) => getDB().prepare("SELECT * FROM firearms WHERE nfa_trust_name = ? ORDER BY created_at DESC").all(name).map(f => ({ ...f, is_3d_printed: !!f.is_3d_printed, is_nfa: !!f.is_nfa, nfa_fmi: !!f.nfa_fmi })),
+  itemsForTrust: (name) => getDB().prepare("SELECT * FROM firearms WHERE nfa_trust_name = ? ORDER BY created_at DESC").all(name).map(f => ({ ...f, is_3d_printed: !!f.is_3d_printed, is_nfa: !!f.is_nfa, nfa_fmi: !!f.nfa_fmi, trust_assigned: !!f.trust_assigned })),
   distinctTrustNames: () => getDB().prepare("SELECT DISTINCT nfa_trust_name FROM firearms WHERE nfa_trust_name IS NOT NULL AND nfa_trust_name != '' ORDER BY nfa_trust_name ASC").all().map(r => r.nfa_trust_name),
-  addDocument: (trustId, filename, originalName) =>
-    getDB().prepare('INSERT INTO trust_documents (trust_id, filename, original_name) VALUES (?, ?, ?)').run(trustId, filename, originalName),
+  addDocument: (trustId, filename, originalName, docType = 'additional') =>
+    getDB().prepare('INSERT INTO trust_documents (trust_id, filename, original_name, doc_type) VALUES (?, ?, ?, ?)').run(trustId, filename, originalName, docType),
+  replaceTrustDoc: (trustId, filename, originalName) => {
+    // Delete any existing primary trust document records (files cleaned up by caller)
+    const existing = getDB().prepare("SELECT * FROM trust_documents WHERE trust_id = ? AND doc_type = 'trust_document'").all(trustId);
+    getDB().prepare("DELETE FROM trust_documents WHERE trust_id = ? AND doc_type = 'trust_document'").run(trustId);
+    getDB().prepare("INSERT INTO trust_documents (trust_id, filename, original_name, doc_type) VALUES (?, ?, ?, 'trust_document')").run(trustId, filename, originalName);
+    return existing;
+  },
   findDocumentById: (id) => getDB().prepare('SELECT * FROM trust_documents WHERE id = ?').get(id),
   findDocumentByFilename: (filename) => getDB().prepare('SELECT * FROM trust_documents WHERE filename = ?').get(filename),
   deleteDocument: (id) => {
