@@ -6,7 +6,7 @@
       <h1 class="page-title"><%= firearm.manufacturer %> <span class="title-model"><%= firearm.model %></span></h1>
       <div class="detail-badges">
         <% if (firearm.is_3d_printed) { %><span class="badge badge--3dp">3D PRINTED</span><% } %>
-        <% if (firearm.nfa_type) { %><span class="badge <%= firearm.is_nfa ? 'badge--nfa' : 'badge--type' %>"><%= firearm.nfa_type %></span><% } %>
+        <% if (firearm.nfa_type) { %><span class="badge <%= firearm.is_nfa ? (firearm.nfa_approve_date ? 'badge--nfa-approved' : 'badge--nfa') : 'badge--type' %>"><%= firearm.nfa_type %></span><% } %>
         <% if (firearm.caliber) { %><span class="badge badge--caliber"><%= firearm.caliber %></span><% } %>
         <% if (firearm.is_disposed) { %><span class="badge badge--disposed">DISPOSED</span><% } %>
       </div>

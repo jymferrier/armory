@@ -21,6 +21,8 @@
   --green: #2ecc71;
   --nfa-red: #e74c3c;
   --nfa-red-bg: rgba(231,76,60,0.1);
+  --nfa-green: #5a8f6e;
+  --nfa-green-bg: rgba(90,143,110,0.1);
   --font-display: 'Bebas Neue', 'Impact', sans-serif;
   --font-mono: 'IBM Plex Mono', 'Courier New', monospace;
   --font-body: 'IBM Plex Sans', system-ui, sans-serif;
@@ -172,6 +174,12 @@ a:hover { color: var(--text); }
   color: var(--nfa-red);
   border-color: var(--nfa-red);
   background: var(--nfa-red-bg);
+}
+
+.badge--nfa-approved {
+  color: var(--nfa-green);
+  border-color: var(--nfa-green);
+  background: var(--nfa-green-bg);
 }
 
 .badge--caliber {

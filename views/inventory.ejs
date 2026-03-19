@@ -41,7 +41,7 @@
             </div>
             <div class="firearm-card__body">
               <div class="firearm-card__badges">
-                <% if (f.nfa_type) { %><span class="badge <%= f.is_nfa ? 'badge--nfa' : 'badge--type' %>"><%= f.nfa_type %></span><% } %>
+                <% if (f.nfa_type) { %><span class="badge <%= f.is_nfa ? (f.nfa_approve_date ? 'badge--nfa-approved' : 'badge--nfa') : 'badge--type' %>"><%= f.nfa_type %></span><% } %>
                 <% if (f.caliber) { %><span class="badge badge--caliber"><%= f.caliber %></span><% } %>
               </div>
               <h2 class="firearm-card__make"><%= f.manufacturer %></h2>
@@ -85,7 +85,7 @@
               </div>
             </div>
             <div class="firearm-row__badges">
-              <% if (f.is_nfa) { %><span class="badge badge--nfa"><%= f.nfa_type %></span><% } %>
+              <% if (f.is_nfa) { %><span class="badge <%= f.nfa_approve_date ? 'badge--nfa-approved' : 'badge--nfa' %>"><%= f.nfa_type %></span><% } %>
               <% if (!f.is_nfa && f.nfa_type) { %><span class="badge badge--type"><%= f.nfa_type %></span><% } %>
               <% if (f.is_disposed) { %><span class="badge badge--disposed">DISPOSED</span><% } %>
             </div>
