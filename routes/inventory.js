@@ -37,7 +37,7 @@ router.use(requireAuth);
 // List
 router.get('/', (req, res) => {
   const isSpouseView = !!req.session.user.is_spouse_view;
-  const { q } = req.query;
+  const q = (req.query.q || '').trim();
   let firearms;
   if (q) {
     firearms = firearmsQueries.search(q);
