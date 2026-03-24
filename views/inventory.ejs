@@ -54,7 +54,7 @@
                   try { const p = JSON.parse(f.optics); cardOptics = Array.isArray(p) ? p : [f.optics]; }
                   catch(e) { cardOptics = [f.optics]; }
                 %>
-                <p class="firearm-card__optics">⊕ <%= cardOptics.join(', ') %></p>
+                <p class="firearm-card__optics">⊕ <% cardOptics.forEach(function(o, i) { %><span class="badge--searchable" data-search="<%= o %>"><%= o %></span><% if (i < cardOptics.length - 1) { %>, <% } %><% }) %></p>
               <% } %>
             </div>
           </a>
