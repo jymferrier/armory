@@ -379,19 +379,91 @@
   </div>
 </div>
 
+<div class="lightbox" id="lightbox" role="dialog" aria-modal="true">
+  <button class="lightbox__close" id="lightboxClose" aria-label="Close">✕</button>
+  <button class="lightbox__arrow lightbox__arrow--prev" id="lightboxPrev" aria-label="Previous">&#8249;</button>
+  <img class="lightbox__img" id="lightboxImg" src="" alt="">
+  <button class="lightbox__arrow lightbox__arrow--next" id="lightboxNext" aria-label="Next">&#8250;</button>
+  <div class="lightbox__counter" id="lightboxCounter"></div>
+</div>
+
 <script nonce="<%= cspNonce %>">
-function setMainPhoto(src, wrap) {
-  document.getElementById('photoMainImg').src = src;
-  document.querySelectorAll('.photo-thumb-wrap').forEach(w => w.classList.remove('photo-thumb-wrap--active'));
-  wrap.classList.add('photo-thumb-wrap--active');
-}
-document.addEventListener('DOMContentLoaded', function() {
-  var deleteFirearmForm = document.getElementById('deleteFirearmForm');
-  if (deleteFirearmForm) {
-    deleteFirearmForm.addEventListener('submit', function(e) {
-      if (!confirm('Delete this firearm and all associated files?')) e.preventDefault();
+(function() {
+  // Build ordered photo list from server data
+  var photos = <%- JSON.stringify(firearm.photos.map(p => '/api/photo/' + p.filename)) %>;
+  var primaryFilename = '<%= (firearm.photos.find(p=>p.is_primary) || firearm.photos[0] || {filename:''}).filename %>';
+  var currentIndex = 0;
+
+  var lightbox    = document.getElementById('lightbox');
+  var lightboxImg = document.getElementById('lightboxImg');
+  var counter     = document.getElementById('lightboxCounter');
+  var prevBtn     = document.getElementById('lightboxPrev');
+  var nextBtn     = document.getElementById('lightboxNext');
+
+  function openLightbox(index) {
+    currentIndex = index;
+    lightboxImg.src = photos[currentIndex];
+    counter.textContent = (currentIndex + 1) + ' / ' + photos.length;
+    prevBtn.hidden = photos.length <= 1;
+    nextBtn.hidden = photos.length <= 1;
+    lightbox.classList.add('lightbox--open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeLightbox() {
+    lightbox.classList.remove('lightbox--open');
+    document.body.style.overflow = '';
+  }
+
+  function navigate(dir) {
+    currentIndex = (currentIndex + dir + photos.length) % photos.length;
+    lightboxImg.src = photos[currentIndex];
+    counter.textContent = (currentIndex + 1) + ' / ' + photos.length;
+    // Sync main photo and active thumb
+    var thumbs = document.querySelectorAll('.photo-thumb');
+    if (thumbs[currentIndex]) setMainPhoto(thumbs[currentIndex].src, thumbs[currentIndex].closest('.photo-thumb-wrap'));
+  }
+
+  document.getElementById('lightboxClose').addEventListener('click', closeLightbox);
+  prevBtn.addEventListener('click', function() { navigate(-1); });
+  nextBtn.addEventListener('click', function() { navigate(1); });
+
+  lightbox.addEventListener('click', function(e) {
+    if (e.target === lightbox) closeLightbox();
+  });
+
+  document.addEventListener('keydown', function(e) {
+    if (!lightbox.classList.contains('lightbox--open')) return;
+    if (e.key === 'Escape')      closeLightbox();
+    if (e.key === 'ArrowLeft')   navigate(-1);
+    if (e.key === 'ArrowRight')  navigate(1);
+  });
+
+  // Open lightbox on main photo click
+  var photoMain = document.getElementById('photoMain');
+  if (photoMain) {
+    photoMain.addEventListener('click', function() {
+      var src = document.getElementById('photoMainImg').src;
+      var idx = photos.findIndex(function(p) { return src.endsWith(p.split('/').pop()); });
+      openLightbox(idx >= 0 ? idx : 0);
     });
   }
+
+  // Open lightbox on thumbnail click
+  document.querySelectorAll('.photo-thumb').forEach(function(thumb, idx) {
+    thumb.addEventListener('click', function(e) {
+      e.stopPropagation();
+      openLightbox(idx);
+    });
+  });
+
+  function setMainPhoto(src, wrap) {
+    document.getElementById('photoMainImg').src = src;
+    document.querySelectorAll('.photo-thumb-wrap').forEach(function(w) { w.classList.remove('photo-thumb-wrap--active'); });
+    if (wrap) wrap.classList.add('photo-thumb-wrap--active');
+  }
+
+  // Thumbnail strip click (set main photo without opening lightbox unless clicking main)
   var thumbsContainer = document.querySelector('.photo-thumbs');
   if (thumbsContainer) {
     thumbsContainer.addEventListener('click', function(e) {
@@ -399,14 +471,23 @@ document.addEventListener('DOMContentLoaded', function() {
       if (thumb) setMainPhoto(thumb.src, thumb.closest('.photo-thumb-wrap'));
     });
   }
-  document.addEventListener('submit', function(e) {
-    if (e.target.classList.contains('photo-delete-form')) {
-      if (!confirm('Delete this photo?')) e.preventDefault();
-    } else if (e.target.classList.contains('doc-delete-form')) {
-      if (!confirm('Delete this document?')) e.preventDefault();
+
+  document.addEventListener('DOMContentLoaded', function() {
+    var deleteFirearmForm = document.getElementById('deleteFirearmForm');
+    if (deleteFirearmForm) {
+      deleteFirearmForm.addEventListener('submit', function(e) {
+        if (!confirm('Delete this firearm and all associated files?')) e.preventDefault();
+      });
     }
+    document.addEventListener('submit', function(e) {
+      if (e.target.classList.contains('photo-delete-form')) {
+        if (!confirm('Delete this photo?')) e.preventDefault();
+      } else if (e.target.classList.contains('doc-delete-form')) {
+        if (!confirm('Delete this document?')) e.preventDefault();
+      }
+    });
   });
-});
+})();
 // photo drop zone wired up by main.js
 </script>
 <%- include('partials/footer') %>
