@@ -169,6 +169,8 @@ a:hover { color: var(--text); }
   color: var(--text-muted);
   background: var(--bg-3);
 }
+.badge--searchable { cursor: pointer; }
+.badge--searchable:hover { border-color: var(--accent); color: var(--accent); }
 
 .badge--nfa {
   color: var(--nfa-red);
