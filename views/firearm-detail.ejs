@@ -5,10 +5,10 @@
       <p class="breadcrumb"><a href="/inventory">← INVENTORY</a></p>
       <h1 class="page-title"><%= firearm.manufacturer %> <span class="title-model"><%= firearm.model %></span></h1>
       <div class="detail-badges">
-        <% if (firearm.is_3d_printed) { %><span class="badge badge--3dp">3D PRINTED</span><% } %>
-        <% if (firearm.nfa_type) { %><span class="badge <%= firearm.is_nfa ? (firearm.nfa_approve_date ? 'badge--nfa-approved' : 'badge--nfa') : 'badge--type' %>"><%= firearm.nfa_type %></span><% } %>
-        <% if (firearm.caliber) { %><span class="badge badge--caliber"><%= firearm.caliber %></span><% } %>
-        <% if (firearm.is_disposed) { %><span class="badge badge--disposed">DISPOSED</span><% } %>
+        <% if (firearm.is_3d_printed) { %><span class="badge badge--3dp badge--searchable" data-search="3D PRINTED">3D PRINTED</span><% } %>
+        <% if (firearm.nfa_type) { %><span class="badge <%= firearm.is_nfa ? (firearm.nfa_approve_date ? 'badge--nfa-approved' : 'badge--nfa') : 'badge--type' %> badge--searchable" data-search="<%= firearm.nfa_type %>"><%= firearm.nfa_type %></span><% } %>
+        <% if (firearm.caliber) { %><span class="badge badge--caliber badge--searchable" data-search="<%= firearm.caliber %>"><%= firearm.caliber %></span><% } %>
+        <% if (firearm.is_disposed) { %><span class="badge badge--disposed badge--searchable" data-search="DISPOSED">DISPOSED</span><% } %>
       </div>
     </div>
     <div class="page-actions">
@@ -133,7 +133,7 @@
         <div class="info-item">
           <span class="info-label">OPTICS / ACCESSORIES</span>
           <div class="tag-list">
-            <% opticsList.forEach(tag => { %><span class="tag"><%= tag %></span><% }) %>
+            <% opticsList.forEach(tag => { %><span class="tag badge--searchable" data-search="<%= tag %>"><%= tag %></span><% }) %>
           </div>
         </div>
         <% } %>
@@ -489,5 +489,12 @@
   });
 })();
 // photo drop zone wired up by main.js
+document.addEventListener('click', function(e) {
+  var badge = e.target.closest('.badge--searchable');
+  if (!badge) return;
+  e.preventDefault();
+  e.stopImmediatePropagation();
+  window.location.href = '/inventory?q=' + encodeURIComponent(badge.getAttribute('data-search'));
+}, true);
 </script>
 <%- include('partials/footer') %>
