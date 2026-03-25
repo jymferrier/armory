@@ -217,7 +217,6 @@
 
   <div class="doc-title">
     ASSIGNMENT TO THE <%= trustNameUpper %>
-    <% if (totalPages > 1) { %> &mdash; PAGE <%= pageNum %> OF <%= totalPages %><% } %>
   </div>
 
   <p class="doc-intro">
@@ -232,25 +231,26 @@
         <th>Make</th>
         <th>Model</th>
         <th>Serial Number</th>
-        <th>Purchase Date /<br>Purchased From</th>
+        <th>Approved Date /<br>Acquired From</th>
       </tr>
     </thead>
     <tbody>
       <% for (let i = 0; i < rowCount; i++) {
            const item = pageItems[i] || null;
            const globalNum = rowOffset + i + 1;
-           let purchaseDate = '';
-           if (item && item.date_acquired) {
-             const d = new Date(item.date_acquired + 'T00:00:00');
-             purchaseDate = d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+           let approveDate = '';
+           if (item && item.nfa_approve_date) {
+             const d = new Date(item.nfa_approve_date + 'T00:00:00');
+             approveDate = d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
            }
+           const acquiredFrom = item ? (item.acquired_from || '') : '';
       %>
       <tr>
         <td class="row-num"><%= globalNum %>.</td>
         <td class="col-make"><%= item ? item.manufacturer : '' %></td>
         <td class="col-model"><%= item ? item.model : '' %></td>
         <td class="col-serial"><%= item ? (item.serial || '') : '' %></td>
-        <td class="col-purchase"><%= purchaseDate %></td>
+        <td class="col-purchase"><%= approveDate %><% if (approveDate && acquiredFrom) { %><br><% } %><%= acquiredFrom %></td>
       </tr>
       <% } %>
     </tbody>
@@ -296,7 +296,6 @@
 
   <div class="doc-footer">
     ASSIGNMENT TO THE <%= trustNameUpper %>
-    <% if (totalPages > 1) { %> &mdash; Page <%= pageNum %> of <%= totalPages %><% } %>
   </div>
 
 </div>
