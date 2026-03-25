@@ -139,24 +139,28 @@
         </p>
       <% } else { %>
         <p style="font-family:var(--font-mono);font-size:0.65rem;color:var(--text-dim);margin-bottom:1rem;letter-spacing:0.08em;">
-          SELECT ITEMS TO INCLUDE IN THE ASSIGNMENT DOCUMENT · FORMALLY ASSIGNED ITEMS ARE LOCKED
+          SELECT ITEMS TO INCLUDE IN THE ASSIGNMENT DOCUMENT · ITEMS MUST HAVE AN NFA APPROVED DATE AND NOT BE ALREADY ASSIGNED
         </p>
-        <% items.forEach(item => { %>
-        <div style="display:flex;align-items:center;gap:1rem;padding:0.65rem 0.75rem;border:1px solid var(--border);margin-bottom:3px;background:var(--bg-3);<%= item.trust_assigned ? 'opacity:0.7;' : '' %>">
+        <% items.forEach(item => {
+             const notEligible = item.trust_assigned || !item.nfa_approve_date;
+        %>
+        <div style="display:flex;align-items:center;gap:1rem;padding:0.65rem 0.75rem;border:1px solid var(--border);margin-bottom:3px;background:var(--bg-3);<%= notEligible ? 'opacity:0.6;' : '' %>">
           <input type="checkbox" class="item-checkbox" value="<%= item.id %>"
-            <%= item.trust_assigned ? 'disabled' : 'checked' %>
+            <%= notEligible ? 'disabled' : 'checked' %>
             style="width:16px;height:16px;flex-shrink:0;accent-color:var(--accent);">
           <div style="flex:1;min-width:0;">
             <div style="font-family:var(--font-display);font-size:1.1rem;letter-spacing:0.05em;">
               <%= item.manufacturer %> <span style="color:var(--accent)"><%= item.model %></span>
               <% if (item.trust_assigned) { %>
                 <span style="font-family:var(--font-mono);font-size:0.6rem;color:var(--nfa-green);border:1px solid var(--nfa-green);padding:0.1rem 0.4rem;margin-left:0.5rem;letter-spacing:0.1em;">ASSIGNED</span>
+              <% } else if (!item.nfa_approve_date) { %>
+                <span style="font-family:var(--font-mono);font-size:0.6rem;color:var(--nfa-red,#c0392b);border:1px solid var(--nfa-red,#c0392b);padding:0.1rem 0.4rem;margin-left:0.5rem;letter-spacing:0.1em;">PENDING APPROVAL</span>
               <% } %>
             </div>
             <div style="font-family:var(--font-mono);font-size:0.65rem;color:var(--text-muted);margin-top:0.1rem;">
               <% if (item.nfa_type) { %><span style="color:<%= item.nfa_approve_date ? 'var(--nfa-green)' : 'var(--nfa-red)' %>"><%= item.nfa_type %></span><% } %>
               <% if (item.serial) { %> · S/N: <%= item.serial %><% } %>
-              <% if (item.date_acquired) { %> · Acquired: <%= item.date_acquired %><% } %>
+              <% if (item.nfa_approve_date) { %> · Approved: <%= item.nfa_approve_date %><% } else if (item.date_acquired) { %> · Acquired: <%= item.date_acquired %><% } %>
             </div>
           </div>
           <% if (!user.is_spouse_view) { %>
