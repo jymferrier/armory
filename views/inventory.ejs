@@ -116,8 +116,8 @@ document.addEventListener('click', function(e) {
   var badge = e.target.closest('.badge--searchable');
   if (!badge) return;
   e.preventDefault();
-  e.stopPropagation();
+  e.stopImmediatePropagation();
   window.location.href = '/inventory?q=' + encodeURIComponent(badge.getAttribute('data-search'));
-});
+}, true);
 </script>
 <%- include('partials/footer') %>
