@@ -321,7 +321,12 @@ const trustQueries = {
   create: (data) => getDB().prepare('INSERT INTO trusts (name, settlor_name, settlor_location, agreement_date, notes) VALUES (@name, @settlor_name, @settlor_location, @agreement_date, @notes)').run(data),
   update: (id, data) => getDB().prepare('UPDATE trusts SET settlor_name = @settlor_name, settlor_location = @settlor_location, agreement_date = @agreement_date, notes = @notes WHERE id = @id').run({ ...data, id }),
   delete: (id) => getDB().prepare('DELETE FROM trusts WHERE id = ?').run(id),
-  itemsForTrust: (name) => getDB().prepare("SELECT * FROM firearms WHERE nfa_trust_name = ? ORDER BY created_at DESC").all(name).map(f => ({ ...f, is_3d_printed: !!f.is_3d_printed, is_nfa: !!f.is_nfa, nfa_fmi: !!f.nfa_fmi, trust_assigned: !!f.trust_assigned })),
+  itemsForTrust: (name) => getDB().prepare("SELECT * FROM firearms WHERE nfa_trust_name = ? ORDER BY created_at DESC").all(name).map(f => ({
+    ...f,
+    is_3d_printed: !!f.is_3d_printed, is_nfa: !!f.is_nfa, nfa_fmi: !!f.nfa_fmi, trust_assigned: !!f.trust_assigned,
+    primary_photo: getDB().prepare('SELECT filename FROM firearm_photos WHERE firearm_id = ? AND is_primary = 1 LIMIT 1').get(f.id)
+               || getDB().prepare('SELECT filename FROM firearm_photos WHERE firearm_id = ? LIMIT 1').get(f.id)
+  })),
   distinctTrustNames: () => getDB().prepare("SELECT DISTINCT nfa_trust_name FROM firearms WHERE nfa_trust_name IS NOT NULL AND nfa_trust_name != '' ORDER BY nfa_trust_name ASC").all().map(r => r.nfa_trust_name),
   addDocument: (trustId, filename, originalName, docType = 'additional') =>
     getDB().prepare('INSERT INTO trust_documents (trust_id, filename, original_name, doc_type) VALUES (?, ?, ?, ?)').run(trustId, filename, originalName, docType),
