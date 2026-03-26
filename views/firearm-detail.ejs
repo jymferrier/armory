@@ -278,6 +278,74 @@
         </div>
         <% } %>
       </div>
+
+      <% if (firearm.nfa2_enabled) { %>
+      <h3 class="section-title mt-lg">SECONDARY TRANSFER</h3>
+      <%
+        const submit2 = firearm.nfa2_submit_date ? new Date(firearm.nfa2_submit_date + 'T00:00:00') : null;
+        const approve2 = firearm.nfa2_approve_date ? new Date(firearm.nfa2_approve_date + 'T00:00:00') : null;
+        let wait2Days = null, wait2Pending = false;
+        if (submit2) {
+          const end2 = approve2 || today;
+          wait2Days = Math.round((end2 - submit2) / (1000 * 60 * 60 * 24));
+          wait2Pending = !approve2;
+        }
+      %>
+      <% if (submit2) { %>
+      <div class="nfa-wait-tracker <%= wait2Pending ? 'nfa-wait-tracker--pending' : 'nfa-wait-tracker--approved' %>">
+        <div class="nfa-wait-icon"><%= wait2Pending ? '⏳' : '✓' %></div>
+        <div class="nfa-wait-body">
+          <div class="nfa-wait-days"><%= wait2Days %> <span>DAYS</span></div>
+          <div class="nfa-wait-label">
+            <% if (wait2Pending) { %>
+              PENDING — submitted <%= submit2.toLocaleDateString('en-US', {year:'numeric',month:'short',day:'numeric'}) %>
+            <% } else { %>
+              APPROVED — <%= submit2.toLocaleDateString('en-US', {month:'short',day:'numeric',year:'numeric'}) %> → <%= approve2.toLocaleDateString('en-US', {month:'short',day:'numeric',year:'numeric'}) %>
+            <% } %>
+          </div>
+        </div>
+      </div>
+      <% } %>
+      <div class="info-grid">
+        <% if (firearm.nfa2_fmi) { %>
+        <div class="info-item">
+          <span class="info-label">FMI</span>
+          <span class="info-value value--nfa">YES</span>
+        </div>
+        <% } %>
+        <% if (firearm.nfa2_form_type) { %>
+        <div class="info-item">
+          <span class="info-label">FORM TYPE</span>
+          <span class="info-value"><%= firearm.nfa2_form_type %></span>
+        </div>
+        <% } %>
+        <% if (firearm.nfa2_form_number) { %>
+        <div class="info-item">
+          <span class="info-label">FORM NUMBER</span>
+          <span class="info-value mono"><%= firearm.nfa2_form_number %></span>
+        </div>
+        <% } %>
+        <% if (firearm.nfa2_submit_date) { %>
+        <div class="info-item">
+          <span class="info-label">DATE SUBMITTED</span>
+          <span class="info-value"><%= new Date(firearm.nfa2_submit_date + 'T00:00:00').toLocaleDateString('en-US', {year:'numeric',month:'long',day:'numeric'}) %></span>
+        </div>
+        <% } %>
+        <% if (firearm.nfa2_tax_stamp_serial) { %>
+        <div class="info-item">
+          <span class="info-label">TAX STAMP / FORM SERIAL</span>
+          <span class="info-value mono"><%= firearm.nfa2_tax_stamp_serial %></span>
+        </div>
+        <% } %>
+        <% if (firearm.nfa2_approve_date) { %>
+        <div class="info-item">
+          <span class="info-label">ATF APPROVAL DATE</span>
+          <span class="info-value"><%= new Date(firearm.nfa2_approve_date + 'T00:00:00').toLocaleDateString('en-US', {year:'numeric',month:'long',day:'numeric'}) %></span>
+        </div>
+        <% } %>
+      </div>
+      <% } %>
+
       <% } %>
 
 

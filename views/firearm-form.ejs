@@ -266,6 +266,63 @@
           📋 ATF Form and Form 5320 documents can be uploaded from the item detail page after saving.
         </div>
 
+        <!-- Secondary Transfer -->
+        <div class="field field--checkbox" style="margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border);">
+          <label class="checkbox-label">
+            <input type="checkbox" name="nfa2_enabled" id="nfa2Enabled" value="1" class="checkbox-input"
+              <%= firearm && firearm.nfa2_enabled ? 'checked' : '' %>>
+            <span class="checkbox-custom checkbox-custom--nfa"></span>
+            <span class="checkbox-text">ADDITIONAL FORM (SECONDARY TRANSFER)</span>
+          </label>
+        </div>
+
+        <div id="nfa2Fields" style="display:<%= firearm && firearm.nfa2_enabled ? 'block' : 'none' %>">
+          <div class="field-row" style="margin-top:0.75rem;">
+            <div class="field">
+              <label class="field-label">FORM TYPE</label>
+              <select name="nfa2_form_type" class="field-select">
+                <option value="">— SELECT —</option>
+                <option value="Form 1" <%= firearm && firearm.nfa2_form_type === 'Form 1' ? 'selected' : '' %>>Form 1</option>
+                <option value="Form 4" <%= firearm && firearm.nfa2_form_type === 'Form 4' ? 'selected' : '' %>>Form 4</option>
+              </select>
+            </div>
+            <div class="field">
+              <label class="field-label">FORM NUMBER</label>
+              <input type="text" name="nfa2_form_number" class="field-input mono"
+                value="<%= firearm ? (firearm.nfa2_form_number || '') : '' %>"
+                placeholder="e.g. 20240001234">
+            </div>
+          </div>
+          <div class="field-row">
+            <div class="field">
+              <label class="field-label">TAX STAMP / FORM SERIAL</label>
+              <input type="text" name="nfa2_tax_stamp_serial" class="field-input mono"
+                value="<%= firearm ? (firearm.nfa2_tax_stamp_serial || '') : '' %>"
+                placeholder="Tax stamp or Form serial number">
+            </div>
+          </div>
+          <div class="field-row">
+            <div class="field">
+              <label class="field-label">DATE SUBMITTED TO ATF</label>
+              <input type="date" name="nfa2_submit_date" class="field-input field-input--date"
+                value="<%= firearm ? (firearm.nfa2_submit_date || '') : '' %>">
+            </div>
+            <div class="field">
+              <label class="field-label">ATF APPROVAL DATE</label>
+              <input type="date" name="nfa2_approve_date" class="field-input field-input--date"
+                value="<%= firearm ? (firearm.nfa2_approve_date || '') : '' %>">
+            </div>
+          </div>
+          <div class="field field--checkbox">
+            <label class="checkbox-label">
+              <input type="checkbox" name="nfa2_fmi" id="nfa2Fmi" value="1" class="checkbox-input"
+                <%= firearm && firearm.nfa2_fmi ? 'checked' : '' %>>
+              <span class="checkbox-custom checkbox-custom--nfa"></span>
+              <span class="checkbox-text">FMI (FIREARM MANUFACTURING INTENT)</span>
+            </label>
+          </div>
+        </div>
+
       </div>
     </div>
 
@@ -390,6 +447,8 @@ document.addEventListener('DOMContentLoaded', function() {
   if (itemType) itemType.addEventListener('change', function() { onItemTypeChange(this.value); });
   var isDisposed = document.getElementById('isDisposed');
   if (isDisposed) isDisposed.addEventListener('change', function() { toggleSection('disposalFields', this.checked); });
+  var nfa2Enabled = document.getElementById('nfa2Enabled');
+  if (nfa2Enabled) nfa2Enabled.addEventListener('change', function() { toggleSection('nfa2Fields', this.checked); });
 });
 
 // ── Optics tag input ──────────────────────────────────────

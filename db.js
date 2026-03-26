@@ -128,6 +128,13 @@ function initDB() {
     "ALTER TABLE firearms ADD COLUMN trust_assigned INTEGER DEFAULT 0",
     "ALTER TABLE trusts ADD COLUMN notes TEXT",
     "ALTER TABLE trust_documents ADD COLUMN doc_type TEXT DEFAULT 'additional'",
+    "ALTER TABLE firearms ADD COLUMN nfa2_enabled INTEGER DEFAULT 0",
+    "ALTER TABLE firearms ADD COLUMN nfa2_form_type TEXT",
+    "ALTER TABLE firearms ADD COLUMN nfa2_form_number TEXT",
+    "ALTER TABLE firearms ADD COLUMN nfa2_fmi INTEGER DEFAULT 0",
+    "ALTER TABLE firearms ADD COLUMN nfa2_submit_date TEXT",
+    "ALTER TABLE firearms ADD COLUMN nfa2_tax_stamp_serial TEXT",
+    "ALTER TABLE firearms ADD COLUMN nfa2_approve_date TEXT",
   ];
   for (const sql of migrations) {
     try { db.exec(sql); } catch (_) { /* column already exists */ }
@@ -203,11 +210,13 @@ const firearmsQueries = {
         manufacturer, model, model_number, caliber, serial, barrel_length, overall_length, optics,
         date_acquired, acquired_from, price_paid, spouse_price, transfer_date, ffl_transferred_from,
         is_3d_printed, is_nfa, nfa_type, nfa_form_type, nfa_form_number, nfa_fmi, nfa_submit_date, nfa_tax_stamp_serial, nfa_approve_date, nfa_trust_name,
+        nfa2_enabled, nfa2_form_type, nfa2_form_number, nfa2_fmi, nfa2_submit_date, nfa2_tax_stamp_serial, nfa2_approve_date,
         is_disposed, date_disposed, disposal_method, notes, round_count
       ) VALUES (
         @manufacturer, @model, @model_number, @caliber, @serial, @barrel_length, @overall_length, @optics,
         @date_acquired, @acquired_from, @price_paid, @spouse_price, @transfer_date, @ffl_transferred_from,
         @is_3d_printed, @is_nfa, @nfa_type, @nfa_form_type, @nfa_form_number, @nfa_fmi, @nfa_submit_date, @nfa_tax_stamp_serial, @nfa_approve_date, @nfa_trust_name,
+        @nfa2_enabled, @nfa2_form_type, @nfa2_form_number, @nfa2_fmi, @nfa2_submit_date, @nfa2_tax_stamp_serial, @nfa2_approve_date,
         @is_disposed, @date_disposed, @disposal_method, @notes, @round_count
       )
     `).run(data);
@@ -224,6 +233,9 @@ const firearmsQueries = {
         nfa_form_type = @nfa_form_type, nfa_form_number = @nfa_form_number, nfa_fmi = @nfa_fmi,
         nfa_submit_date = @nfa_submit_date, nfa_tax_stamp_serial = @nfa_tax_stamp_serial,
         nfa_approve_date = @nfa_approve_date, nfa_trust_name = @nfa_trust_name,
+        nfa2_enabled = @nfa2_enabled, nfa2_form_type = @nfa2_form_type, nfa2_form_number = @nfa2_form_number,
+        nfa2_fmi = @nfa2_fmi, nfa2_submit_date = @nfa2_submit_date, nfa2_tax_stamp_serial = @nfa2_tax_stamp_serial,
+        nfa2_approve_date = @nfa2_approve_date,
         is_disposed = @is_disposed, date_disposed = @date_disposed,
         disposal_method = @disposal_method, notes = @notes,
         round_count = @round_count, updated_at = CURRENT_TIMESTAMP
