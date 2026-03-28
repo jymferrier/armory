@@ -230,14 +230,6 @@
       width: 2.2in;
       height: 2.2in;
       flex-shrink: 0;
-      border: 1px dashed #999;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: #aaa;
-      font-size: 9pt;
-      font-style: italic;
-      font-family: 'Courier New', monospace;
     }
 
     /* ── Footer ─────────────────────────────────────────────────── */
@@ -280,7 +272,7 @@
       .notary-section  { padding-top: 0.5rem; margin-top: 0.25rem; }
       .notary-state    { margin-bottom: 0.35rem; font-size: 10.5pt; }
       .notary-body     { font-size: 10.5pt; margin-bottom: 0.5rem; }
-      .stamp-box       { width: 1.6in; height: 1.6in; border: 1px dashed #999; }
+      .stamp-box       { width: 1.6in; height: 1.6in; }
       .doc-footer      { margin-top: 0.5rem; padding-top: 0.25rem; }
       .doc-header      { margin-bottom: 0.75rem; padding-bottom: 0.4rem; }
 
@@ -311,7 +303,7 @@
     return '<span class="blank" style="min-width:' + (min||'1.5in') + '"></span>';
   }
 
-  const ITEMS_PER_PAGE = 8;
+  const ITEMS_PER_PAGE = 5;
   const MIN_ROWS       = 5;
 
   const pages = [];
@@ -447,7 +439,7 @@
         <div class="sig-label" style="margin-top:0.25rem">Printed Name: <span class="blank" style="min-width:1.5in"></span></div>
         <div class="sig-label" style="margin-top:0.25rem">My Commission Expires: <span class="blank" style="min-width:1.1in"></span></div>
       </div>
-      <div class="stamp-box">Notary Seal</div>
+      <div class="stamp-box"></div>
     </div>
   </div>
 
