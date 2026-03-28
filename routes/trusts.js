@@ -99,7 +99,7 @@ router.get('/:id/assignment/pdf', async (req, res) => {
 
     const html = await ejs.renderFile(
       path.join(__dirname, '../views/trust-print.ejs'),
-      { user: req.session.user, trust, items, pdfMode: true },
+      { user: req.session.user, trust, items, pdfMode: true, cspNonce: '' },
       { async: true }
     );
 
