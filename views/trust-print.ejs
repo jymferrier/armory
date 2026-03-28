@@ -353,7 +353,7 @@
     <tbody>
       <% for (let i = 0; i < rowCount; i++) {
            const item      = pageItems[i] || null;
-           const globalNum = rowOffset + i + 1;
+           const globalNum = i + 1;
 
            let approveDate = '';
            if (item && item.nfa_approve_date) {
