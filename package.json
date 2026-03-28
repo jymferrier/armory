@@ -19,6 +19,7 @@
     "express-session": "^1.17.3",
     "helmet": "^8.1.0",
     "multer": "^2.0.0",
+    "puppeteer-core": "^22.15.0",
     "uuid": "^9.0.0"
   }
 }

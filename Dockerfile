@@ -1,5 +1,10 @@
 FROM node:20-alpine
 
+# Install Chromium for server-side PDF generation
+RUN apk add --no-cache chromium
+
+ENV CHROMIUM_PATH=/usr/bin/chromium-browser
+
 # Set working directory
 WORKDIR /app
 

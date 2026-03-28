@@ -56,7 +56,7 @@ router.post('/:id', requireAdmin, (req, res) => {
   res.redirect('/trusts/' + req.params.id + '?saved=1');
 });
 
-// Print assignment document
+// Print assignment document (HTML preview)
 router.get('/:id/assignment', (req, res) => {
   const trust = trustQueries.findById(req.params.id);
   if (!trust) return res.status(404).render('error', { message: 'Trust not found', user: req.session.user });
@@ -73,6 +73,60 @@ router.get('/:id/assignment', (req, res) => {
   const rawIds = [].concat(req.query.items || []).map(Number).filter(Boolean);
   const items = rawIds.length > 0 ? allItems.filter(f => rawIds.includes(f.id)) : allItems;
   res.render('trust-print', { user: req.session.user, trust, items });
+});
+
+// Download assignment document as PDF
+router.get('/:id/assignment/pdf', async (req, res) => {
+  const trust = trustQueries.findById(req.params.id);
+  if (!trust) return res.status(404).render('error', { message: 'Trust not found', user: req.session.user });
+
+  const missing = [];
+  if (!trust.settlor_name)     missing.push('Settlor Name');
+  if (!trust.settlor_location) missing.push('Settlor Location');
+  if (!trust.agreement_date)   missing.push('Trust Agreement Date');
+  if (missing.length > 0) {
+    return res.redirect('/trusts/' + req.params.id + '?details_required=' + encodeURIComponent(missing.join(', ')));
+  }
+
+  const allItems = trustQueries.itemsForTrust(trust.name);
+  const rawIds = [].concat(req.query.items || []).map(Number).filter(Boolean);
+  const items = rawIds.length > 0 ? allItems.filter(f => rawIds.includes(f.id)) : allItems;
+
+  let browser;
+  try {
+    const ejs = require('ejs');
+    const puppeteer = require('puppeteer-core');
+
+    const html = await ejs.renderFile(
+      path.join(__dirname, '../views/trust-print.ejs'),
+      { user: req.session.user, trust, items, pdfMode: true },
+      { async: true }
+    );
+
+    browser = await puppeteer.launch({
+      executablePath: process.env.CHROMIUM_PATH || '/usr/bin/chromium-browser',
+      args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
+      headless: true
+    });
+
+    const page = await browser.newPage();
+    await page.setContent(html, { waitUntil: 'networkidle0' });
+    const pdf = await page.pdf({
+      format: 'Letter',
+      printBackground: true,
+      margin: { top: '0.65in', right: '0.65in', bottom: '0.65in', left: '0.65in' }
+    });
+
+    const filename = 'Assignment to ' + trust.name.replace(/[^a-zA-Z0-9 _-]/g, '') + '.pdf';
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', 'attachment; filename="' + filename + '"');
+    res.send(pdf);
+  } catch (e) {
+    console.error('PDF generation error:', e);
+    res.status(500).render('error', { message: 'PDF generation failed: ' + e.message, user: req.session.user });
+  } finally {
+    if (browser) await browser.close();
+  }
 });
 
 // Upload primary trust document (replaces existing)

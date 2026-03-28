@@ -182,7 +182,7 @@
         <% }) %>
 
         <div style="margin-top:1.25rem;display:flex;gap:0.75rem;align-items:center;">
-          <button type="button" id="generateBtn" class="btn btn--primary">GENERATE ASSIGNMENT DOCUMENT</button>
+          <button type="button" id="generateBtn" class="btn btn--primary">↓ DOWNLOAD ASSIGNMENT PDF</button>
           <button type="button" id="selectAllBtn" class="btn btn--ghost btn--sm">SELECT ALL</button>
           <button type="button" id="deselectAllBtn" class="btn btn--ghost btn--sm">DESELECT ALL</button>
         </div>
@@ -231,8 +231,8 @@ document.addEventListener('DOMContentLoaded', function() {
     generateBtn.addEventListener('click', function() {
       var checked = Array.from(document.querySelectorAll('.item-checkbox:checked')).map(function(cb) { return cb.value; });
       if (checked.length === 0) { alert('Select at least one item.'); return; }
-      var url = '/trusts/<%= trust.id %>/assignment?' + checked.map(function(id) { return 'items=' + id; }).join('&');
-      window.open(url, '_blank');
+      var url = '/trusts/<%= trust.id %>/assignment/pdf?' + checked.map(function(id) { return 'items=' + id; }).join('&');
+      window.location.href = url;
     });
   }
 

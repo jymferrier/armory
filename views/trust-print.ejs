@@ -228,8 +228,8 @@
     }
     .notary-sig-col .sig-line { min-height: 2rem; margin-top: 0.5rem; }
     .stamp-box {
-      width: 2.2in;
-      height: 2.2in;
+      width: 1.75in;
+      height: 1.75in;
       flex-shrink: 0;
     }
 
@@ -275,7 +275,7 @@
       .notary-state-row { margin-bottom: 0.1rem; }
       .notary-body     { font-size: 10pt; margin-bottom: 0.35rem; }
       .notary-sig-col .sig-line { margin-top: 0.25rem; }
-      .stamp-box       { width: 1.3in; height: 1.3in; }
+      .stamp-box       { width: 1.75in; height: 1.75in; }
       .doc-footer      { margin-top: 0.3rem; padding-top: 0.15rem; }
       .doc-header      { margin-bottom: 0.4rem; padding-bottom: 0.25rem; }
 
@@ -285,11 +285,12 @@
 </head>
 <body>
 
+<% if (!locals.pdfMode) { %>
 <div class="screen-actions">
-  <button class="print-btn" id="printBtn">&#9113; PRINT / SAVE AS PDF</button>
+  <button class="print-btn" id="printBtn">&#9113; PRINT</button>
   <a href="/trusts/<%= trust.id %>">&#8592; BACK TO TRUST</a>
-  <span class="screen-note">Each page prints as an independent document</span>
 </div>
+<% } %>
 
 <%
   const trustNameUpper = trust.name.toUpperCase();
