@@ -191,7 +191,7 @@ router.post('/:id/edit', requireAdmin, (req, res) => {
     optics: optics || null,
     date_acquired: date_acquired || null,
     acquired_from: cap(acquired_from, 500) || null,
-    price_paid: isSpouseView ? existingPricePaid : (price_paid || null),
+    price_paid: isSpouseView ? existingPricePaid : sanitizePrice(price_paid),
     spouse_price: isSpouseView ? sanitizePrice(price_paid) : sanitizePrice(spouse_price),
     transfer_date: transfer_date || null,
     ffl_transferred_from: cap(ffl_transferred_from, 500) || null,

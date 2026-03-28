@@ -173,20 +173,20 @@
           <% if (displayPrice) { %>
           <div class="info-item">
             <span class="info-label">PRICE PAID</span>
-            <span class="info-value">$<%= parseFloat(displayPrice).toLocaleString('en-US', {minimumFractionDigits:2,maximumFractionDigits:2}) %></span>
+            <span class="info-value">$<%= (parseFloat(String(displayPrice).replace(/[$,\s]/g,''))||0).toLocaleString('en-US', {minimumFractionDigits:2,maximumFractionDigits:2}) %></span>
           </div>
           <% } %>
         <% } else { %>
           <% if (firearm.price_paid) { %>
           <div class="info-item">
             <span class="info-label">PRICE PAID</span>
-            <span class="info-value">$<%= parseFloat(firearm.price_paid).toLocaleString('en-US', {minimumFractionDigits:2,maximumFractionDigits:2}) %></span>
+            <span class="info-value">$<%= (parseFloat(String(firearm.price_paid).replace(/[$,\s]/g,''))||0).toLocaleString('en-US', {minimumFractionDigits:2,maximumFractionDigits:2}) %></span>
           </div>
           <% } %>
           <% if (firearm.spouse_price) { %>
           <div class="info-item">
             <span class="info-label">WHAT SPOUSE THINKS I PAID</span>
-            <span class="info-value">$<%= parseFloat(firearm.spouse_price).toLocaleString('en-US', {minimumFractionDigits:2,maximumFractionDigits:2}) %></span>
+            <span class="info-value">$<%= (parseFloat(String(firearm.spouse_price).replace(/[$,\s]/g,''))||0).toLocaleString('en-US', {minimumFractionDigits:2,maximumFractionDigits:2}) %></span>
           </div>
           <% } %>
         <% } %>
