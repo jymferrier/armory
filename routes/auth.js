@@ -16,6 +16,10 @@ const { v4: uuidv4 } = require('uuid');
 const importUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 20 * 1024 * 1024 } }).single('import_file');
 const zipImportUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 500 * 1024 * 1024 } }).single('import_zip');
 
+// Precomputed hash used for constant-time response when a username is not found,
+// preventing timing-based username enumeration. Computed once at startup.
+const DUMMY_HASH = bcrypt.hashSync('_armory_dummy_sentinel_', 12);
+
 // ── Account lockout (in-memory; resets on restart) ──────────────────────────
 const failedLogins = new Map();
 const LOCKOUT_THRESHOLD = 10;
@@ -188,7 +192,15 @@ router.post('/login', (req, res) => {
   }
 
   const user = userQueries.findByUsername(username);
-  if (!user || !bcrypt.compareSync(password, user.password)) {
+  if (!user) {
+    // Run a dummy compare so response time is indistinguishable from a wrong
+    // password — prevents timing-based username enumeration.
+    bcrypt.compareSync(password, DUMMY_HASH);
+    recordFailedLogin(username);
+    audit(req, 'LOGIN_FAILURE', username);
+    return res.render('login', { error: 'Invalid username or password' });
+  }
+  if (!bcrypt.compareSync(password, user.password)) {
     recordFailedLogin(username);
     audit(req, 'LOGIN_FAILURE', username);
     return res.render('login', { error: 'Invalid username or password' });
@@ -467,9 +479,12 @@ router.post('/settings/import/zip', requireAuth, requireAdmin, (req, res) => {
     if (entries.length > MAX_ENTRIES) {
       return fail(`ZIP contains too many entries (${entries.length}). Maximum allowed is ${MAX_ENTRIES}.`);
     }
+    // Measure actual decompressed size — e.header.size is user-controlled metadata
+    // in the ZIP central directory and cannot be trusted for zip-bomb detection.
     let totalUncompressed = 0;
     for (const e of entries) {
-      totalUncompressed += (e.header && e.header.size) ? e.header.size : 0;
+      if (e.isDirectory) continue;
+      totalUncompressed += e.getData().length;
       if (totalUncompressed > MAX_UNCOMPRESSED) {
         return fail('ZIP uncompressed content exceeds the 500 MB safety limit.');
       }
@@ -533,10 +548,10 @@ router.post('/settings/import/zip', requireAuth, requireAdmin, (req, res) => {
           let docType, basename;
           if (parts.length >= 4 && VALID_DOC_TYPES.has(parts[2])) {
             docType = parts[2];
-            basename = parts.slice(3).join('/');
+            basename = path.basename(parts.slice(3).join('/'));
           } else {
             docType = 'additional_docs';
-            basename = parts[parts.length - 1];
+            basename = path.basename(parts[parts.length - 1]);
           }
           const ext = path.extname(basename);
           const newFilename = uuidv4() + ext;

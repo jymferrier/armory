@@ -53,11 +53,17 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
-// Session secret — fail loudly if not configured; never use a known fallback
+// Session secret — fail loudly if not configured or if the known placeholder is still in use
+const KNOWN_WEAK_SECRETS = [
+  'replace-with-a-long-random-string-at-least-32-chars',
+  'secret', 'changeme', 'password', 'armory', 'armory123',
+];
 let sessionSecret = process.env.SESSION_SECRET;
 if (!sessionSecret) {
   sessionSecret = crypto.randomBytes(32).toString('hex');
   console.warn('WARNING: SESSION_SECRET env var is not set. Generated a random ephemeral secret — all sessions will be invalidated on restart. Set SESSION_SECRET to a strong random value.');
+} else if (KNOWN_WEAK_SECRETS.includes(sessionSecret) || sessionSecret.length < 32) {
+  console.warn('WARNING: SESSION_SECRET is a known placeholder or is too short (< 32 chars). Sessions may be forgeable. Generate a strong secret with: node -e "console.log(require(\'crypto\').randomBytes(32).toString(\'hex\'))"');
 }
 
 // Open sessions DB and migrate schema if it was created by the old connect-sqlite3

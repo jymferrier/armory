@@ -123,7 +123,7 @@ router.get('/:id/assignment/pdf', async (req, res) => {
     res.send(pdf);
   } catch (e) {
     console.error('PDF generation error:', e);
-    res.status(500).render('error', { message: 'PDF generation failed: ' + e.message, user: req.session.user });
+    res.status(500).render('error', { message: 'PDF generation failed. Please try again.', user: req.session.user });
   } finally {
     if (browser) await browser.close();
   }
