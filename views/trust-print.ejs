@@ -255,8 +255,12 @@
         max-width: none;
         padding: 0;
         page-break-after: always;
+        display: flex;
+        flex-direction: column;
+        height: 9.7in;
       }
       .paper:last-child { page-break-after: avoid; }
+      .doc-bottom { margin-top: auto; }
 
       /* Tighten spacing */
       .doc-title       { font-size: 12pt; margin-bottom: 0.1rem; }
@@ -398,58 +402,60 @@
     as of the date first written above.
   </p>
 
-  <div class="sig-section">
-    <div class="sig-row">
-      <div class="sig-block">
-        <div class="sig-line"></div>
-        <div class="sig-label"><%= settlor || 'Settlor and Trustee' %><% if (settlor) { %>, Settlor and Trustee<% } %></div>
-      </div>
-      <div class="sig-block-date">
-        <div class="sig-line"></div>
-        <div class="sig-label">Date</div>
-      </div>
-    </div>
-  </div>
-
-  <div class="notary-section">
-    <div class="notary-state">
-      <div class="notary-state-row">
-        <span class="label">State of</span>
-        <span class="blank"></span>
-        <span class="paren">)</span>
-      </div>
-      <div class="notary-state-row">
-        <span class="label" style="padding-left:0.75in">&nbsp;</span>
-        <span style="white-space:nowrap; font-size:9pt; padding: 0 0.5rem; padding-bottom:0.1rem">)</span>
-        <span style="white-space:nowrap; font-size:9.5pt; font-style:italic">ss.</span>
-      </div>
-      <div class="notary-state-row">
-        <span class="label">County of</span>
-        <span class="blank"></span>
-        <span class="paren">)</span>
+  <div class="doc-bottom">
+    <div class="sig-section">
+      <div class="sig-row">
+        <div class="sig-block">
+          <div class="sig-line"></div>
+          <div class="sig-label"><%= settlor || 'Settlor and Trustee' %><% if (settlor) { %>, Settlor and Trustee<% } %></div>
+        </div>
+        <div class="sig-block-date">
+          <div class="sig-line"></div>
+          <div class="sig-label">Date</div>
+        </div>
       </div>
     </div>
 
-    <p class="notary-body">
-      This instrument was acknowledged before me on the <span class="blank" style="min-width:0.3in"></span> day
-      of <span class="blank" style="min-width:1in"></span>, 20<span class="blank" style="min-width:0.4in"></span>,
-      by <strong><%= settlor || '_______________' %></strong>, as Settlor and Trustee of the <strong><%= trustNameUpper %></strong>.
-    </p>
-
-    <div class="notary-footer">
-      <div class="notary-sig-col">
-        <div class="sig-line"></div>
-        <div class="sig-label">Signature of Notarial Officer</div>
-        <div class="sig-label" style="margin-top:0.25rem">Printed Name: <span class="blank" style="min-width:1.5in"></span></div>
-        <div class="sig-label" style="margin-top:0.25rem">My Commission Expires: <span class="blank" style="min-width:1.1in"></span></div>
+    <div class="notary-section">
+      <div class="notary-state">
+        <div class="notary-state-row">
+          <span class="label">State of</span>
+          <span class="blank"></span>
+          <span class="paren">)</span>
+        </div>
+        <div class="notary-state-row">
+          <span class="label" style="padding-left:0.75in">&nbsp;</span>
+          <span style="white-space:nowrap; font-size:9pt; padding: 0 0.5rem; padding-bottom:0.1rem">)</span>
+          <span style="white-space:nowrap; font-size:9.5pt; font-style:italic">ss.</span>
+        </div>
+        <div class="notary-state-row">
+          <span class="label">County of</span>
+          <span class="blank"></span>
+          <span class="paren">)</span>
+        </div>
       </div>
-      <div class="stamp-box"></div>
-    </div>
-  </div>
 
-  <div class="doc-footer">
-    <span>Assignment of Property &mdash; <%= trust.name %></span>
-    <span>Executed under penalty of law &mdash; retain with trust records</span>
+      <p class="notary-body">
+        This instrument was acknowledged before me on the <span class="blank" style="min-width:0.3in"></span> day
+        of <span class="blank" style="min-width:1in"></span>, 20<span class="blank" style="min-width:0.4in"></span>,
+        by <strong><%= settlor || '_______________' %></strong>, as Settlor and Trustee of the <strong><%= trustNameUpper %></strong>.
+      </p>
+
+      <div class="notary-footer">
+        <div class="notary-sig-col">
+          <div class="sig-line"></div>
+          <div class="sig-label">Signature of Notarial Officer</div>
+          <div class="sig-label" style="margin-top:0.25rem">Printed Name: <span class="blank" style="min-width:1.5in"></span></div>
+          <div class="sig-label" style="margin-top:0.25rem">My Commission Expires: <span class="blank" style="min-width:1.1in"></span></div>
+        </div>
+        <div class="stamp-box"></div>
+      </div>
+    </div>
+
+    <div class="doc-footer">
+      <span>Assignment of Property &mdash; <%= trust.name %></span>
+      <span>Executed under penalty of law &mdash; retain with trust records</span>
+    </div>
   </div>
 
 </div>
