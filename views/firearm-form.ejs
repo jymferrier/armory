@@ -112,7 +112,7 @@
             <label class="field-label">ITEM TYPE</label>
             <%
               const allItemTypes = [
-                { group: 'Standard', items: ['Handgun', 'Rifle', 'Shotgun', 'Launcher'] },
+                { group: 'Standard', items: ['Handgun', 'Rifle', 'Shotgun', 'Launcher', 'Other'] },
                 { group: 'NFA', items: ['Suppressor/Silencer','Short Barrel Rifle (SBR)','Short Barrel Shotgun (SBS)','Machine Gun','Destructive Device (DD)','Any Other Weapon (AOW)'] }
               ];
               const currentType = firearm ? (firearm.nfa_type || '') : '';
