@@ -228,6 +228,51 @@ router.post('/:id/rounds', requireAdmin, (req, res) => {
   res.redirect(`/inventory/${req.params.id}`);
 });
 
+// Duplicate — copies everything except serial, NFA fields, and photos/docs
+router.post('/:id/duplicate', requireAdmin, (req, res) => {
+  const firearm = firearmsQueries.findById(req.params.id);
+  if (!firearm) return res.status(404).render('error', { message: 'Item not found', user: req.session.user });
+  const newId = firearmsQueries.create({
+    manufacturer:        firearm.manufacturer,
+    model:               firearm.model,
+    model_number:        firearm.model_number   || null,
+    caliber:             firearm.caliber        || null,
+    serial:              null,
+    barrel_length:       firearm.barrel_length  || null,
+    overall_length:      firearm.overall_length || null,
+    optics:              firearm.optics         || null,
+    date_acquired:       firearm.date_acquired  || null,
+    acquired_from:       firearm.acquired_from  || null,
+    price_paid:          firearm.price_paid     || null,
+    spouse_price:        firearm.spouse_price   || null,
+    transfer_date:       null,
+    ffl_transferred_from: firearm.ffl_transferred_from || null,
+    is_3d_printed:       firearm.is_3d_printed ? 1 : 0,
+    is_nfa:              0,
+    nfa_type:            null,
+    nfa_form_type:       null,
+    nfa_form_number:     null,
+    nfa_fmi:             0,
+    nfa_submit_date:     null,
+    nfa_tax_stamp_serial: null,
+    nfa_approve_date:    null,
+    nfa_trust_name:      null,
+    nfa2_enabled:        0,
+    nfa2_form_type:      null,
+    nfa2_form_number:    null,
+    nfa2_fmi:            0,
+    nfa2_submit_date:    null,
+    nfa2_tax_stamp_serial: null,
+    nfa2_approve_date:   null,
+    is_disposed:         0,
+    date_disposed:       null,
+    disposal_method:     null,
+    notes:               firearm.notes || null,
+    round_count:         0,
+  });
+  res.redirect('/inventory/' + newId);
+});
+
 // Delete
 router.post('/:id/delete', requireAdmin, (req, res) => {
   const firearm = firearmsQueries.findById(req.params.id);
