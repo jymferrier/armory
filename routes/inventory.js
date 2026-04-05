@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const path = require('path');
 const fs = require('fs');
-const { firearmsQueries } = require('../db');
+const { firearmsQueries, opticsQueries } = require('../db');
 const { requireAuth, requireAdmin } = require('../middleware/auth');
 const { validateCsrf } = require('../middleware/csrf');
 const { uploadPhotos, uploadDocs, PHOTO_DIR, DOC_DIR } = require('../middleware/upload');
@@ -144,7 +144,8 @@ router.get('/:id', (req, res) => {
   if (req.session.user.is_spouse_view && !firearm.spouse_visible) {
     return res.status(404).render('error', { message: 'Firearm not found', user: req.session.user });
   }
-  res.render('firearm-detail', { user: req.session.user, firearm, isSpouseView: !!req.session.user.is_spouse_view });
+  const assignedOptics = opticsQueries.findByFirearmId(firearm.id);
+  res.render('firearm-detail', { user: req.session.user, firearm, isSpouseView: !!req.session.user.is_spouse_view, assignedOptics });
 });
 
 // Edit form

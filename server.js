@@ -123,6 +123,7 @@ app.use('/settings/import', sensitiveWriteLimiter);
 app.use('/', require('./routes/auth'));
 app.use('/inventory', require('./routes/inventory'));
 app.use('/trusts', require('./routes/trusts'));
+app.use('/optics', require('./routes/optics'));
 app.use('/api', require('./routes/api'));
 
 // 404

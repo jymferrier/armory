@@ -1,0 +1,216 @@
+<%- include('partials/header') %>
+<div class="page">
+  <div class="page-header">
+    <div>
+      <p class="breadcrumb"><a href="<%= optic ? '/optics/' + optic.id : '/optics' %>">← <%= optic ? optic.manufacturer + ' ' + optic.model : 'OPTICS' %></a></p>
+      <h1 class="page-title"><%= optic && optic.id ? 'EDIT OPTIC' : 'ADD OPTIC' %></h1>
+    </div>
+  </div>
+
+  <% if (error) { %>
+    <div class="alert alert--error"><%= error %></div>
+  <% } %>
+
+  <form method="POST" action="/optics/<%= optic && optic.id ? optic.id + '/edit' : 'new' %>"
+    enctype="multipart/form-data"
+    class="firearm-form">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+    <!-- 01: IDENTIFICATION -->
+    <div class="form-band">
+      <div class="form-band__label">01 / IDENTIFICATION</div>
+      <div class="form-band__fields">
+
+        <div class="field-row">
+          <div class="field">
+            <label class="field-label">MANUFACTURER <span class="required">*</span></label>
+            <input type="text" name="manufacturer" class="field-input" list="manufacturerList"
+              value="<%= optic ? (optic.manufacturer || '') : '' %>" required placeholder="e.g. Vortex, Leupold, Trijicon" autocomplete="off">
+            <datalist id="manufacturerList">
+              <% manufacturers.forEach(m => { %><option value="<%= m %>"><% }) %>
+            </datalist>
+          </div>
+          <div class="field">
+            <label class="field-label">MODEL <span class="required">*</span></label>
+            <input type="text" name="model" class="field-input" list="modelList"
+              value="<%= optic ? (optic.model || '') : '' %>" required placeholder="e.g. Razor HD Gen III, MRO" autocomplete="off">
+            <datalist id="modelList">
+              <% models.forEach(m => { %><option value="<%= m %>"><% }) %>
+            </datalist>
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label class="field-label">MODEL NUMBER</label>
+            <input type="text" name="model_number" class="field-input mono"
+              value="<%= optic ? (optic.model_number || '') : '' %>" placeholder="e.g. RZR-20027">
+          </div>
+          <div class="field">
+            <label class="field-label">SERIAL NUMBER</label>
+            <input type="text" name="serial" class="field-input mono"
+              value="<%= optic ? (optic.serial || '') : '' %>" placeholder="Manufacturer serial number">
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- 02: OPTIC TYPE -->
+    <div class="form-band">
+      <div class="form-band__label">02 / OPTIC TYPE</div>
+      <div class="form-band__fields">
+
+        <div class="field-row field-row--half">
+          <div class="field">
+            <label class="field-label">TYPE</label>
+            <select name="optic_type" class="field-input field-select" id="opticTypeSelect">
+              <option value="">— Select type —</option>
+              <% opticTypes.forEach(t => { %>
+                <option value="<%= t %>" <%= optic && optic.optic_type === t ? 'selected' : '' %>><%= t %></option>
+              <% }) %>
+            </select>
+          </div>
+        </div>
+
+        <div class="field-row field-row--half">
+          <div class="field">
+            <label class="field-label">MAGNIFICATION</label>
+            <input type="text" name="magnification" class="field-input"
+              value="<%= optic ? (optic.magnification || '') : '' %>" placeholder='e.g. 3-9, 1-6, 4'>
+            <p class="field-hint">Enter range (3-9) or fixed value (4) — "x" is added automatically</p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- 03: ACQUISITION -->
+    <div class="form-band">
+      <div class="form-band__label">03 / ACQUISITION</div>
+      <div class="form-band__fields">
+
+        <div class="field-row">
+          <div class="field">
+            <label class="field-label">ACQUIRED FROM</label>
+            <input type="text" name="acquired_from" class="field-input" list="acquiredFromList"
+              value="<%= optic ? (optic.acquired_from || '') : '' %>" placeholder="e.g. Brownells, Amazon, Private Party" autocomplete="off">
+            <datalist id="acquiredFromList">
+              <% acquiredFromList.forEach(a => { %><option value="<%= a %>"><% }) %>
+            </datalist>
+          </div>
+          <div class="field">
+            <label class="field-label">DATE ACQUIRED</label>
+            <input type="date" name="date_acquired" class="field-input"
+              value="<%= optic ? (optic.date_acquired || '') : '' %>">
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label class="field-label">PRICE PAID</label>
+            <input type="text" name="price_paid" class="field-input"
+              value="<%= optic ? (optic.price_paid || '') : '' %>" placeholder="e.g. 1299.99">
+          </div>
+          <div class="field">
+            <label class="field-label">WHAT SPOUSE THINKS I PAID</label>
+            <input type="text" name="spouse_price" class="field-input"
+              value="<%= optic ? (optic.spouse_price || '') : '' %>" placeholder="e.g. 299.99">
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- 04: ASSIGNED TO -->
+    <div class="form-band">
+      <div class="form-band__label">04 / ASSIGNED TO</div>
+      <div class="form-band__fields">
+        <div class="field-row field-row--half">
+          <div class="field">
+            <label class="field-label">MOUNTED ON / ASSIGNED TO</label>
+            <select name="firearm_id" class="field-input field-select">
+              <option value="">— Unassigned —</option>
+              <% firearms.forEach(f => { %>
+                <option value="<%= f.id %>" <%= optic && parseInt(optic.firearm_id) === f.id ? 'selected' : '' %>>
+                  <%= f.manufacturer %> <%= f.model %><%= f.serial ? ' (' + f.serial + ')' : '' %>
+                </option>
+              <% }) %>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 05: NOTES -->
+    <div class="form-band">
+      <div class="form-band__label">05 / NOTES</div>
+      <div class="form-band__fields">
+        <div class="field">
+          <label class="field-label">NOTES</label>
+          <textarea name="notes" class="field-input field-textarea" rows="4"
+            placeholder="Any additional notes…"><%= optic ? (optic.notes || '') : '' %></textarea>
+        </div>
+      </div>
+    </div>
+
+    <% if (!optic || !optic.id) { %>
+    <!-- 06: PHOTOS (new items only) -->
+    <div class="form-band">
+      <div class="form-band__label">06 / PHOTOS</div>
+      <div class="form-band__fields">
+        <div class="field">
+          <label class="field-label">PHOTOS</label>
+          <input type="file" name="photos" multiple accept="image/*" id="photoInput" style="display:none">
+          <div class="file-drop-zone" id="photoDropZone">
+            <div class="file-drop-label">
+              <span class="file-drop-icon">⊕</span>
+              <span>DRAG &amp; DROP OR CLICK TO SELECT</span>
+              <span class="file-drop-hint">JPG, PNG, WEBP, GIF — MAX 20MB EACH</span>
+            </div>
+          </div>
+          <div class="file-list" id="fileList"></div>
+        </div>
+      </div>
+    </div>
+    <% } %>
+
+    <div class="form-actions">
+      <button type="submit" class="btn btn--primary">SAVE OPTIC</button>
+      <a href="<%= optic && optic.id ? '/optics/' + optic.id : '/optics' %>" class="btn btn--ghost">CANCEL</a>
+    </div>
+
+  </form>
+</div>
+
+<script nonce="<%= cspNonce %>">
+// Photo drop zone
+(function() {
+  const dropZone = document.getElementById('photoDropZone');
+  const fileInput = document.getElementById('photoInput');
+  const fileList = document.getElementById('fileList');
+  if (!dropZone) return;
+
+  dropZone.addEventListener('click', () => fileInput.click());
+  dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+  dropZone.addEventListener('drop', e => {
+    e.preventDefault();
+    dropZone.classList.remove('drag-over');
+    fileInput.files = e.dataTransfer.files;
+    renderFileList();
+  });
+  fileInput.addEventListener('change', renderFileList);
+
+  function renderFileList() {
+    fileList.innerHTML = '';
+    Array.from(fileInput.files).forEach(f => {
+      const div = document.createElement('div');
+      div.className = 'file-item';
+      div.textContent = f.name + ' (' + (f.size / 1024).toFixed(0) + ' KB)';
+      fileList.appendChild(div);
+    });
+  }
+})();
+</script>
+<%- include('partials/footer') %>

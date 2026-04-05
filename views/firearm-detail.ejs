@@ -389,6 +389,19 @@
         </form>
       </div>
 
+      <!-- Assigned Optics -->
+      <% if (assignedOptics && assignedOptics.length > 0) { %>
+      <h3 class="section-title mt-lg">OPTICS / ACCESSORIES</h3>
+      <div class="info-grid">
+        <% assignedOptics.forEach(o => { %>
+        <div class="info-item">
+          <span class="info-label"><%= o.optic_type || 'Optic' %></span>
+          <span class="info-value"><a href="/optics/<%= o.id %>"><%= o.manufacturer %> <%= o.model %><%= o.magnification ? ' ' + o.magnification + 'x' : '' %></a></span>
+        </div>
+        <% }) %>
+      </div>
+      <% } %>
+
       <!-- Notes -->
       <% if (firearm.notes) { %>
       <div class="notes-block mt-lg">

@@ -97,6 +97,31 @@ function initDB() {
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (trust_id) REFERENCES trusts(id) ON DELETE CASCADE
     );
+
+    CREATE TABLE IF NOT EXISTS optics_items (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      manufacturer TEXT NOT NULL,
+      model TEXT NOT NULL,
+      model_number TEXT,
+      optic_type TEXT,
+      magnification TEXT,
+      acquired_from TEXT,
+      date_acquired TEXT,
+      price_paid TEXT,
+      notes TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS optics_photos (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      optic_id INTEGER NOT NULL,
+      filename TEXT NOT NULL,
+      original_name TEXT,
+      is_primary INTEGER DEFAULT 0,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (optic_id) REFERENCES optics_items(id) ON DELETE CASCADE
+    );
   `);
 
   // Migrate existing databases — safely add new columns if they don't exist
@@ -135,6 +160,9 @@ function initDB() {
     "ALTER TABLE firearms ADD COLUMN nfa2_submit_date TEXT",
     "ALTER TABLE firearms ADD COLUMN nfa2_tax_stamp_serial TEXT",
     "ALTER TABLE firearms ADD COLUMN nfa2_approve_date TEXT",
+    "ALTER TABLE optics_items ADD COLUMN serial TEXT",
+    "ALTER TABLE optics_items ADD COLUMN spouse_price TEXT",
+    "ALTER TABLE optics_items ADD COLUMN firearm_id INTEGER",
   ];
   for (const sql of migrations) {
     try { db.exec(sql); } catch (_) { /* column already exists */ }
@@ -293,6 +321,7 @@ const firearmsQueries = {
     });
     return [...tags].sort((a, b) => a.localeCompare(b));
   },
+  allForDropdown: () => getDB().prepare("SELECT id, manufacturer, model, serial FROM firearms WHERE is_disposed = 0 ORDER BY manufacturer ASC, model ASC").all(),
   setTrustAssigned: (id, value) => getDB().prepare('UPDATE firearms SET trust_assigned = ? WHERE id = ?').run(value ? 1 : 0, id),
   search: (q) => {
     const like = `%${q}%`;
@@ -358,4 +387,70 @@ const trustQueries = {
   },
 };
 
-module.exports = { initDB, userQueries, firearmsQueries, trustQueries };
+const opticsQueries = {
+  all: () => {
+    const items = getDB().prepare('SELECT * FROM optics_items ORDER BY created_at DESC').all();
+    return items.map(o => ({
+      ...o,
+      primary_photo: getDB().prepare('SELECT filename FROM optics_photos WHERE optic_id = ? AND is_primary = 1 LIMIT 1').get(o.id)
+        || getDB().prepare('SELECT filename FROM optics_photos WHERE optic_id = ? LIMIT 1').get(o.id)
+    }));
+  },
+  findById: (id) => {
+    const o = getDB().prepare('SELECT * FROM optics_items WHERE id = ?').get(id);
+    if (!o) return null;
+    return {
+      ...o,
+      photos: getDB().prepare('SELECT * FROM optics_photos WHERE optic_id = ? ORDER BY is_primary DESC, id ASC').all(id)
+    };
+  },
+  create: (data) => {
+    const result = getDB().prepare(`
+      INSERT INTO optics_items (manufacturer, model, model_number, serial, optic_type, magnification, acquired_from, date_acquired, price_paid, spouse_price, firearm_id, notes)
+      VALUES (@manufacturer, @model, @model_number, @serial, @optic_type, @magnification, @acquired_from, @date_acquired, @price_paid, @spouse_price, @firearm_id, @notes)
+    `).run(data);
+    return result.lastInsertRowid;
+  },
+  update: (id, data) => {
+    getDB().prepare(`
+      UPDATE optics_items SET
+        manufacturer = @manufacturer, model = @model, model_number = @model_number,
+        serial = @serial, optic_type = @optic_type, magnification = @magnification,
+        acquired_from = @acquired_from, date_acquired = @date_acquired,
+        price_paid = @price_paid, spouse_price = @spouse_price, firearm_id = @firearm_id,
+        notes = @notes, updated_at = CURRENT_TIMESTAMP
+      WHERE id = @id
+    `).run({ ...data, id });
+  },
+  delete: (id) => getDB().prepare('DELETE FROM optics_items WHERE id = ?').run(id),
+  addPhoto: (opticId, filename, originalName, isPrimary) => {
+    if (isPrimary) {
+      getDB().prepare('UPDATE optics_photos SET is_primary = 0 WHERE optic_id = ?').run(opticId);
+    }
+    return getDB().prepare('INSERT INTO optics_photos (optic_id, filename, original_name, is_primary) VALUES (?, ?, ?, ?)').run(opticId, filename, originalName, isPrimary ? 1 : 0);
+  },
+  setPrimaryPhoto: (photoId, opticId) => {
+    getDB().prepare('UPDATE optics_photos SET is_primary = 0 WHERE optic_id = ?').run(opticId);
+    getDB().prepare('UPDATE optics_photos SET is_primary = 1 WHERE id = ?').run(photoId);
+  },
+  deletePhoto: (id) => {
+    const photo = getDB().prepare('SELECT * FROM optics_photos WHERE id = ?').get(id);
+    getDB().prepare('DELETE FROM optics_photos WHERE id = ?').run(id);
+    return photo;
+  },
+  findPhotoById: (id) => getDB().prepare('SELECT * FROM optics_photos WHERE id = ?').get(id),
+  findPhotoByFilename: (filename) => getDB().prepare('SELECT * FROM optics_photos WHERE filename = ?').get(filename),
+  distinctManufacturers: () => getDB().prepare("SELECT DISTINCT manufacturer FROM optics_items ORDER BY manufacturer ASC").all().map(r => r.manufacturer),
+  distinctModels: () => getDB().prepare("SELECT DISTINCT model FROM optics_items WHERE model IS NOT NULL AND model != '' ORDER BY model ASC").all().map(r => r.model),
+  distinctAcquiredFrom: () => getDB().prepare("SELECT DISTINCT acquired_from FROM optics_items WHERE acquired_from IS NOT NULL AND acquired_from != '' ORDER BY acquired_from ASC").all().map(r => r.acquired_from),
+  findByFirearmId: (firearmsId) => {
+    const items = getDB().prepare('SELECT * FROM optics_items WHERE firearm_id = ? ORDER BY created_at ASC').all(firearmsId);
+    return items.map(o => ({
+      ...o,
+      primary_photo: getDB().prepare('SELECT filename FROM optics_photos WHERE optic_id = ? AND is_primary = 1 LIMIT 1').get(o.id)
+        || getDB().prepare('SELECT filename FROM optics_photos WHERE optic_id = ? LIMIT 1').get(o.id)
+    }));
+  },
+};
+
+module.exports = { initDB, userQueries, firearmsQueries, trustQueries, opticsQueries };

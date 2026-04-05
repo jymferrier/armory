@@ -1,0 +1,233 @@
+<%- include('partials/header') %>
+<div class="page">
+  <div class="page-header">
+    <div>
+      <p class="breadcrumb"><a href="/optics">← OPTICS</a></p>
+      <h1 class="page-title"><%= optic.manufacturer %> <span class="title-model"><%= optic.model %></span></h1>
+      <div class="detail-badges">
+        <% if (optic.optic_type) { %><span class="badge badge--type"><%= optic.optic_type %></span><% } %>
+        <% if (optic.magnification) { %><span class="badge badge--caliber"><%= optic.magnification %>x</span><% } %>
+      </div>
+    </div>
+    <div class="page-actions">
+      <% if (!user.is_spouse_view) { %>
+      <a href="/optics/<%= optic.id %>/edit" class="btn btn--ghost">EDIT</a>
+      <form method="POST" action="/optics/<%= optic.id %>/duplicate">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <button type="submit" class="btn btn--ghost">DUPLICATE</button>
+      </form>
+      <form method="POST" action="/optics/<%= optic.id %>/delete" id="deleteOpticForm">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <button type="submit" class="btn btn--danger">DELETE</button>
+      </form>
+      <% } %>
+    </div>
+  </div>
+
+  <div class="detail-layout">
+    <!-- Left: Photos -->
+    <div class="detail-photos">
+      <% if (optic.photos.length > 0) { %>
+        <div class="photo-main" id="photoMain">
+          <img src="/api/optic-photo/<%= (optic.photos.find(p=>p.is_primary) || optic.photos[0]).filename %>" alt="Primary photo" id="photoMainImg">
+        </div>
+        <div class="photo-thumbs">
+          <% optic.photos.forEach(p => { %>
+            <div class="photo-thumb-wrap <%= p.is_primary ? 'photo-thumb-wrap--active' : '' %>">
+              <img src="/api/optic-photo/<%= p.filename %>" class="photo-thumb" alt="">
+              <div class="photo-thumb-actions">
+                <% if (!p.is_primary) { %>
+                  <form method="POST" action="/optics/<%= optic.id %>/photos/<%= p.id %>/primary">
+                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                    <button type="submit" class="thumb-btn thumb-btn--primary" title="Set as primary">★</button>
+                  </form>
+                <% } else { %>
+                  <span class="thumb-primary-badge">★</span>
+                <% } %>
+                <% if (!user.is_spouse_view) { %>
+                <form method="POST" action="/optics/<%= optic.id %>/photos/<%= p.id %>/delete" class="photo-delete-form">
+                  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                  <button type="submit" class="thumb-btn thumb-btn--delete" title="Delete">✕</button>
+                </form>
+                <% } %>
+              </div>
+            </div>
+          <% }) %>
+        </div>
+      <% } else { %>
+        <div class="photo-placeholder">NO PHOTOS</div>
+      <% } %>
+
+      <% if (!user.is_spouse_view) { %>
+      <div class="upload-section">
+        <h3 class="section-title">ADD PHOTOS</h3>
+        <form method="POST" action="/optics/<%= optic.id %>/photos" enctype="multipart/form-data">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <input type="file" name="photos" multiple accept="image/*" id="photoInput" style="display:none">
+          <div class="file-drop-zone" id="photoDropZone">
+            <div class="file-drop-label">
+              <span class="file-drop-icon">⊕</span>
+              <span>DRAG &amp; DROP OR CLICK TO SELECT</span>
+              <span class="file-drop-hint">JPG, PNG, WEBP, GIF — MAX 20MB EACH</span>
+            </div>
+          </div>
+          <div class="file-list" id="fileList"></div>
+          <button type="submit" class="btn btn--primary btn--full mt-sm">UPLOAD PHOTOS</button>
+        </form>
+      </div>
+      <% } %>
+    </div>
+
+    <!-- Right: Details -->
+    <div class="detail-info">
+
+      <!-- Identification -->
+      <h3 class="section-title">IDENTIFICATION</h3>
+      <div class="info-grid">
+        <div class="info-item">
+          <span class="info-label">MANUFACTURER</span>
+          <span class="info-value"><%= optic.manufacturer %></span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">MODEL</span>
+          <span class="info-value"><%= optic.model %></span>
+        </div>
+        <% if (optic.model_number) { %>
+        <div class="info-item">
+          <span class="info-label">MODEL NUMBER</span>
+          <span class="info-value mono"><%= optic.model_number %></span>
+        </div>
+        <% } %>
+        <% if (optic.optic_type) { %>
+        <div class="info-item">
+          <span class="info-label">TYPE</span>
+          <span class="info-value"><%= optic.optic_type %></span>
+        </div>
+        <% } %>
+        <% if (optic.magnification) { %>
+        <div class="info-item">
+          <span class="info-label">MAGNIFICATION</span>
+          <span class="info-value"><%= optic.magnification %>x</span>
+        </div>
+        <% } %>
+        <% if (optic.serial) { %>
+        <div class="info-item">
+          <span class="info-label">SERIAL NUMBER</span>
+          <span class="info-value mono"><%= optic.serial %></span>
+        </div>
+        <% } %>
+      </div>
+
+      <!-- Acquisition -->
+      <% const isSpouseView = !!user.is_spouse_view; %>
+      <% const displayPrice = isSpouseView ? (optic.spouse_price || optic.price_paid) : optic.price_paid; %>
+      <% const showAcq = !!(optic.date_acquired || optic.acquired_from || displayPrice || (!isSpouseView && optic.spouse_price)); %>
+      <% if (showAcq) { %>
+      <h3 class="section-title mt-lg">ACQUISITION</h3>
+      <div class="info-grid">
+        <% if (optic.date_acquired) { %>
+        <div class="info-item">
+          <span class="info-label">ACQUIRED DATE</span>
+          <span class="info-value"><%= new Date(optic.date_acquired + 'T00:00:00').toLocaleDateString('en-US', {year:'numeric',month:'long',day:'numeric'}) %></span>
+        </div>
+        <% } %>
+        <% if (optic.acquired_from) { %>
+        <div class="info-item">
+          <span class="info-label">ACQUIRED FROM</span>
+          <span class="info-value"><%= optic.acquired_from %></span>
+        </div>
+        <% } %>
+        <% if (isSpouseView) { %>
+          <% if (displayPrice) { %>
+          <div class="info-item">
+            <span class="info-label">PRICE PAID</span>
+            <span class="info-value">$<%= (parseFloat(String(displayPrice).replace(/[$,\s]/g,''))||0).toLocaleString('en-US', {minimumFractionDigits:2,maximumFractionDigits:2}) %></span>
+          </div>
+          <% } %>
+        <% } else { %>
+          <% if (optic.price_paid) { %>
+          <div class="info-item">
+            <span class="info-label">PRICE PAID</span>
+            <span class="info-value">$<%= (parseFloat(String(optic.price_paid).replace(/[$,\s]/g,''))||0).toLocaleString('en-US', {minimumFractionDigits:2,maximumFractionDigits:2}) %></span>
+          </div>
+          <% } %>
+          <% if (optic.spouse_price) { %>
+          <div class="info-item">
+            <span class="info-label">WHAT SPOUSE THINKS I PAID</span>
+            <span class="info-value">$<%= (parseFloat(String(optic.spouse_price).replace(/[$,\s]/g,''))||0).toLocaleString('en-US', {minimumFractionDigits:2,maximumFractionDigits:2}) %></span>
+          </div>
+          <% } %>
+        <% } %>
+      </div>
+      <% } %>
+
+      <!-- Assigned Firearm -->
+      <% if (optic.firearm_id && assignedFirearm) { %>
+      <h3 class="section-title mt-lg">MOUNTED ON</h3>
+      <div class="info-grid">
+        <div class="info-item">
+          <span class="info-label">FIREARM</span>
+          <span class="info-value"><a href="/inventory/<%= assignedFirearm.id %>"><%= assignedFirearm.manufacturer %> <%= assignedFirearm.model %><%= assignedFirearm.serial ? ' (' + assignedFirearm.serial + ')' : '' %></a></span>
+        </div>
+      </div>
+      <% } %>
+
+      <!-- Notes -->
+      <% if (optic.notes) { %>
+      <h3 class="section-title mt-lg">NOTES</h3>
+      <div class="notes-block"><%= optic.notes %></div>
+      <% } %>
+
+    </div>
+  </div>
+</div>
+
+<script nonce="<%= cspNonce %>">
+// Photo gallery thumbnail click
+(function() {
+  const mainImg = document.getElementById('photoMainImg');
+  if (!mainImg) return;
+  document.querySelectorAll('.photo-thumb').forEach(function(thumb) {
+    thumb.addEventListener('click', function() {
+      mainImg.src = thumb.src;
+      document.querySelectorAll('.photo-thumb-wrap').forEach(w => w.classList.remove('photo-thumb-wrap--active'));
+      thumb.closest('.photo-thumb-wrap').classList.add('photo-thumb-wrap--active');
+    });
+  });
+})();
+
+// Photo drop zone
+(function() {
+  const dropZone = document.getElementById('photoDropZone');
+  const fileInput = document.getElementById('photoInput');
+  const fileList = document.getElementById('fileList');
+  if (!dropZone) return;
+
+  dropZone.addEventListener('click', () => fileInput.click());
+  dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+  dropZone.addEventListener('drop', e => {
+    e.preventDefault();
+    dropZone.classList.remove('drag-over');
+    fileInput.files = e.dataTransfer.files;
+    renderFileList();
+  });
+  fileInput.addEventListener('change', renderFileList);
+
+  function renderFileList() {
+    fileList.innerHTML = '';
+    Array.from(fileInput.files).forEach(f => {
+      const div = document.createElement('div');
+      div.className = 'file-item';
+      div.textContent = f.name + ' (' + (f.size / 1024).toFixed(0) + ' KB)';
+      fileList.appendChild(div);
+    });
+  }
+})();
+
+// Delete confirmation
+document.getElementById('deleteOpticForm') && document.getElementById('deleteOpticForm').addEventListener('submit', function(e) {
+  if (!confirm('Delete this optic? This cannot be undone.')) e.preventDefault();
+});
+</script>
+<%- include('partials/footer') %>

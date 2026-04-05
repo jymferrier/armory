@@ -4,7 +4,7 @@ const path = require('path');
 const fs = require('fs');
 const { requireAuth } = require('../middleware/auth');
 const { DOC_DIR, PHOTO_DIR } = require('../middleware/upload');
-const { firearmsQueries, trustQueries } = require('../db');
+const { firearmsQueries, trustQueries, opticsQueries } = require('../db');
 const { audit } = require('../middleware/audit');
 
 router.use(requireAuth);
@@ -17,6 +17,17 @@ router.get('/photo/:filename', (req, res) => {
   const filepath = path.join(PHOTO_DIR, filename);
   if (!fs.existsSync(filepath)) return res.status(404).end();
   audit(req, 'FILE_ACCESS', `photo:${filename}`);
+  res.sendFile(filepath);
+});
+
+// Serve an optic photo — authenticated; verify record exists in DB
+router.get('/optic-photo/:filename', (req, res) => {
+  const filename = path.basename(req.params.filename);
+  const photo = opticsQueries.findPhotoByFilename(filename);
+  if (!photo) return res.status(404).end();
+  const filepath = path.join(PHOTO_DIR, filename);
+  if (!fs.existsSync(filepath)) return res.status(404).end();
+  audit(req, 'FILE_ACCESS', `optic-photo:${filename}`);
   res.sendFile(filepath);
 });
 

@@ -1,0 +1,108 @@
+<%- include('partials/header') %>
+<div class="page">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">OPTICS</h1>
+      <p class="page-sub"><%= items.length %> ITEM<%= items.length !== 1 ? 'S' : '' %> CATALOGUED</p>
+    </div>
+    <div class="page-actions">
+      <form method="GET" action="/optics" class="search-form">
+        <input type="text" name="q" value="<%= q %>" placeholder="SEARCH OPTICS…" class="search-input">
+        <button type="submit" class="btn btn--ghost">SEARCH</button>
+        <% if (q) { %><a href="/optics" class="btn btn--ghost">CLEAR</a><% } %>
+      </form>
+      <div class="view-toggle" id="viewToggle">
+        <button type="button" class="view-toggle__btn" id="btnGrid" title="Grid view">⊞</button>
+        <button type="button" class="view-toggle__btn" id="btnList" title="List view">≡</button>
+      </div>
+      <% if (!user.is_spouse_view) { %>
+      <a href="/optics/new" class="btn btn--primary">+ ADD OPTIC</a>
+      <% } %>
+    </div>
+  </div>
+
+  <% if (items.length === 0) { %>
+    <div class="empty-state">
+      <div class="empty-icon">⊘</div>
+      <p class="empty-text"><%= q ? 'NO RESULTS FOR "' + q + '"' : 'NO OPTICS CATALOGUED' %></p>
+      <% if (!q && !user.is_spouse_view) { %><a href="/optics/new" class="btn btn--primary">ADD FIRST OPTIC</a><% } %>
+    </div>
+  <% } else { %>
+
+    <!-- Grid view -->
+    <div id="viewGrid">
+      <div class="inventory-grid">
+        <% items.forEach(o => { %>
+          <a href="/optics/<%= o.id %>" class="firearm-card">
+            <div class="firearm-card__photo">
+              <% if (o.primary_photo) { %>
+                <img src="/api/optic-photo/<%= o.primary_photo.filename %>" alt="<%= o.manufacturer %> <%= o.model %>">
+              <% } else { %>
+                <div class="firearm-card__no-photo">NO PHOTO</div>
+              <% } %>
+            </div>
+            <div class="firearm-card__body">
+              <div class="firearm-card__badges">
+                <% if (o.optic_type) { %><span class="badge badge--type"><%= o.optic_type %></span><% } %>
+              </div>
+              <h2 class="firearm-card__make"><%= o.manufacturer %></h2>
+              <p class="firearm-card__model"><%= o.model %></p>
+              <% if (o.magnification) { %>
+                <p class="firearm-card__serial">⊕ <%= o.magnification %>x</p>
+              <% } %>
+            </div>
+          </a>
+        <% }) %>
+      </div>
+    </div>
+
+    <!-- List view -->
+    <div id="viewList">
+      <div class="inventory-list">
+        <% items.forEach(o => { %>
+          <a href="/optics/<%= o.id %>" class="firearm-row">
+            <div class="firearm-row__thumb">
+              <% if (o.primary_photo) { %>
+                <img src="/api/optic-photo/<%= o.primary_photo.filename %>" alt="">
+              <% } else { %>
+                <div class="firearm-row__no-photo">NO PHOTO</div>
+              <% } %>
+            </div>
+            <div class="firearm-row__main">
+              <div class="firearm-row__title"><%= o.manufacturer %> <span><%= o.model %></span></div>
+              <div class="firearm-row__meta">
+                <% if (o.optic_type) { %><%= o.optic_type %><% } %>
+                <% if (o.optic_type && o.magnification) { %> &middot; <% } %>
+                <% if (o.magnification) { %><%= o.magnification %>x<% } %>
+                <% if ((o.optic_type || o.magnification) && o.date_acquired) { %> &middot; <% } %>
+                <% if (o.date_acquired) { %>Acq: <%= o.date_acquired %><% } %>
+              </div>
+            </div>
+            <div class="firearm-row__badges">
+              <% if (o.optic_type) { %><span class="badge badge--type"><%= o.optic_type %></span><% } %>
+            </div>
+          </a>
+        <% }) %>
+      </div>
+    </div>
+
+  <% } %>
+</div>
+
+<script nonce="<%= cspNonce %>">
+function setView(v) {
+  document.getElementById('viewGrid').style.display = v === 'grid' ? '' : 'none';
+  document.getElementById('viewList').style.display = v === 'list' ? '' : 'none';
+  document.getElementById('btnGrid').classList.toggle('view-toggle__btn--active', v === 'grid');
+  document.getElementById('btnList').classList.toggle('view-toggle__btn--active', v === 'list');
+  try { localStorage.setItem('armory_optics_view', v); } catch(e) {}
+}
+document.getElementById('btnGrid').addEventListener('click', function() { setView('grid'); });
+document.getElementById('btnList').addEventListener('click', function() { setView('list'); });
+(function() {
+  var saved = 'grid';
+  try { saved = localStorage.getItem('armory_optics_view') || 'grid'; } catch(e) {}
+  setView(saved);
+})();
+</script>
+<%- include('partials/footer') %>
