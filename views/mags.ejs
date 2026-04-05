@@ -1,0 +1,55 @@
+<%- include('partials/header') %>
+<div class="page">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">MAGS</h1>
+      <p class="page-sub"><%= mags.length %> ENTRY<%= mags.length !== 1 ? 'S' : '' %> &middot; <%= totalQty %> TOTAL MAG<%= totalQty !== 1 ? 'S' : '' %></p>
+    </div>
+    <div class="page-actions">
+      <form method="GET" action="/mags" class="search-form">
+        <input type="text" name="q" value="<%= q %>" placeholder="SEARCH MAGS…" class="search-input">
+        <button type="submit" class="btn btn--ghost">SEARCH</button>
+        <% if (q) { %><a href="/mags" class="btn btn--ghost">CLEAR</a><% } %>
+      </form>
+      <% if (!user.is_spouse_view) { %>
+      <a href="/mags/new" class="btn btn--primary">+ ADD MAG</a>
+      <% } %>
+    </div>
+  </div>
+
+  <% if (mags.length === 0) { %>
+    <div class="empty-state">
+      <div class="empty-icon">⊘</div>
+      <p class="empty-text"><%= q ? 'NO RESULTS FOR "' + q + '"' : 'NO MAGS CATALOGUED' %></p>
+      <% if (!q && !user.is_spouse_view) { %><a href="/mags/new" class="btn btn--primary">ADD FIRST MAG</a><% } %>
+    </div>
+  <% } else { %>
+
+  <div class="inventory-list mag-list">
+    <div class="mag-list-header">
+      <span>PLATFORM</span>
+      <span>BRAND / MODEL</span>
+      <span>CALIBER</span>
+      <span>CAP</span>
+      <span>MATERIAL</span>
+      <span>COLOR</span>
+      <span class="mag-col-qty">QTY</span>
+    </div>
+    <% mags.forEach(m => { %>
+      <a href="/mags/<%= m.id %>" class="mag-row">
+        <span class="mag-cell mag-cell--platform"><%= m.platform || '—' %></span>
+        <span class="mag-cell mag-cell--brand">
+          <strong><%= m.brand %></strong><% if (m.model) { %> <span class="mag-model"><%= m.model %></span><% } %>
+        </span>
+        <span class="mag-cell"><%= m.caliber || '—' %></span>
+        <span class="mag-cell mono"><%= m.capacity ? m.capacity + ' rd' : '—' %></span>
+        <span class="mag-cell"><%= m.material || '—' %></span>
+        <span class="mag-cell"><%= m.color || '—' %></span>
+        <span class="mag-cell mag-cell--qty mono"><%= m.quantity || 1 %></span>
+      </a>
+    <% }) %>
+  </div>
+
+  <% } %>
+</div>
+<%- include('partials/footer') %>

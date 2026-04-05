@@ -1,0 +1,135 @@
+<%- include('partials/header') %>
+<div class="page">
+  <div class="page-header">
+    <div>
+      <p class="breadcrumb"><a href="<%= mag && mag.id ? '/mags/' + mag.id : '/mags' %>">← <%= mag && mag.id ? mag.brand + (mag.model ? ' ' + mag.model : '') : 'MAGS' %></a></p>
+      <h1 class="page-title"><%= mag && mag.id ? 'EDIT MAG' : 'ADD MAG' %></h1>
+    </div>
+  </div>
+
+  <% if (error) { %>
+    <div class="alert alert--error"><%= error %></div>
+  <% } %>
+
+  <form method="POST" action="/mags/<%= mag && mag.id ? mag.id + '/edit' : 'new' %>" class="firearm-form">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+    <!-- 01: IDENTIFICATION -->
+    <div class="form-band">
+      <div class="form-band__label">01 / IDENTIFICATION</div>
+      <div class="form-band__fields">
+
+        <div class="field-row">
+          <div class="field">
+            <label class="field-label">BRAND <span class="required">*</span></label>
+            <input type="text" name="brand" class="field-input" list="brandList"
+              value="<%= mag ? (mag.brand || '') : '' %>" required placeholder="e.g. Magpul, Lancer, OEM" autocomplete="off">
+            <datalist id="brandList">
+              <% brands.forEach(b => { %><option value="<%= b %>"><% }) %>
+            </datalist>
+          </div>
+          <div class="field">
+            <label class="field-label">MODEL</label>
+            <input type="text" name="model" class="field-input" list="modelList"
+              value="<%= mag ? (mag.model || '') : '' %>" placeholder="e.g. PMAG 30 M2, AWC" autocomplete="off">
+            <datalist id="modelList">
+              <% models.forEach(m => { %><option value="<%= m %>"><% }) %>
+            </datalist>
+          </div>
+        </div>
+
+        <div class="field-row field-row--half">
+          <div class="field">
+            <label class="field-label">PLATFORM</label>
+            <input type="text" name="platform" class="field-input" list="platformList"
+              value="<%= mag ? (mag.platform || '') : '' %>" placeholder="e.g. AR-15, Glock 19, MP5" autocomplete="off">
+            <datalist id="platformList">
+              <% platforms.forEach(p => { %><option value="<%= p %>"><% }) %>
+            </datalist>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- 02: SPECIFICATIONS -->
+    <div class="form-band">
+      <div class="form-band__label">02 / SPECIFICATIONS</div>
+      <div class="form-band__fields">
+
+        <div class="field-row">
+          <div class="field">
+            <label class="field-label">CALIBER</label>
+            <input type="text" name="caliber" class="field-input" list="caliberList"
+              value="<%= mag ? (mag.caliber || '') : '' %>" placeholder="e.g. 9mm, .223 / 5.56, .308" autocomplete="off">
+            <datalist id="caliberList">
+              <% calibers.forEach(c => { %><option value="<%= c %>"><% }) %>
+            </datalist>
+          </div>
+          <div class="field">
+            <label class="field-label">CAPACITY</label>
+            <input type="number" name="capacity" class="field-input mono" min="1" step="1"
+              value="<%= mag ? (mag.capacity || '') : '' %>" placeholder="e.g. 30">
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label class="field-label">MATERIAL</label>
+            <select name="material" class="field-input field-select">
+              <option value="">— Select material —</option>
+              <% materials.forEach(mat => { %>
+                <option value="<%= mat %>" <%= mag && mag.material === mat ? 'selected' : '' %>><%= mat %></option>
+              <% }) %>
+            </select>
+          </div>
+          <div class="field">
+            <label class="field-label">COLOR</label>
+            <input type="text" name="color" class="field-input" list="colorList"
+              value="<%= mag ? (mag.color || '') : '' %>" placeholder="e.g. Black, FDE, Translucent" autocomplete="off">
+            <datalist id="colorList">
+              <option value="Black">
+              <option value="FDE">
+              <option value="Grey">
+              <option value="OD Green">
+              <option value="Translucent">
+              <option value="Smoke">
+              <option value="White">
+              <option value="Stainless">
+            </datalist>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- 03: QUANTITY & NOTES -->
+    <div class="form-band">
+      <div class="form-band__label">03 / QUANTITY &amp; NOTES</div>
+      <div class="form-band__fields">
+
+        <div class="field-row field-row--half">
+          <div class="field">
+            <label class="field-label">QUANTITY</label>
+            <input type="number" name="quantity" class="field-input mono" min="1" step="1"
+              value="<%= mag ? (mag.quantity != null ? mag.quantity : 1) : 1 %>" placeholder="1">
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="field-label">NOTES</label>
+          <textarea name="notes" class="field-input field-textarea" rows="4"
+            placeholder="Any additional notes…"><%= mag ? (mag.notes || '') : '' %></textarea>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <button type="submit" class="btn btn--primary">SAVE MAG</button>
+      <a href="<%= mag && mag.id ? '/mags/' + mag.id : '/mags' %>" class="btn btn--ghost">CANCEL</a>
+    </div>
+
+  </form>
+</div>
+<%- include('partials/footer') %>

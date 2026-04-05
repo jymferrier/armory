@@ -1,0 +1,95 @@
+<%- include('partials/header') %>
+<div class="page">
+  <div class="page-header">
+    <div>
+      <p class="breadcrumb"><a href="/mags">← MAGS</a></p>
+      <h1 class="page-title"><%= mag.brand %><% if (mag.model) { %> <span class="title-model"><%= mag.model %></span><% } %></h1>
+      <div class="detail-badges">
+        <% if (mag.platform) { %><span class="badge badge--type"><%= mag.platform %></span><% } %>
+        <% if (mag.caliber) { %><span class="badge badge--caliber"><%= mag.caliber %></span><% } %>
+        <% if (mag.capacity) { %><span class="badge badge--type"><%= mag.capacity %> RD</span><% } %>
+      </div>
+    </div>
+    <div class="page-actions">
+      <% if (!user.is_spouse_view) { %>
+      <a href="/mags/<%= mag.id %>/edit" class="btn btn--ghost">EDIT</a>
+      <form method="POST" action="/mags/<%= mag.id %>/duplicate">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <button type="submit" class="btn btn--ghost">DUPLICATE</button>
+      </form>
+      <form method="POST" action="/mags/<%= mag.id %>/delete" id="deleteMagForm">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <button type="submit" class="btn btn--danger">DELETE</button>
+      </form>
+      <% } %>
+    </div>
+  </div>
+
+  <div class="detail-info detail-info--full">
+
+    <h3 class="section-title">IDENTIFICATION</h3>
+    <div class="info-grid">
+      <div class="info-item">
+        <span class="info-label">BRAND</span>
+        <span class="info-value"><%= mag.brand %></span>
+      </div>
+      <% if (mag.model) { %>
+      <div class="info-item">
+        <span class="info-label">MODEL</span>
+        <span class="info-value"><%= mag.model %></span>
+      </div>
+      <% } %>
+      <% if (mag.platform) { %>
+      <div class="info-item">
+        <span class="info-label">PLATFORM</span>
+        <span class="info-value"><%= mag.platform %></span>
+      </div>
+      <% } %>
+    </div>
+
+    <h3 class="section-title mt-lg">SPECIFICATIONS</h3>
+    <div class="info-grid">
+      <% if (mag.caliber) { %>
+      <div class="info-item">
+        <span class="info-label">CALIBER</span>
+        <span class="info-value"><%= mag.caliber %></span>
+      </div>
+      <% } %>
+      <% if (mag.capacity) { %>
+      <div class="info-item">
+        <span class="info-label">CAPACITY</span>
+        <span class="info-value mono"><%= mag.capacity %> rounds</span>
+      </div>
+      <% } %>
+      <% if (mag.material) { %>
+      <div class="info-item">
+        <span class="info-label">MATERIAL</span>
+        <span class="info-value"><%= mag.material %></span>
+      </div>
+      <% } %>
+      <% if (mag.color) { %>
+      <div class="info-item">
+        <span class="info-label">COLOR</span>
+        <span class="info-value"><%= mag.color %></span>
+      </div>
+      <% } %>
+      <div class="info-item">
+        <span class="info-label">QUANTITY</span>
+        <span class="info-value mono"><%= mag.quantity || 1 %></span>
+      </div>
+    </div>
+
+    <% if (mag.notes) { %>
+    <h3 class="section-title mt-lg">NOTES</h3>
+    <div class="notes-block"><%= mag.notes %></div>
+    <% } %>
+
+  </div>
+</div>
+
+<script nonce="<%= cspNonce %>">
+document.getElementById('deleteMagForm') && document.getElementById('deleteMagForm').addEventListener('submit', function(e) {
+  if (!confirm('Delete this mag entry? This cannot be undone.')) e.preventDefault();
+});
+</script>
+<%- include('partials/footer') %>

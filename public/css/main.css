@@ -1453,3 +1453,56 @@ a:hover { color: var(--text); }
 
 .photo-main { cursor: zoom-in; }
 .photo-thumb { cursor: pointer; }
+
+/* ── Mags list ─────────────────────────────────────── */
+.mag-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  background: var(--border);
+  margin-top: 1rem;
+}
+
+.mag-list-header,
+.mag-row {
+  display: grid;
+  grid-template-columns: 1fr 2fr 1fr 5rem 1fr 1fr 3.5rem;
+  align-items: center;
+  gap: 0;
+}
+
+.mag-list-header {
+  background: var(--bg-3);
+  padding: 0.4rem 1rem;
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.12em;
+  color: var(--text-dim);
+}
+
+.mag-list-header span { padding: 0 0.5rem; }
+
+.mag-row {
+  background: var(--bg-2);
+  color: var(--text);
+  text-decoration: none;
+  transition: background var(--transition);
+  border-left: 2px solid transparent;
+  padding: 0.55rem 1rem;
+}
+.mag-row:hover { background: var(--bg-3); color: var(--text); border-left-color: var(--accent); }
+
+.mag-cell { padding: 0 0.5rem; font-size: 0.85rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mag-cell--brand strong { font-weight: 500; }
+.mag-cell--brand .mag-model { color: var(--text-muted); margin-left: 0.25rem; }
+.mag-cell--qty { font-family: var(--font-mono); font-size: 0.9rem; text-align: right; }
+.mag-col-qty { text-align: right; }
+
+.detail-info--full { max-width: 720px; }
+
+@media (max-width: 640px) {
+  .mag-list-header { display: none; }
+  .mag-row { grid-template-columns: 1fr 1fr; padding: 0.75rem 1rem; row-gap: 0.2rem; }
+  .mag-cell--platform { font-size: 0.7rem; color: var(--text-dim); grid-column: 1 / -1; padding: 0; }
+  .mag-cell--qty::before { content: 'Qty: '; color: var(--text-dim); }
+}

@@ -98,6 +98,21 @@ function initDB() {
       FOREIGN KEY (trust_id) REFERENCES trusts(id) ON DELETE CASCADE
     );
 
+    CREATE TABLE IF NOT EXISTS mags (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      platform TEXT,
+      brand TEXT NOT NULL,
+      model TEXT,
+      color TEXT,
+      capacity INTEGER,
+      caliber TEXT,
+      material TEXT,
+      quantity INTEGER DEFAULT 1,
+      notes TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+
     CREATE TABLE IF NOT EXISTS optics_items (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       manufacturer TEXT NOT NULL,
@@ -453,4 +468,30 @@ const opticsQueries = {
   },
 };
 
-module.exports = { initDB, userQueries, firearmsQueries, trustQueries, opticsQueries };
+const magsQueries = {
+  all: () => getDB().prepare('SELECT * FROM mags ORDER BY platform ASC, brand ASC, model ASC').all(),
+  findById: (id) => getDB().prepare('SELECT * FROM mags WHERE id = ?').get(id),
+  create: (data) => {
+    const result = getDB().prepare(`
+      INSERT INTO mags (platform, brand, model, color, capacity, caliber, material, quantity, notes)
+      VALUES (@platform, @brand, @model, @color, @capacity, @caliber, @material, @quantity, @notes)
+    `).run(data);
+    return result.lastInsertRowid;
+  },
+  update: (id, data) => {
+    getDB().prepare(`
+      UPDATE mags SET
+        platform = @platform, brand = @brand, model = @model, color = @color,
+        capacity = @capacity, caliber = @caliber, material = @material,
+        quantity = @quantity, notes = @notes, updated_at = CURRENT_TIMESTAMP
+      WHERE id = @id
+    `).run({ ...data, id });
+  },
+  delete: (id) => getDB().prepare('DELETE FROM mags WHERE id = ?').run(id),
+  distinctPlatforms: () => getDB().prepare("SELECT DISTINCT platform FROM mags WHERE platform IS NOT NULL AND platform != '' ORDER BY platform ASC").all().map(r => r.platform),
+  distinctBrands: () => getDB().prepare("SELECT DISTINCT brand FROM mags WHERE brand IS NOT NULL AND brand != '' ORDER BY brand ASC").all().map(r => r.brand),
+  distinctModels: () => getDB().prepare("SELECT DISTINCT model FROM mags WHERE model IS NOT NULL AND model != '' ORDER BY model ASC").all().map(r => r.model),
+  distinctCalibers: () => getDB().prepare("SELECT DISTINCT caliber FROM mags WHERE caliber IS NOT NULL AND caliber != '' ORDER BY caliber ASC").all().map(r => r.caliber),
+};
+
+module.exports = { initDB, userQueries, firearmsQueries, trustQueries, opticsQueries, magsQueries };

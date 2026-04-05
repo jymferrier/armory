@@ -124,6 +124,7 @@ app.use('/', require('./routes/auth'));
 app.use('/inventory', require('./routes/inventory'));
 app.use('/trusts', require('./routes/trusts'));
 app.use('/optics', require('./routes/optics'));
+app.use('/mags', require('./routes/mags'));
 app.use('/api', require('./routes/api'));
 
 // 404
