@@ -477,7 +477,7 @@
 <script nonce="<%= cspNonce %>">
 (function() {
   // Build ordered photo list from server data
-  var photos = <%- JSON.stringify(firearm.photos.map(p => '/api/photo/' + p.filename)) %>;
+  var photos = <%= JSON.stringify(firearm.photos.map(p => '/api/photo/' + p.filename)) %>;
   var primaryFilename = '<%= (firearm.photos.find(p=>p.is_primary) || firearm.photos[0] || {filename:''}).filename %>';
   var currentIndex = 0;
 

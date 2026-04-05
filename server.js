@@ -121,6 +121,7 @@ app.use('/settings/import', sensitiveWriteLimiter);
 
 // Routes
 app.use('/', require('./routes/auth'));
+app.use('/search', require('./routes/search'));
 app.use('/inventory', require('./routes/inventory'));
 app.use('/trusts', require('./routes/trusts'));
 app.use('/optics', require('./routes/optics'));

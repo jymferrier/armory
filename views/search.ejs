@@ -1,0 +1,109 @@
+<%- include('partials/header') %>
+<div class="page">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">SEARCH</h1>
+      <p class="page-sub"><%= total %> RESULT<%= total !== 1 ? 'S' : '' %> FOR "<%= q %>"</p>
+    </div>
+    <div class="page-actions">
+      <form method="GET" action="/search" class="search-form">
+        <input type="text" name="q" value="<%= q %>" placeholder="SEARCH ALL…" class="search-input" autofocus>
+        <button type="submit" class="btn btn--ghost">SEARCH</button>
+      </form>
+    </div>
+  </div>
+
+  <% if (total === 0) { %>
+    <div class="empty-state">
+      <div class="empty-icon">⊘</div>
+      <p class="empty-text">NO RESULTS FOR "<%= q %>"</p>
+    </div>
+  <% } %>
+
+  <% if (firearms.length > 0) { %>
+  <div class="search-section">
+    <h2 class="search-section-title">INVENTORY <span class="search-count"><%= firearms.length %></span></h2>
+    <div class="inventory-list">
+      <% firearms.forEach(f => { %>
+        <a href="/inventory/<%= f.id %>" class="firearm-row">
+          <% if (f.primary_photo) { %>
+            <div class="firearm-thumb">
+              <img src="/api/photo/<%= f.primary_photo.filename %>" alt="<%= f.manufacturer %> <%= f.model %>">
+            </div>
+          <% } else { %>
+            <div class="firearm-thumb firearm-thumb--empty"><span>⊘</span></div>
+          <% } %>
+          <div class="firearm-info">
+            <div class="firearm-name"><%= f.manufacturer %> <span class="firearm-model"><%= f.model %></span></div>
+            <div class="firearm-meta">
+              <% if (f.caliber) { %><span class="badge badge--caliber"><%= f.caliber %></span><% } %>
+              <% if (f.is_nfa) { %><span class="badge badge--nfa">NFA</span><% } %>
+              <% if (f.is_disposed) { %><span class="badge badge--disposed">DISPOSED</span><% } %>
+            </div>
+          </div>
+          <% if (f.serial) { %><span class="firearm-serial mono"><%= f.serial %></span><% } %>
+        </a>
+      <% }) %>
+    </div>
+  </div>
+  <% } %>
+
+  <% if (optics.length > 0) { %>
+  <div class="search-section">
+    <h2 class="search-section-title">OPTICS <span class="search-count"><%= optics.length %></span></h2>
+    <div class="inventory-list">
+      <% optics.forEach(o => { %>
+        <a href="/optics/<%= o.id %>" class="firearm-row">
+          <% if (o.primary_photo) { %>
+            <div class="firearm-thumb">
+              <img src="/api/optic-photo/<%= o.primary_photo.filename %>" alt="<%= o.manufacturer %> <%= o.model %>">
+            </div>
+          <% } else { %>
+            <div class="firearm-thumb firearm-thumb--empty"><span>⊘</span></div>
+          <% } %>
+          <div class="firearm-info">
+            <div class="firearm-name"><%= o.manufacturer %> <% if (o.model) { %><span class="firearm-model"><%= o.model %></span><% } %></div>
+            <div class="firearm-meta">
+              <% if (o.optic_type) { %><span class="badge badge--type"><%= o.optic_type %></span><% } %>
+              <% if (o.magnification) { %><span class="badge badge--caliber"><%= o.magnification %>x</span><% } %>
+            </div>
+          </div>
+          <% if (o.serial) { %><span class="firearm-serial mono"><%= o.serial %></span><% } %>
+        </a>
+      <% }) %>
+    </div>
+  </div>
+  <% } %>
+
+  <% if (mags.length > 0) { %>
+  <div class="search-section">
+    <h2 class="search-section-title">MAGS <span class="search-count"><%= mags.length %></span></h2>
+    <div class="mag-list">
+      <div class="mag-list-header">
+        <span>PLATFORM</span>
+        <span>BRAND / MODEL</span>
+        <span>CALIBER</span>
+        <span>CAP</span>
+        <span>MATERIAL</span>
+        <span>COLOR</span>
+        <span class="mag-col-qty">QTY</span>
+      </div>
+      <% mags.forEach(m => { %>
+        <a href="/mags/<%= m.id %>" class="mag-row">
+          <span class="mag-cell mag-cell--platform"><%= m.platform || '—' %></span>
+          <span class="mag-cell mag-cell--brand">
+            <strong><%= m.brand %></strong><% if (m.model) { %> <span class="mag-model"><%= m.model %></span><% } %>
+          </span>
+          <span class="mag-cell"><%= m.caliber || '—' %></span>
+          <span class="mag-cell mono"><%= m.capacity ? m.capacity + ' rd' : '—' %></span>
+          <span class="mag-cell"><%= m.material || '—' %></span>
+          <span class="mag-cell"><%= m.color || '—' %></span>
+          <span class="mag-cell mag-cell--qty mono"><%= m.quantity || 1 %></span>
+        </a>
+      <% }) %>
+    </div>
+  </div>
+  <% } %>
+
+</div>
+<%- include('partials/footer') %>

@@ -27,10 +27,7 @@ const docStorage = multer.diskStorage({
 const photoFilter = (req, file, cb) => {
   const ext = path.extname(file.originalname).toLowerCase();
   const extOk = /^\.(jpeg|jpg|png|gif|webp)$/.test(ext);
-  // Accept explicit image MIME types (no SVG) or application/octet-stream as
-  // a fallback for browsers that don't send the correct MIME type.
-  const mimeOk = /^image\/(jpeg|jpg|png|gif|webp)$/i.test(file.mimetype)
-              || file.mimetype === 'application/octet-stream';
+  const mimeOk = /^image\/(jpeg|jpg|png|gif|webp)$/i.test(file.mimetype);
   if (extOk && mimeOk) {
     cb(null, true);
   } else {

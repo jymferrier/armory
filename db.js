@@ -466,6 +466,20 @@ const opticsQueries = {
         || getDB().prepare('SELECT filename FROM optics_photos WHERE optic_id = ? LIMIT 1').get(o.id)
     }));
   },
+  search: (q) => {
+    const like = `%${q}%`;
+    const items = getDB().prepare(`
+      SELECT * FROM optics_items
+      WHERE manufacturer LIKE ? OR model LIKE ? OR model_number LIKE ? OR serial LIKE ?
+         OR optic_type LIKE ? OR magnification LIKE ? OR acquired_from LIKE ? OR notes LIKE ?
+      ORDER BY created_at DESC
+    `).all(like, like, like, like, like, like, like, like);
+    return items.map(o => ({
+      ...o,
+      primary_photo: getDB().prepare('SELECT filename FROM optics_photos WHERE optic_id = ? AND is_primary = 1 LIMIT 1').get(o.id)
+        || getDB().prepare('SELECT filename FROM optics_photos WHERE optic_id = ? LIMIT 1').get(o.id)
+    }));
+  },
 };
 
 const magsQueries = {
@@ -492,6 +506,15 @@ const magsQueries = {
   distinctBrands: () => getDB().prepare("SELECT DISTINCT brand FROM mags WHERE brand IS NOT NULL AND brand != '' ORDER BY brand ASC").all().map(r => r.brand),
   distinctModels: () => getDB().prepare("SELECT DISTINCT model FROM mags WHERE model IS NOT NULL AND model != '' ORDER BY model ASC").all().map(r => r.model),
   distinctCalibers: () => getDB().prepare("SELECT DISTINCT caliber FROM mags WHERE caliber IS NOT NULL AND caliber != '' ORDER BY caliber ASC").all().map(r => r.caliber),
+  search: (q) => {
+    const like = `%${q}%`;
+    return getDB().prepare(`
+      SELECT * FROM mags
+      WHERE platform LIKE ? OR brand LIKE ? OR model LIKE ? OR caliber LIKE ?
+         OR color LIKE ? OR material LIKE ? OR notes LIKE ?
+      ORDER BY platform ASC, brand ASC
+    `).all(like, like, like, like, like, like, like);
+  },
 };
 
 module.exports = { initDB, userQueries, firearmsQueries, trustQueries, opticsQueries, magsQueries };

@@ -97,6 +97,28 @@ a:hover { color: var(--text); }
 .nav-link--accent { color: var(--accent); border-color: var(--accent-dim); }
 .nav-link--accent:hover { background: var(--accent); color: var(--bg); }
 .nav-link--muted { color: var(--text-dim); }
+.nav-search-form {
+  display: flex; align-items: center;
+  margin: 0 0.5rem 0 0;
+  padding-right: 0.75rem;
+  border-right: 1px solid var(--border);
+}
+.nav-search-input {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.05em;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 0.3rem 0.6rem;
+  border-radius: 2px;
+  width: 160px;
+  outline: none;
+  transition: border-color var(--transition), width var(--transition);
+}
+.nav-search-input:focus { border-color: var(--accent); width: 220px; }
+.nav-search-input::placeholder { color: var(--text-dim); }
+
 .nav-user {
   font-family: var(--font-mono);
   font-size: 0.7rem;
@@ -1505,4 +1527,27 @@ a:hover { color: var(--text); }
   .mag-row { grid-template-columns: 1fr 1fr; padding: 0.75rem 1rem; row-gap: 0.2rem; }
   .mag-cell--platform { font-size: 0.7rem; color: var(--text-dim); grid-column: 1 / -1; padding: 0; }
   .mag-cell--qty::before { content: 'Qty: '; color: var(--text-dim); }
+}
+
+/* ============================================================
+   SEARCH RESULTS
+   ============================================================ */
+.search-section { margin-bottom: 2.5rem; }
+.search-section-title {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.15em;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0.5rem;
+  margin-bottom: 0.75rem;
+  display: flex; align-items: center; gap: 0.75rem;
+}
+.search-count {
+  background: var(--accent-dim);
+  color: var(--accent);
+  font-size: 0.65rem;
+  padding: 0.1rem 0.45rem;
+  border-radius: 2px;
 }

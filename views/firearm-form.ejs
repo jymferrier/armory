@@ -465,7 +465,9 @@ document.addEventListener('DOMContentLoaded', function() {
     tags.forEach((tag, i) => {
       const chip = document.createElement('span');
       chip.className = 'tag-chip';
-      chip.innerHTML = '<span>' + tag.replace(/</g,'&lt;') + '</span>';
+      const span = document.createElement('span');
+      span.textContent = tag;
+      chip.appendChild(span);
       const btn = document.createElement('button');
       btn.type = 'button';
       btn.className = 'tag-chip__remove';
