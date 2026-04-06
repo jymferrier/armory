@@ -24,6 +24,18 @@ const OPTIC_TYPES = [
   'Other',
 ];
 
+const MOUNT_TYPES = [
+  'Rings',
+  'Fixed Mount',
+  'QD (Quick Detach)',
+  'Cantilever',
+  'Offset',
+  'Picatinny Riser',
+  'Dovetail',
+  'Integrated',
+  'Other',
+];
+
 // Types that show the magnification field
 const MAG_TYPES = new Set(['Riflescope', 'LPVO (Low Power Variable Optic)', 'Prism', 'Magnifier']);
 
@@ -38,6 +50,10 @@ router.get('/', (req, res) => {
       (o.model || '').toLowerCase().includes(ql) ||
       (o.optic_type || '').toLowerCase().includes(ql) ||
       (o.magnification || '').toLowerCase().includes(ql) ||
+      (o.reticle || '').toLowerCase().includes(ql) ||
+      (o.mount_type || '').toLowerCase().includes(ql) ||
+      (o.mount_brand || '').toLowerCase().includes(ql) ||
+      (o.mount_model || '').toLowerCase().includes(ql) ||
       (o.acquired_from || '').toLowerCase().includes(ql) ||
       (o.notes || '').toLowerCase().includes(ql)
     );
@@ -52,6 +68,10 @@ function formLocals() {
     acquiredFromList: opticsQueries.distinctAcquiredFrom(),
     firearms: firearmsQueries.allForDropdown(),
     opticTypes: OPTIC_TYPES,
+    reticles: opticsQueries.distinctReticles(),
+    mountTypes: MOUNT_TYPES,
+    mountBrands: opticsQueries.distinctMountBrands(),
+    mountModels: opticsQueries.distinctMountModels(),
   };
 }
 
@@ -67,7 +87,7 @@ router.post('/new', requireAdmin, (req, res) => {
 
     if (err) return res.render('optic-form', { user: req.session.user, optic: null, error: err.message, ...formLocals() });
 
-    const { manufacturer, model, model_number, serial, optic_type, magnification, acquired_from, date_acquired, price_paid, spouse_price, firearm_id, notes } = req.body;
+    const { manufacturer, model, model_number, serial, optic_type, magnification, reticle, mount_type, mount_brand, mount_model, mount_cant, acquired_from, date_acquired, price_paid, spouse_price, firearm_id, notes } = req.body;
 
     if (!manufacturer || !model) {
       return res.render('optic-form', { user: req.session.user, optic: req.body, error: 'Manufacturer and model are required.', ...formLocals() });
@@ -80,6 +100,11 @@ router.post('/new', requireAdmin, (req, res) => {
       serial: serial || null,
       optic_type: optic_type || null,
       magnification: magnification || null,
+      reticle: reticle || null,
+      mount_type: mount_type || null,
+      mount_brand: mount_brand || null,
+      mount_model: mount_model || null,
+      mount_cant: mount_cant || null,
       acquired_from: acquired_from || null,
       date_acquired: date_acquired || null,
       price_paid: price_paid || null,
@@ -118,7 +143,7 @@ router.post('/:id/edit', requireAdmin, (req, res) => {
   if (!validateCsrf(req)) return res.status(403).render('error', { message: 'Security token validation failed.', user: req.session.user });
   const optic = opticsQueries.findById(req.params.id);
   if (!optic) return res.status(404).render('error', { message: 'Optic not found', user: req.session.user });
-  const { manufacturer, model, model_number, serial, optic_type, magnification, acquired_from, date_acquired, price_paid, spouse_price, firearm_id, notes } = req.body;
+  const { manufacturer, model, model_number, serial, optic_type, magnification, reticle, mount_type, mount_brand, mount_model, mount_cant, acquired_from, date_acquired, price_paid, spouse_price, firearm_id, notes } = req.body;
   if (!manufacturer || !model) {
     return res.render('optic-form', { user: req.session.user, optic: { ...optic, ...req.body }, error: 'Manufacturer and model are required.', ...formLocals() });
   }
@@ -128,7 +153,12 @@ router.post('/:id/edit', requireAdmin, (req, res) => {
     model_number: model_number || null,
     serial: serial || null,
     optic_type: optic_type || null,
-    magnification: MAG_TYPES.has(optic_type) ? (magnification || null) : null,
+    magnification: magnification || null,
+    reticle: reticle || null,
+    mount_type: mount_type || null,
+    mount_brand: mount_brand || null,
+    mount_model: mount_model || null,
+    mount_cant: mount_cant || null,
     acquired_from: acquired_from || null,
     date_acquired: date_acquired || null,
     price_paid: price_paid || null,
@@ -150,6 +180,11 @@ router.post('/:id/duplicate', requireAdmin, (req, res) => {
     serial: null,
     optic_type: optic.optic_type || null,
     magnification: optic.magnification || null,
+    reticle: optic.reticle || null,
+    mount_type: optic.mount_type || null,
+    mount_brand: optic.mount_brand || null,
+    mount_model: optic.mount_model || null,
+    mount_cant: optic.mount_cant || null,
     acquired_from: optic.acquired_from || null,
     date_acquired: optic.date_acquired || null,
     price_paid: optic.price_paid || null,

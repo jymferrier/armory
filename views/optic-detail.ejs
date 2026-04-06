@@ -110,6 +110,12 @@
           <span class="info-value"><%= optic.magnification %>x</span>
         </div>
         <% } %>
+        <% if (optic.reticle) { %>
+        <div class="info-item">
+          <span class="info-label">RETICLE</span>
+          <span class="info-value"><%= optic.reticle %></span>
+        </div>
+        <% } %>
         <% if (optic.serial) { %>
         <div class="info-item">
           <span class="info-label">SERIAL NUMBER</span>
@@ -117,6 +123,38 @@
         </div>
         <% } %>
       </div>
+
+      <!-- Mounting -->
+      <% const showMount = !!(optic.mount_type || optic.mount_brand || optic.mount_model || optic.mount_cant); %>
+      <% if (showMount) { %>
+      <h3 class="section-title mt-lg">MOUNTING</h3>
+      <div class="info-grid">
+        <% if (optic.mount_type) { %>
+        <div class="info-item">
+          <span class="info-label">MOUNT TYPE</span>
+          <span class="info-value"><%= optic.mount_type %></span>
+        </div>
+        <% } %>
+        <% if (optic.mount_brand) { %>
+        <div class="info-item">
+          <span class="info-label">MOUNT BRAND</span>
+          <span class="info-value"><%= optic.mount_brand %></span>
+        </div>
+        <% } %>
+        <% if (optic.mount_model) { %>
+        <div class="info-item">
+          <span class="info-label">MOUNT MODEL</span>
+          <span class="info-value"><%= optic.mount_model %></span>
+        </div>
+        <% } %>
+        <% if (optic.mount_cant) { %>
+        <div class="info-item">
+          <span class="info-label">CANT</span>
+          <span class="info-value"><%= optic.mount_cant %></span>
+        </div>
+        <% } %>
+      </div>
+      <% } %>
 
       <!-- Acquisition -->
       <% const isSpouseView = !!user.is_spouse_view; %>

@@ -73,21 +73,73 @@
           </div>
         </div>
 
-        <div class="field-row field-row--half">
+        <div class="field-row">
           <div class="field">
             <label class="field-label">MAGNIFICATION</label>
             <input type="text" name="magnification" class="field-input"
               value="<%= optic ? (optic.magnification || '') : '' %>" placeholder='e.g. 3-9, 1-6, 4'>
             <p class="field-hint">Enter range (3-9) or fixed value (4) — "x" is added automatically</p>
           </div>
+          <div class="field">
+            <label class="field-label">RETICLE</label>
+            <input type="text" name="reticle" class="field-input" list="reticleList"
+              value="<%= optic ? (optic.reticle || '') : '' %>" placeholder="e.g. MOA, BDC, Crosshair, EBR-7C" autocomplete="off">
+            <datalist id="reticleList">
+              <% reticles.forEach(r => { %><option value="<%= r %>"><% }) %>
+            </datalist>
+          </div>
         </div>
 
       </div>
     </div>
 
-    <!-- 03: ACQUISITION -->
+    <!-- 03: MOUNTING -->
     <div class="form-band">
-      <div class="form-band__label">03 / ACQUISITION</div>
+      <div class="form-band__label">03 / MOUNTING</div>
+      <div class="form-band__fields">
+
+        <div class="field-row">
+          <div class="field">
+            <label class="field-label">MOUNT TYPE</label>
+            <select name="mount_type" class="field-input field-select">
+              <option value="">— Select mount type —</option>
+              <% mountTypes.forEach(t => { %>
+                <option value="<%= t %>" <%= optic && optic.mount_type === t ? 'selected' : '' %>><%= t %></option>
+              <% }) %>
+            </select>
+          </div>
+          <div class="field">
+            <label class="field-label">MOUNT BRAND</label>
+            <input type="text" name="mount_brand" class="field-input" list="mountBrandList"
+              value="<%= optic ? (optic.mount_brand || '') : '' %>" placeholder="e.g. Scalarworks, Badger, ADM" autocomplete="off">
+            <datalist id="mountBrandList">
+              <% mountBrands.forEach(b => { %><option value="<%= b %>"><% }) %>
+            </datalist>
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label class="field-label">MOUNT MODEL</label>
+            <input type="text" name="mount_model" class="field-input" list="mountModelList"
+              value="<%= optic ? (optic.mount_model || '') : '' %>" placeholder="e.g. LEAP/07, C1, Recon-H" autocomplete="off">
+            <datalist id="mountModelList">
+              <% mountModels.forEach(m => { %><option value="<%= m %>"><% }) %>
+            </datalist>
+          </div>
+          <div class="field">
+            <label class="field-label">CANT</label>
+            <input type="text" name="mount_cant" class="field-input"
+              value="<%= optic ? (optic.mount_cant || '') : '' %>" placeholder="e.g. 0 MOA, 20 MOA">
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- 04: ACQUISITION -->
+    <div class="form-band">
+      <div class="form-band__label">04 / ACQUISITION</div>
       <div class="form-band__fields">
 
         <div class="field-row">
@@ -122,9 +174,9 @@
       </div>
     </div>
 
-    <!-- 04: ASSIGNED TO -->
+    <!-- 05: ASSIGNED TO -->
     <div class="form-band">
-      <div class="form-band__label">04 / ASSIGNED TO</div>
+      <div class="form-band__label">05 / ASSIGNED TO</div>
       <div class="form-band__fields">
         <div class="field-row field-row--half">
           <div class="field">
@@ -142,9 +194,9 @@
       </div>
     </div>
 
-    <!-- 05: NOTES -->
+    <!-- 06: NOTES -->
     <div class="form-band">
-      <div class="form-band__label">05 / NOTES</div>
+      <div class="form-band__label">06 / NOTES</div>
       <div class="form-band__fields">
         <div class="field">
           <label class="field-label">NOTES</label>
@@ -155,9 +207,9 @@
     </div>
 
     <% if (!optic || !optic.id) { %>
-    <!-- 06: PHOTOS (new items only) -->
+    <!-- 07: PHOTOS (new items only) -->
     <div class="form-band">
-      <div class="form-band__label">06 / PHOTOS</div>
+      <div class="form-band__label">07 / PHOTOS</div>
       <div class="form-band__fields">
         <div class="field">
           <label class="field-label">PHOTOS</label>

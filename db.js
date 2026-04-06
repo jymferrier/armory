@@ -178,6 +178,11 @@ function initDB() {
     "ALTER TABLE optics_items ADD COLUMN serial TEXT",
     "ALTER TABLE optics_items ADD COLUMN spouse_price TEXT",
     "ALTER TABLE optics_items ADD COLUMN firearm_id INTEGER",
+    "ALTER TABLE optics_items ADD COLUMN reticle TEXT",
+    "ALTER TABLE optics_items ADD COLUMN mount_type TEXT",
+    "ALTER TABLE optics_items ADD COLUMN mount_brand TEXT",
+    "ALTER TABLE optics_items ADD COLUMN mount_model TEXT",
+    "ALTER TABLE optics_items ADD COLUMN mount_cant TEXT",
   ];
   for (const sql of migrations) {
     try { db.exec(sql); } catch (_) { /* column already exists */ }
@@ -453,8 +458,8 @@ const opticsQueries = {
   },
   create: (data) => {
     const result = getDB().prepare(`
-      INSERT INTO optics_items (manufacturer, model, model_number, serial, optic_type, magnification, acquired_from, date_acquired, price_paid, spouse_price, firearm_id, notes)
-      VALUES (@manufacturer, @model, @model_number, @serial, @optic_type, @magnification, @acquired_from, @date_acquired, @price_paid, @spouse_price, @firearm_id, @notes)
+      INSERT INTO optics_items (manufacturer, model, model_number, serial, optic_type, magnification, reticle, mount_type, mount_brand, mount_model, mount_cant, acquired_from, date_acquired, price_paid, spouse_price, firearm_id, notes)
+      VALUES (@manufacturer, @model, @model_number, @serial, @optic_type, @magnification, @reticle, @mount_type, @mount_brand, @mount_model, @mount_cant, @acquired_from, @date_acquired, @price_paid, @spouse_price, @firearm_id, @notes)
     `).run(data);
     return result.lastInsertRowid;
   },
@@ -462,7 +467,8 @@ const opticsQueries = {
     getDB().prepare(`
       UPDATE optics_items SET
         manufacturer = @manufacturer, model = @model, model_number = @model_number,
-        serial = @serial, optic_type = @optic_type, magnification = @magnification,
+        serial = @serial, optic_type = @optic_type, magnification = @magnification, reticle = @reticle,
+        mount_type = @mount_type, mount_brand = @mount_brand, mount_model = @mount_model, mount_cant = @mount_cant,
         acquired_from = @acquired_from, date_acquired = @date_acquired,
         price_paid = @price_paid, spouse_price = @spouse_price, firearm_id = @firearm_id,
         notes = @notes, updated_at = CURRENT_TIMESTAMP
@@ -489,7 +495,10 @@ const opticsQueries = {
   findPhotoByFilename: (filename) => getDB().prepare('SELECT * FROM optics_photos WHERE filename = ?').get(filename),
   distinctManufacturers: () => getDB().prepare("SELECT DISTINCT manufacturer FROM optics_items ORDER BY manufacturer ASC").all().map(r => r.manufacturer),
   distinctModels: () => getDB().prepare("SELECT DISTINCT model FROM optics_items WHERE model IS NOT NULL AND model != '' ORDER BY model ASC").all().map(r => r.model),
+  distinctReticles: () => getDB().prepare("SELECT DISTINCT reticle FROM optics_items WHERE reticle IS NOT NULL AND reticle != '' ORDER BY reticle ASC").all().map(r => r.reticle),
   distinctAcquiredFrom: () => getDB().prepare("SELECT DISTINCT acquired_from FROM optics_items WHERE acquired_from IS NOT NULL AND acquired_from != '' ORDER BY acquired_from ASC").all().map(r => r.acquired_from),
+  distinctMountBrands: () => getDB().prepare("SELECT DISTINCT mount_brand FROM optics_items WHERE mount_brand IS NOT NULL AND mount_brand != '' ORDER BY mount_brand ASC").all().map(r => r.mount_brand),
+  distinctMountModels: () => getDB().prepare("SELECT DISTINCT mount_model FROM optics_items WHERE mount_model IS NOT NULL AND mount_model != '' ORDER BY mount_model ASC").all().map(r => r.mount_model),
   findByFirearmId: (firearmsId) => {
     const items = getDB().prepare(`
       SELECT o.*, COALESCE(pp.filename, fp.filename) AS _photo_filename
@@ -519,8 +528,9 @@ const opticsQueries = {
       ) fp ON fp.optic_id = o.id AND pp.id IS NULL
       WHERE o.manufacturer LIKE ? OR o.model LIKE ? OR o.model_number LIKE ? OR o.serial LIKE ?
          OR o.optic_type LIKE ? OR o.magnification LIKE ? OR o.acquired_from LIKE ? OR o.notes LIKE ?
+         OR o.reticle LIKE ? OR o.mount_type LIKE ? OR o.mount_brand LIKE ? OR o.mount_model LIKE ?
       ORDER BY o.created_at DESC
-    `).all(like, like, like, like, like, like, like, like);
+    `).all(like, like, like, like, like, like, like, like, like, like, like, like);
     return items.map(o => ({
       ...o,
       primary_photo: o._photo_filename ? { filename: o._photo_filename } : null,
