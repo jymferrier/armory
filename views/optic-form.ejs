@@ -90,13 +90,22 @@
           </div>
         </div>
 
-        <div class="field-row field-row--half">
+        <div class="field-row">
           <div class="field">
             <label class="field-label">TUBE SIZE</label>
             <select name="tube_size" class="field-input field-select">
               <option value="">— Select tube size —</option>
               <% ['1" (25.4mm)', '30mm', '34mm', '35mm', '40mm', 'N/A'].forEach(s => { %>
                 <option value="<%= s %>" <%= optic && optic.tube_size === s ? 'selected' : '' %>><%= s %></option>
+              <% }) %>
+            </select>
+          </div>
+          <div class="field">
+            <label class="field-label">ADJUSTMENT</label>
+            <select name="adjustment" class="field-input field-select">
+              <option value="">— Select adjustment —</option>
+              <% ['MOA', 'Mils (MRAD)'].forEach(a => { %>
+                <option value="<%= a %>" <%= optic && optic.adjustment === a ? 'selected' : '' %>><%= a %></option>
               <% }) %>
             </select>
           </div>
