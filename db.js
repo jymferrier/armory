@@ -223,15 +223,24 @@ const userQueries = {
 // Firearm queries
 const firearmsQueries = {
   all: () => {
-    const firearms = getDB().prepare('SELECT * FROM firearms ORDER BY created_at DESC').all();
+    const firearms = getDB().prepare(`
+      SELECT f.*, COALESCE(pp.filename, fp.filename) AS _photo_filename
+      FROM firearms f
+      LEFT JOIN firearm_photos pp ON pp.firearm_id = f.id AND pp.is_primary = 1
+      LEFT JOIN (
+        SELECT firearm_id, MIN(id) AS min_id, filename
+        FROM firearm_photos GROUP BY firearm_id
+      ) fp ON fp.firearm_id = f.id AND pp.id IS NULL
+      ORDER BY f.created_at DESC
+    `).all();
     return firearms.map(f => ({
       ...f,
       is_3d_printed: !!f.is_3d_printed,
       is_nfa: !!f.is_nfa,
       nfa_fmi: !!f.nfa_fmi,
       is_disposed: !!f.is_disposed,
-      primary_photo: getDB().prepare('SELECT filename FROM firearm_photos WHERE firearm_id = ? AND is_primary = 1 LIMIT 1').get(f.id)
-        || getDB().prepare('SELECT filename FROM firearm_photos WHERE firearm_id = ? LIMIT 1').get(f.id)
+      primary_photo: f._photo_filename ? { filename: f._photo_filename } : null,
+      _photo_filename: undefined,
     }));
   },
   findById: (id) => {
@@ -341,8 +350,13 @@ const firearmsQueries = {
   search: (q) => {
     const like = `%${q}%`;
     const firearms = getDB().prepare(`
-      SELECT f.*
+      SELECT f.*, COALESCE(pp.filename, fp.filename) AS _photo_filename
       FROM firearms f
+      LEFT JOIN firearm_photos pp ON pp.firearm_id = f.id AND pp.is_primary = 1
+      LEFT JOIN (
+        SELECT firearm_id, MIN(id) AS min_id, filename
+        FROM firearm_photos GROUP BY firearm_id
+      ) fp ON fp.firearm_id = f.id AND pp.id IS NULL
       WHERE f.manufacturer LIKE ? OR f.model LIKE ? OR f.serial LIKE ? OR f.caliber LIKE ?
          OR f.optics LIKE ? OR f.notes LIKE ? OR f.nfa_type LIKE ?
          OR f.nfa_form_number LIKE ? OR f.nfa_tax_stamp_serial LIKE ?
@@ -355,8 +369,8 @@ const firearmsQueries = {
       is_nfa: !!f.is_nfa,
       nfa_fmi: !!f.nfa_fmi,
       is_disposed: !!f.is_disposed,
-      primary_photo: getDB().prepare('SELECT filename FROM firearm_photos WHERE firearm_id = ? AND is_primary = 1 LIMIT 1').get(f.id)
-        || getDB().prepare('SELECT filename FROM firearm_photos WHERE firearm_id = ? LIMIT 1').get(f.id)
+      primary_photo: f._photo_filename ? { filename: f._photo_filename } : null,
+      _photo_filename: undefined,
     }));
   }
 };
@@ -377,11 +391,20 @@ const trustQueries = {
   create: (data) => getDB().prepare('INSERT INTO trusts (name, settlor_name, settlor_location, agreement_date, notes) VALUES (@name, @settlor_name, @settlor_location, @agreement_date, @notes)').run(data),
   update: (id, data) => getDB().prepare('UPDATE trusts SET settlor_name = @settlor_name, settlor_location = @settlor_location, agreement_date = @agreement_date, notes = @notes WHERE id = @id').run({ ...data, id }),
   delete: (id) => getDB().prepare('DELETE FROM trusts WHERE id = ?').run(id),
-  itemsForTrust: (name) => getDB().prepare("SELECT * FROM firearms WHERE nfa_trust_name = ? ORDER BY created_at DESC").all(name).map(f => ({
+  itemsForTrust: (name) => getDB().prepare(`
+    SELECT f.*, COALESCE(pp.filename, fp.filename) AS _photo_filename
+    FROM firearms f
+    LEFT JOIN firearm_photos pp ON pp.firearm_id = f.id AND pp.is_primary = 1
+    LEFT JOIN (
+      SELECT firearm_id, MIN(id) AS min_id, filename
+      FROM firearm_photos GROUP BY firearm_id
+    ) fp ON fp.firearm_id = f.id AND pp.id IS NULL
+    WHERE f.nfa_trust_name = ? ORDER BY f.created_at DESC
+  `).all(name).map(f => ({
     ...f,
     is_3d_printed: !!f.is_3d_printed, is_nfa: !!f.is_nfa, nfa_fmi: !!f.nfa_fmi, trust_assigned: !!f.trust_assigned,
-    primary_photo: getDB().prepare('SELECT filename FROM firearm_photos WHERE firearm_id = ? AND is_primary = 1 LIMIT 1').get(f.id)
-               || getDB().prepare('SELECT filename FROM firearm_photos WHERE firearm_id = ? LIMIT 1').get(f.id)
+    primary_photo: f._photo_filename ? { filename: f._photo_filename } : null,
+    _photo_filename: undefined,
   })),
   distinctTrustNames: () => getDB().prepare("SELECT DISTINCT nfa_trust_name FROM firearms WHERE nfa_trust_name IS NOT NULL AND nfa_trust_name != '' ORDER BY nfa_trust_name ASC").all().map(r => r.nfa_trust_name),
   addDocument: (trustId, filename, originalName, docType = 'additional') =>
@@ -404,11 +427,20 @@ const trustQueries = {
 
 const opticsQueries = {
   all: () => {
-    const items = getDB().prepare('SELECT * FROM optics_items ORDER BY created_at DESC').all();
+    const items = getDB().prepare(`
+      SELECT o.*, COALESCE(pp.filename, fp.filename) AS _photo_filename
+      FROM optics_items o
+      LEFT JOIN optics_photos pp ON pp.optic_id = o.id AND pp.is_primary = 1
+      LEFT JOIN (
+        SELECT optic_id, MIN(id) AS min_id, filename
+        FROM optics_photos GROUP BY optic_id
+      ) fp ON fp.optic_id = o.id AND pp.id IS NULL
+      ORDER BY o.created_at DESC
+    `).all();
     return items.map(o => ({
       ...o,
-      primary_photo: getDB().prepare('SELECT filename FROM optics_photos WHERE optic_id = ? AND is_primary = 1 LIMIT 1').get(o.id)
-        || getDB().prepare('SELECT filename FROM optics_photos WHERE optic_id = ? LIMIT 1').get(o.id)
+      primary_photo: o._photo_filename ? { filename: o._photo_filename } : null,
+      _photo_filename: undefined,
     }));
   },
   findById: (id) => {
@@ -459,25 +491,40 @@ const opticsQueries = {
   distinctModels: () => getDB().prepare("SELECT DISTINCT model FROM optics_items WHERE model IS NOT NULL AND model != '' ORDER BY model ASC").all().map(r => r.model),
   distinctAcquiredFrom: () => getDB().prepare("SELECT DISTINCT acquired_from FROM optics_items WHERE acquired_from IS NOT NULL AND acquired_from != '' ORDER BY acquired_from ASC").all().map(r => r.acquired_from),
   findByFirearmId: (firearmsId) => {
-    const items = getDB().prepare('SELECT * FROM optics_items WHERE firearm_id = ? ORDER BY created_at ASC').all(firearmsId);
+    const items = getDB().prepare(`
+      SELECT o.*, COALESCE(pp.filename, fp.filename) AS _photo_filename
+      FROM optics_items o
+      LEFT JOIN optics_photos pp ON pp.optic_id = o.id AND pp.is_primary = 1
+      LEFT JOIN (
+        SELECT optic_id, MIN(id) AS min_id, filename
+        FROM optics_photos GROUP BY optic_id
+      ) fp ON fp.optic_id = o.id AND pp.id IS NULL
+      WHERE o.firearm_id = ? ORDER BY o.created_at ASC
+    `).all(firearmsId);
     return items.map(o => ({
       ...o,
-      primary_photo: getDB().prepare('SELECT filename FROM optics_photos WHERE optic_id = ? AND is_primary = 1 LIMIT 1').get(o.id)
-        || getDB().prepare('SELECT filename FROM optics_photos WHERE optic_id = ? LIMIT 1').get(o.id)
+      primary_photo: o._photo_filename ? { filename: o._photo_filename } : null,
+      _photo_filename: undefined,
     }));
   },
   search: (q) => {
     const like = `%${q}%`;
     const items = getDB().prepare(`
-      SELECT * FROM optics_items
-      WHERE manufacturer LIKE ? OR model LIKE ? OR model_number LIKE ? OR serial LIKE ?
-         OR optic_type LIKE ? OR magnification LIKE ? OR acquired_from LIKE ? OR notes LIKE ?
-      ORDER BY created_at DESC
+      SELECT o.*, COALESCE(pp.filename, fp.filename) AS _photo_filename
+      FROM optics_items o
+      LEFT JOIN optics_photos pp ON pp.optic_id = o.id AND pp.is_primary = 1
+      LEFT JOIN (
+        SELECT optic_id, MIN(id) AS min_id, filename
+        FROM optics_photos GROUP BY optic_id
+      ) fp ON fp.optic_id = o.id AND pp.id IS NULL
+      WHERE o.manufacturer LIKE ? OR o.model LIKE ? OR o.model_number LIKE ? OR o.serial LIKE ?
+         OR o.optic_type LIKE ? OR o.magnification LIKE ? OR o.acquired_from LIKE ? OR o.notes LIKE ?
+      ORDER BY o.created_at DESC
     `).all(like, like, like, like, like, like, like, like);
     return items.map(o => ({
       ...o,
-      primary_photo: getDB().prepare('SELECT filename FROM optics_photos WHERE optic_id = ? AND is_primary = 1 LIMIT 1').get(o.id)
-        || getDB().prepare('SELECT filename FROM optics_photos WHERE optic_id = ? LIMIT 1').get(o.id)
+      primary_photo: o._photo_filename ? { filename: o._photo_filename } : null,
+      _photo_filename: undefined,
     }));
   },
 };
