@@ -12,7 +12,7 @@
   <% } %>
 
   <form method="POST" action="/optics/<%= optic && optic.id ? optic.id + '/edit' : 'new' %>"
-    enctype="multipart/form-data"
+    <%= (!optic || !optic.id) ? 'enctype="multipart/form-data"' : '' %>
     class="firearm-form">
     <input type="hidden" name="_csrf" value="<%= csrfToken %>">
 
@@ -87,6 +87,18 @@
             <datalist id="reticleList">
               <% reticles.forEach(r => { %><option value="<%= r %>"><% }) %>
             </datalist>
+          </div>
+        </div>
+
+        <div class="field-row field-row--half">
+          <div class="field">
+            <label class="field-label">TUBE SIZE</label>
+            <select name="tube_size" class="field-input field-select">
+              <option value="">— Select tube size —</option>
+              <% ['1" (25.4mm)', '30mm', '34mm', '35mm', '40mm', 'N/A'].forEach(s => { %>
+                <option value="<%= s %>" <%= optic && optic.tube_size === s ? 'selected' : '' %>><%= s %></option>
+              <% }) %>
+            </select>
           </div>
         </div>
 

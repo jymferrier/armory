@@ -116,6 +116,12 @@
           <span class="info-value"><%= optic.reticle %></span>
         </div>
         <% } %>
+        <% if (optic.tube_size) { %>
+        <div class="info-item">
+          <span class="info-label">TUBE SIZE</span>
+          <span class="info-value"><%= optic.tube_size %></span>
+        </div>
+        <% } %>
         <% if (optic.serial) { %>
         <div class="info-item">
           <span class="info-label">SERIAL NUMBER</span>

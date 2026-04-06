@@ -87,7 +87,7 @@ router.post('/new', requireAdmin, (req, res) => {
 
     if (err) return res.render('optic-form', { user: req.session.user, optic: null, error: err.message, ...formLocals() });
 
-    const { manufacturer, model, model_number, serial, optic_type, magnification, reticle, mount_type, mount_brand, mount_model, mount_cant, acquired_from, date_acquired, price_paid, spouse_price, firearm_id, notes } = req.body;
+    const { manufacturer, model, model_number, serial, optic_type, magnification, reticle, tube_size, mount_type, mount_brand, mount_model, mount_cant, acquired_from, date_acquired, price_paid, spouse_price, firearm_id, notes } = req.body;
 
     if (!manufacturer || !model) {
       return res.render('optic-form', { user: req.session.user, optic: req.body, error: 'Manufacturer and model are required.', ...formLocals() });
@@ -101,6 +101,7 @@ router.post('/new', requireAdmin, (req, res) => {
       optic_type: optic_type || null,
       magnification: magnification || null,
       reticle: reticle || null,
+      tube_size: tube_size || null,
       mount_type: mount_type || null,
       mount_brand: mount_brand || null,
       mount_model: mount_model || null,
@@ -181,6 +182,7 @@ router.post('/:id/duplicate', requireAdmin, (req, res) => {
     optic_type: optic.optic_type || null,
     magnification: optic.magnification || null,
     reticle: optic.reticle || null,
+    tube_size: optic.tube_size || null,
     mount_type: optic.mount_type || null,
     mount_brand: optic.mount_brand || null,
     mount_model: optic.mount_model || null,

@@ -179,6 +179,7 @@ function initDB() {
     "ALTER TABLE optics_items ADD COLUMN spouse_price TEXT",
     "ALTER TABLE optics_items ADD COLUMN firearm_id INTEGER",
     "ALTER TABLE optics_items ADD COLUMN reticle TEXT",
+    "ALTER TABLE optics_items ADD COLUMN tube_size TEXT",
     "ALTER TABLE optics_items ADD COLUMN mount_type TEXT",
     "ALTER TABLE optics_items ADD COLUMN mount_brand TEXT",
     "ALTER TABLE optics_items ADD COLUMN mount_model TEXT",
@@ -458,8 +459,8 @@ const opticsQueries = {
   },
   create: (data) => {
     const result = getDB().prepare(`
-      INSERT INTO optics_items (manufacturer, model, model_number, serial, optic_type, magnification, reticle, mount_type, mount_brand, mount_model, mount_cant, acquired_from, date_acquired, price_paid, spouse_price, firearm_id, notes)
-      VALUES (@manufacturer, @model, @model_number, @serial, @optic_type, @magnification, @reticle, @mount_type, @mount_brand, @mount_model, @mount_cant, @acquired_from, @date_acquired, @price_paid, @spouse_price, @firearm_id, @notes)
+      INSERT INTO optics_items (manufacturer, model, model_number, serial, optic_type, magnification, reticle, tube_size, mount_type, mount_brand, mount_model, mount_cant, acquired_from, date_acquired, price_paid, spouse_price, firearm_id, notes)
+      VALUES (@manufacturer, @model, @model_number, @serial, @optic_type, @magnification, @reticle, @tube_size, @mount_type, @mount_brand, @mount_model, @mount_cant, @acquired_from, @date_acquired, @price_paid, @spouse_price, @firearm_id, @notes)
     `).run(data);
     return result.lastInsertRowid;
   },
@@ -467,7 +468,7 @@ const opticsQueries = {
     getDB().prepare(`
       UPDATE optics_items SET
         manufacturer = @manufacturer, model = @model, model_number = @model_number,
-        serial = @serial, optic_type = @optic_type, magnification = @magnification, reticle = @reticle,
+        serial = @serial, optic_type = @optic_type, magnification = @magnification, reticle = @reticle, tube_size = @tube_size,
         mount_type = @mount_type, mount_brand = @mount_brand, mount_model = @mount_model, mount_cant = @mount_cant,
         acquired_from = @acquired_from, date_acquired = @date_acquired,
         price_paid = @price_paid, spouse_price = @spouse_price, firearm_id = @firearm_id,
