@@ -37,6 +37,8 @@ app.use(helmet({
       imgSrc:     ["'self'", 'data:', 'blob:'],
       objectSrc:  ["'none'"],
       frameSrc:   ["'none'"],
+      baseUri:    ["'self'"],
+      formAction: ["'self'"],
       upgradeInsecureRequests: null,
     }
   },
@@ -118,6 +120,27 @@ const sensitiveWriteLimiter = rateLimit({
 app.use('/settings/change-password', sensitiveWriteLimiter);
 app.use('/settings/add-user', sensitiveWriteLimiter);
 app.use('/settings/import', sensitiveWriteLimiter);
+
+// General API rate limiting — 120 requests per minute per IP
+const apiLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 120,
+  handler: (req, res) => {
+    res.status(429).json({ error: 'Too many requests. Please slow down.' });
+  }
+});
+app.use('/api', apiLimiter);
+app.use('/search', apiLimiter);
+
+// Export rate limiting — 5 exports per 15 minutes
+const exportLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  handler: (req, res) => {
+    res.status(429).render('error', { message: 'Too many export requests. Please try again later.', user: req.session.user });
+  }
+});
+app.use('/settings/export', exportLimiter);
 
 // Routes
 app.use('/', require('./routes/auth'));

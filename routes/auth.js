@@ -113,6 +113,26 @@ function parseCSV(text) {
   return lines;
 }
 
+// Sanitize imported records: cap string field lengths to prevent abuse
+const FIELD_MAX_LEN = {
+  manufacturer: 200, model: 200, caliber: 100, serial: 100,
+  barrel_length: 50, overall_length: 50, optics: 2000,
+  date_acquired: 20, acquired_from: 200, price_paid: 50,
+  transfer_date: 20, ffl_transferred_from: 200,
+  nfa_trust_name: 200, nfa_type: 100, nfa_form_type: 50,
+  nfa_form_number: 100, nfa_submit_date: 20, nfa_tax_stamp_serial: 100,
+  nfa_approve_date: 20, date_disposed: 20, disposal_method: 200,
+  notes: 10000,
+};
+function sanitizeImportRecord(record) {
+  for (const [key, maxLen] of Object.entries(FIELD_MAX_LEN)) {
+    if (typeof record[key] === 'string' && record[key].length > maxLen) {
+      record[key] = record[key].slice(0, maxLen);
+    }
+  }
+  return record;
+}
+
 function csvRowToFirearm(headers, row) {
   const get = (col) => { const i = headers.indexOf(col); return i >= 0 ? (row[i] || '').trim() : ''; };
   const bool = (col) => get(col).toLowerCase() === 'yes';
@@ -218,9 +238,17 @@ router.post('/login', (req, res) => {
       session_version: user.session_version || 0
     };
     audit(req, 'LOGIN_SUCCESS', username);
-    // Validate returnTo: must be a relative path, not an open redirect
-    const safeTo = (typeof returnTo === 'string' && returnTo.startsWith('/') && !returnTo.startsWith('//'))
-      ? returnTo : '/inventory';
+    // Validate returnTo: resolve to a safe local path (prevents open redirects via //, /%2f, etc.)
+    let safeTo = '/inventory';
+    if (typeof returnTo === 'string' && returnTo.startsWith('/')) {
+      try {
+        const parsed = new URL(returnTo, 'http://localhost');
+        // Only allow same-origin paths (no protocol-relative or absolute URLs)
+        if (parsed.hostname === 'localhost' && parsed.pathname.startsWith('/')) {
+          safeTo = parsed.pathname + parsed.search + parsed.hash;
+        }
+      } catch (_) { /* malformed URL — use default */ }
+    }
     res.redirect(safeTo);
   });
 });
@@ -436,12 +464,12 @@ router.post('/settings/import', requireAuth, requireAdmin, (req, res) => {
         const parsed = JSON.parse(text);
         const arr = Array.isArray(parsed) ? parsed : (parsed.firearms || []);
         if (!Array.isArray(arr) || arr.length === 0) return fail('JSON file contains no records.');
-        records = arr.map(jsonRecordToFirearm);
+        records = arr.map(jsonRecordToFirearm).map(sanitizeImportRecord);
       } else if (ext === '.csv') {
         const rows = parseCSV(text);
         if (rows.length < 2) return fail('CSV file contains no data rows.');
         const headers = rows[0];
-        records = rows.slice(1).filter(r => r.some(Boolean)).map(r => csvRowToFirearm(headers, r));
+        records = rows.slice(1).filter(r => r.some(Boolean)).map(r => sanitizeImportRecord(csvRowToFirearm(headers, r)));
       } else {
         return fail('Unsupported file type. Please upload a .csv or .json file.');
       }
@@ -512,12 +540,12 @@ router.post('/settings/import/zip', requireAuth, requireAdmin, (req, res) => {
       try { meta = JSON.parse(metaEntry.getData().toString('utf8')); }
       catch (e) { skipped++; continue; }
 
-      const data = {
+      const data = sanitizeImportRecord({
         ...jsonRecordToFirearm(meta),
         model_number: meta.model_number || null,
         round_count: meta.round_count || 0,
         spouse_price: meta.spouse_price || null,
-      };
+      });
 
       let firearmsId;
       try { firearmsId = firearmsQueries.create(data); }

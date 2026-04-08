@@ -7,6 +7,14 @@ const { DOC_DIR, PHOTO_DIR } = require('../middleware/upload');
 const { firearmsQueries, trustQueries, opticsQueries } = require('../db');
 const { audit } = require('../middleware/audit');
 
+// Check file exists and is a regular file (not a symlink) to prevent symlink attacks
+function safeFileExists(filepath) {
+  try {
+    const stat = fs.lstatSync(filepath);
+    return stat.isFile();
+  } catch (_) { return false; }
+}
+
 router.use(requireAuth);
 
 // Serve a photo — authenticated; verify record exists in DB and enforce spouse visibility
@@ -19,7 +27,7 @@ router.get('/photo/:filename', (req, res) => {
     if (!firearm || !firearm.spouse_visible) return res.status(404).end();
   }
   const filepath = path.join(PHOTO_DIR, filename);
-  if (!fs.existsSync(filepath)) return res.status(404).end();
+  if (!safeFileExists(filepath)) return res.status(404).end();
   audit(req, 'FILE_ACCESS', `photo:${filename}`);
   res.sendFile(filepath);
 });
@@ -30,7 +38,7 @@ router.get('/optic-photo/:filename', (req, res) => {
   const photo = opticsQueries.findPhotoByFilename(filename);
   if (!photo) return res.status(404).end();
   const filepath = path.join(PHOTO_DIR, filename);
-  if (!fs.existsSync(filepath)) return res.status(404).end();
+  if (!safeFileExists(filepath)) return res.status(404).end();
   audit(req, 'FILE_ACCESS', `optic-photo:${filename}`);
   res.sendFile(filepath);
 });
@@ -41,7 +49,7 @@ router.get('/trust-document/:filename', (req, res) => {
   const doc = trustQueries.findDocumentByFilename(filename);
   if (!doc) return res.status(404).json({ error: 'File not found' });
   const filepath = path.join(DOC_DIR, filename);
-  if (!fs.existsSync(filepath)) return res.status(404).json({ error: 'File not found' });
+  if (!safeFileExists(filepath)) return res.status(404).json({ error: 'File not found' });
   audit(req, 'FILE_ACCESS', `trust-doc:${filename} (${doc.original_name || filename})`);
   res.download(filepath, doc.original_name || filename);
 });
@@ -56,7 +64,7 @@ router.get('/document/:filename', (req, res) => {
     if (!firearm || !firearm.spouse_visible) return res.status(404).json({ error: 'File not found' });
   }
   const filepath = path.join(DOC_DIR, filename);
-  if (!fs.existsSync(filepath)) return res.status(404).json({ error: 'File not found' });
+  if (!safeFileExists(filepath)) return res.status(404).json({ error: 'File not found' });
   audit(req, 'FILE_ACCESS', `doc:${filename} (${doc.original_name || filename})`);
   res.download(filepath, doc.original_name || filename);
 });
