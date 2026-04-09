@@ -10,7 +10,13 @@ function requireAuth(req, res, next) {
     }
     return next();
   }
-  req.session.returnTo = req.originalUrl;
+  // Only save returnTo for page navigations, not subresource requests (images, etc.)
+  const accept = req.headers['accept'] || '';
+  if (accept.includes('text/html')) {
+    req.session.returnTo = req.originalUrl;
+  }
+  // Prevent browsers from caching the 302 redirect (especially for images)
+  res.set('Cache-Control', 'no-store');
   res.redirect('/login');
 }
 
