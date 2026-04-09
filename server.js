@@ -12,6 +12,11 @@ const { csrfMiddleware } = require('./middleware/csrf');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Trust proxy for correct client IP behind reverse proxies (nginx, Cloudflare, etc.)
+// This ensures rate limiting and logging use the real client IP, not the proxy IP.
+if (process.env.TRUST_PROXY) {
+  app.set('trust proxy', process.env.TRUST_PROXY === 'true' ? 1 : process.env.TRUST_PROXY);
+}
 
 // Init DB
 initDB();
@@ -121,10 +126,11 @@ app.use('/settings/change-password', sensitiveWriteLimiter);
 app.use('/settings/add-user', sensitiveWriteLimiter);
 app.use('/settings/import', sensitiveWriteLimiter);
 
-// General API rate limiting — 120 requests per minute per IP
+// General API rate limiting — 300 requests per minute per IP
+// Generous limit since photo/document serving is auth-gated already
 const apiLimiter = rateLimit({
   windowMs: 60 * 1000,
-  max: 120,
+  max: 300,
   handler: (req, res) => {
     res.status(429).json({ error: 'Too many requests. Please slow down.' });
   }
