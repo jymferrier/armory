@@ -130,12 +130,18 @@
           </div>
         </div>
 
-        <div class="field-row field-row--half">
+        <div class="field-row">
           <div class="field">
-            <label class="field-label">TRUST / ENTITY NAME</label>
+            <label class="field-label">NFA TRUST / ENTITY NAME</label>
             <input type="text" name="nfa_trust_name" class="field-input"
               value="<%= firearm ? (firearm.nfa_trust_name || '') : '' %>"
-              placeholder="Trust or entity name, if applicable">
+              placeholder="NFA trust or entity name, if applicable">
+          </div>
+          <div class="field">
+            <label class="field-label">NON-NFA TRUST NAME</label>
+            <input type="text" name="non_nfa_trust_name" class="field-input"
+              value="<%= firearm ? (firearm.non_nfa_trust_name || '') : '' %>"
+              placeholder="Non-NFA trust name, if applicable">
           </div>
         </div>
 

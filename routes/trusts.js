@@ -14,9 +14,11 @@ router.use(requireAuth);
 // List
 router.get('/', (req, res) => {
   const trusts = trustQueries.all();
-  const allNames = trustQueries.distinctTrustNames();
-  const knownNames = new Set(trusts.map(t => t.name));
-  const unregistered = allNames.filter(n => !knownNames.has(n));
+  const knownNamesLC = new Set(trusts.map(t => t.name.toLowerCase()));
+  const nfaNames = trustQueries.distinctTrustNames();
+  const nonNfaNames = trustQueries.distinctNonNfaTrustNames();
+  const allNames = [...new Set([...nfaNames, ...nonNfaNames])];
+  const unregistered = allNames.filter(n => !knownNamesLC.has(n.toLowerCase()));
   res.render('trusts', { user: req.session.user, trusts, unregistered });
 });
 
@@ -28,9 +30,9 @@ router.get('/new', requireAdmin, (req, res) => {
 
 // Create trust
 router.post('/new', requireAdmin, (req, res) => {
-  const { name, settlor_name, settlor_location, agreement_date, notes } = req.body;
+  const { name, trust_type, settlor_name, settlor_location, agreement_date, notes } = req.body;
   try {
-    trustQueries.create({ name: name.trim(), settlor_name: settlor_name || null, settlor_location: settlor_location || null, agreement_date: agreement_date || null, notes: notes || null });
+    trustQueries.create({ name: name.trim(), trust_type: trust_type === 'Non-NFA' ? 'Non-NFA' : 'NFA', settlor_name: settlor_name || null, settlor_location: settlor_location || null, agreement_date: agreement_date || null, notes: notes || null });
     const trust = trustQueries.findByName(name.trim());
     res.redirect('/trusts/' + trust.id);
   } catch(e) {
@@ -43,7 +45,8 @@ router.post('/new', requireAdmin, (req, res) => {
 router.get('/:id', (req, res) => {
   const trust = trustQueries.findById(req.params.id);
   if (!trust) return res.status(404).render('error', { message: 'Trust not found', user: req.session.user });
-  const items = trustQueries.itemsForTrust(trust.name);
+  const isNonNfa = trust.trust_type === 'Non-NFA';
+  const items = isNonNfa ? trustQueries.nonNfaItemsForTrust(trust.name) : trustQueries.itemsForTrust(trust.name);
   res.render('trust-detail', { user: req.session.user, trust, items, saved: !!req.query.saved, detailsRequired: req.query.details_required || null, docError: req.query.docError || null });
 });
 
@@ -69,10 +72,12 @@ router.get('/:id/assignment', (req, res) => {
     return res.redirect('/trusts/' + req.params.id + '?details_required=' + encodeURIComponent(missing.join(', ')));
   }
 
-  const allItems = trustQueries.itemsForTrust(trust.name);
+  const isNonNfa = trust.trust_type === 'Non-NFA';
+  const allItems = isNonNfa ? trustQueries.nonNfaItemsForTrust(trust.name) : trustQueries.itemsForTrust(trust.name);
   const rawIds = [].concat(req.query.items || []).map(Number).filter(Boolean);
   const items = rawIds.length > 0 ? allItems.filter(f => rawIds.includes(f.id)) : allItems;
-  res.render('trust-print', { user: req.session.user, trust, items });
+  const template = isNonNfa ? 'trust-print-non-nfa' : 'trust-print';
+  res.render(template, { user: req.session.user, trust, items });
 });
 
 // Download assignment document as PDF
@@ -88,7 +93,8 @@ router.get('/:id/assignment/pdf', async (req, res) => {
     return res.redirect('/trusts/' + req.params.id + '?details_required=' + encodeURIComponent(missing.join(', ')));
   }
 
-  const allItems = trustQueries.itemsForTrust(trust.name);
+  const isNonNfa = trust.trust_type === 'Non-NFA';
+  const allItems = isNonNfa ? trustQueries.nonNfaItemsForTrust(trust.name) : trustQueries.itemsForTrust(trust.name);
   const rawIds = [].concat(req.query.items || []).map(Number).filter(Boolean);
   const items = rawIds.length > 0 ? allItems.filter(f => rawIds.includes(f.id)) : allItems;
 
@@ -97,8 +103,9 @@ router.get('/:id/assignment/pdf', async (req, res) => {
     const ejs = require('ejs');
     const puppeteer = require('puppeteer-core');
 
+    const template = isNonNfa ? 'trust-print-non-nfa' : 'trust-print';
     const html = await ejs.renderFile(
-      path.join(__dirname, '../views/trust-print.ejs'),
+      path.join(__dirname, '../views/' + template + '.ejs'),
       { user: req.session.user, trust, items, pdfMode: true, cspNonce: '' },
       { async: true }
     );
@@ -171,14 +178,23 @@ router.post('/:id/documents/:docId/delete', requireAdmin, (req, res) => {
   res.redirect(`/trusts/${req.params.id}`);
 });
 
-// Toggle trust_assigned flag on a firearm
+// Toggle trust_assigned flag on a firearm (NFA trusts)
 router.post('/:id/firearms/:firearmsId/assign', requireAdmin, (req, res) => {
   const trust = trustQueries.findById(req.params.id);
   if (!trust) return res.status(404).render('error', { message: 'Trust not found', user: req.session.user });
   const firearm = firearmsQueries.findById(req.params.firearmsId);
-  if (!firearm || firearm.nfa_trust_name !== trust.name)
-    return res.status(403).render('error', { message: 'Forbidden', user: req.session.user });
-  firearmsQueries.setTrustAssigned(req.params.firearmsId, !firearm.trust_assigned);
+  if (trust.trust_type === 'Non-NFA') {
+    const nameLC = trust.name.toLowerCase();
+    const matchesNonNfa = firearm && (firearm.non_nfa_trust_name || '').toLowerCase() === nameLC;
+    const matchesNfa = firearm && (firearm.nfa_trust_name || '').toLowerCase() === nameLC;
+    if (!firearm || (!matchesNonNfa && !matchesNfa))
+      return res.status(403).render('error', { message: 'Forbidden', user: req.session.user });
+    trustQueries.setNonNfaTrustAssigned(req.params.firearmsId, !firearm.non_nfa_trust_assigned);
+  } else {
+    if (!firearm || (firearm.nfa_trust_name || '').toLowerCase() !== trust.name.toLowerCase())
+      return res.status(403).render('error', { message: 'Forbidden', user: req.session.user });
+    firearmsQueries.setTrustAssigned(req.params.firearmsId, !firearm.trust_assigned);
+  }
   res.redirect(`/trusts/${req.params.id}`);
 });
 

@@ -4,6 +4,7 @@
     <div>
       <p class="breadcrumb"><a href="/trusts">← TRUSTS</a></p>
       <h1 class="page-title"><%= trust.name.toUpperCase() %></h1>
+      <span class="badge <%= trust.trust_type === 'Non-NFA' ? 'badge--type' : 'badge--nfa' %>" style="margin-top:0.25rem;"><%= trust.trust_type || 'NFA' %></span>
     </div>
     <div class="page-actions">
       <form method="POST" action="/trusts/<%= trust.id %>/delete" id="deleteTrustForm">
@@ -130,20 +131,28 @@
   </div>
 
   <!-- Items selection -->
+  <% const isNonNfa = trust.trust_type === 'Non-NFA'; %>
   <div class="form-band" style="border-top:none;">
     <div class="form-band__label">ASSIGNED ITEMS</div>
     <div class="form-band__fields">
       <% if (items.length === 0) { %>
         <p style="font-family:var(--font-mono);font-size:0.78rem;color:var(--text-muted);">
-          No items assigned to "<%= trust.name %>". Set the Trust / Entity Name on any firearm to assign it here.
+          No items assigned to "<%= trust.name %>". Set the <%= isNonNfa ? 'Non-NFA Trust Name' : 'Trust / Entity Name' %> on any firearm to assign it here.
         </p>
       <% } else { %>
+        <% if (isNonNfa) { %>
+        <p style="font-family:var(--font-mono);font-size:0.65rem;color:var(--text-dim);margin-bottom:1rem;letter-spacing:0.08em;">
+          SELECT ITEMS TO INCLUDE IN THE ASSIGNMENT DOCUMENT · ITEMS MUST NOT BE ALREADY ASSIGNED
+        </p>
+        <% } else { %>
         <p style="font-family:var(--font-mono);font-size:0.65rem;color:var(--text-dim);margin-bottom:1rem;letter-spacing:0.08em;">
           SELECT ITEMS TO INCLUDE IN THE ASSIGNMENT DOCUMENT · ITEMS MUST HAVE AN NFA APPROVED DATE AND NOT BE ALREADY ASSIGNED
         </p>
+        <% } %>
         <% items.forEach(item => {
-             const fullyApproved = item.nfa_approve_date && (!item.nfa2_enabled || item.nfa2_approve_date);
-             const notEligible = item.trust_assigned || !fullyApproved;
+             const isAssigned = isNonNfa ? item.non_nfa_trust_assigned : item.trust_assigned;
+             const fullyApproved = isNonNfa ? true : (item.nfa_approve_date && (!item.nfa2_enabled || item.nfa2_approve_date));
+             const notEligible = isAssigned || !fullyApproved;
         %>
         <div style="display:flex;align-items:center;gap:1rem;padding:0.65rem 0.75rem;border:1px solid var(--border);margin-bottom:3px;background:var(--bg-3);<%= notEligible ? 'opacity:0.6;' : '' %>">
           <input type="checkbox" class="item-checkbox" value="<%= item.id %>"
@@ -158,23 +167,25 @@
           <div style="flex:1;min-width:0;">
             <div style="font-family:var(--font-display);font-size:1.1rem;letter-spacing:0.05em;">
               <%= item.manufacturer %> <span style="color:var(--accent)"><%= item.model %></span>
-              <% if (item.trust_assigned) { %>
+              <% if (isAssigned) { %>
                 <span style="font-family:var(--font-mono);font-size:0.6rem;color:var(--nfa-green);border:1px solid var(--nfa-green);padding:0.1rem 0.4rem;margin-left:0.5rem;letter-spacing:0.1em;">ASSIGNED</span>
               <% } else if (!fullyApproved) { %>
                 <span style="font-family:var(--font-mono);font-size:0.6rem;color:var(--nfa-red,#c0392b);border:1px solid var(--nfa-red,#c0392b);padding:0.1rem 0.4rem;margin-left:0.5rem;letter-spacing:0.1em;">PENDING APPROVAL</span>
               <% } %>
             </div>
             <div style="font-family:var(--font-mono);font-size:0.65rem;color:var(--text-muted);margin-top:0.1rem;">
-              <% if (item.nfa_type) { %><span style="color:<%= fullyApproved ? 'var(--nfa-green)' : 'var(--nfa-red)' %>"><%= item.nfa_type %></span><% } %>
+              <% if (!isNonNfa && item.nfa_type) { %><span style="color:<%= fullyApproved ? 'var(--nfa-green)' : 'var(--nfa-red)' %>"><%= item.nfa_type %></span><% } %>
+              <% if (isNonNfa && item.nfa_type) { %><span><%= item.nfa_type %></span><% } %>
               <% if (item.serial) { %> · S/N: <%= item.serial %><% } %>
-              <% if (item.nfa_approve_date) { %> · Approved: <%= item.nfa_approve_date %><% } else if (item.date_acquired) { %> · Acquired: <%= item.date_acquired %><% } %>
+              <% if (!isNonNfa && item.nfa_approve_date) { %> · Approved: <%= item.nfa_approve_date %><% } %>
+              <% if (item.date_acquired) { %> · Acquired: <%= item.date_acquired %><% } %>
             </div>
           </div>
           <% if (!user.is_spouse_view) { %>
           <form method="POST" action="/trusts/<%= trust.id %>/firearms/<%= item.id %>/assign" style="flex-shrink:0;">
             <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-            <button type="submit" class="btn btn--ghost btn--sm" style="<%= item.trust_assigned ? 'color:var(--nfa-green);border-color:var(--nfa-green);' : '' %>">
-              <%= item.trust_assigned ? 'UNASSIGN' : 'MARK ASSIGNED' %>
+            <button type="submit" class="btn btn--ghost btn--sm" style="<%= isAssigned ? 'color:var(--nfa-green);border-color:var(--nfa-green);' : '' %>">
+              <%= isAssigned ? 'UNASSIGN' : 'MARK ASSIGNED' %>
             </button>
           </form>
           <% } %>

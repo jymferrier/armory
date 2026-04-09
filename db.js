@@ -168,6 +168,9 @@ function initDB() {
     "ALTER TABLE firearms ADD COLUMN trust_assigned INTEGER DEFAULT 0",
     "ALTER TABLE trusts ADD COLUMN notes TEXT",
     "ALTER TABLE trust_documents ADD COLUMN doc_type TEXT DEFAULT 'additional'",
+    "ALTER TABLE trusts ADD COLUMN trust_type TEXT DEFAULT 'NFA'",
+    "ALTER TABLE firearms ADD COLUMN non_nfa_trust_name TEXT",
+    "ALTER TABLE firearms ADD COLUMN non_nfa_trust_assigned INTEGER DEFAULT 0",
     "ALTER TABLE firearms ADD COLUMN nfa2_enabled INTEGER DEFAULT 0",
     "ALTER TABLE firearms ADD COLUMN nfa2_form_type TEXT",
     "ALTER TABLE firearms ADD COLUMN nfa2_form_number TEXT",
@@ -270,12 +273,14 @@ const firearmsQueries = {
         date_acquired, acquired_from, price_paid, spouse_price, transfer_date, ffl_transferred_from,
         is_3d_printed, is_nfa, nfa_type, nfa_form_type, nfa_form_number, nfa_fmi, nfa_submit_date, nfa_tax_stamp_serial, nfa_approve_date, nfa_trust_name,
         nfa2_enabled, nfa2_form_type, nfa2_form_number, nfa2_fmi, nfa2_submit_date, nfa2_tax_stamp_serial, nfa2_approve_date,
+        non_nfa_trust_name,
         is_disposed, date_disposed, disposal_method, notes, round_count
       ) VALUES (
         @manufacturer, @model, @model_number, @caliber, @serial, @barrel_length, @overall_length, @optics,
         @date_acquired, @acquired_from, @price_paid, @spouse_price, @transfer_date, @ffl_transferred_from,
         @is_3d_printed, @is_nfa, @nfa_type, @nfa_form_type, @nfa_form_number, @nfa_fmi, @nfa_submit_date, @nfa_tax_stamp_serial, @nfa_approve_date, @nfa_trust_name,
         @nfa2_enabled, @nfa2_form_type, @nfa2_form_number, @nfa2_fmi, @nfa2_submit_date, @nfa2_tax_stamp_serial, @nfa2_approve_date,
+        @non_nfa_trust_name,
         @is_disposed, @date_disposed, @disposal_method, @notes, @round_count
       )
     `).run(data);
@@ -295,6 +300,7 @@ const firearmsQueries = {
         nfa2_enabled = @nfa2_enabled, nfa2_form_type = @nfa2_form_type, nfa2_form_number = @nfa2_form_number,
         nfa2_fmi = @nfa2_fmi, nfa2_submit_date = @nfa2_submit_date, nfa2_tax_stamp_serial = @nfa2_tax_stamp_serial,
         nfa2_approve_date = @nfa2_approve_date,
+        non_nfa_trust_name = @non_nfa_trust_name,
         is_disposed = @is_disposed, date_disposed = @date_disposed,
         disposal_method = @disposal_method, notes = @notes,
         round_count = @round_count, updated_at = CURRENT_TIMESTAMP
@@ -395,7 +401,7 @@ const trustQueries = {
     };
   },
   findByName: (name) => getDB().prepare('SELECT * FROM trusts WHERE name = ?').get(name),
-  create: (data) => getDB().prepare('INSERT INTO trusts (name, settlor_name, settlor_location, agreement_date, notes) VALUES (@name, @settlor_name, @settlor_location, @agreement_date, @notes)').run(data),
+  create: (data) => getDB().prepare('INSERT INTO trusts (name, trust_type, settlor_name, settlor_location, agreement_date, notes) VALUES (@name, @trust_type, @settlor_name, @settlor_location, @agreement_date, @notes)').run(data),
   update: (id, data) => getDB().prepare('UPDATE trusts SET settlor_name = @settlor_name, settlor_location = @settlor_location, agreement_date = @agreement_date, notes = @notes WHERE id = @id').run({ ...data, id }),
   delete: (id) => getDB().prepare('DELETE FROM trusts WHERE id = ?').run(id),
   itemsForTrust: (name) => getDB().prepare(`
@@ -406,14 +412,32 @@ const trustQueries = {
       SELECT firearm_id, MIN(id) AS min_id, filename
       FROM firearm_photos GROUP BY firearm_id
     ) fp ON fp.firearm_id = f.id AND pp.id IS NULL
-    WHERE f.nfa_trust_name = ? ORDER BY f.created_at DESC
+    WHERE f.nfa_trust_name = ? COLLATE NOCASE ORDER BY f.created_at DESC
   `).all(name).map(f => ({
     ...f,
     is_3d_printed: !!f.is_3d_printed, is_nfa: !!f.is_nfa, nfa_fmi: !!f.nfa_fmi, trust_assigned: !!f.trust_assigned,
     primary_photo: f._photo_filename ? { filename: f._photo_filename } : null,
     _photo_filename: undefined,
   })),
+  nonNfaItemsForTrust: (name) => getDB().prepare(`
+    SELECT f.*, COALESCE(pp.filename, fp.filename) AS _photo_filename
+    FROM firearms f
+    LEFT JOIN firearm_photos pp ON pp.firearm_id = f.id AND pp.is_primary = 1
+    LEFT JOIN (
+      SELECT firearm_id, MIN(id) AS min_id, filename
+      FROM firearm_photos GROUP BY firearm_id
+    ) fp ON fp.firearm_id = f.id AND pp.id IS NULL
+    WHERE f.non_nfa_trust_name = ? COLLATE NOCASE OR f.nfa_trust_name = ? COLLATE NOCASE ORDER BY f.created_at DESC
+  `).all(name, name).map(f => ({
+    ...f,
+    is_3d_printed: !!f.is_3d_printed, is_nfa: !!f.is_nfa, nfa_fmi: !!f.nfa_fmi,
+    non_nfa_trust_assigned: !!f.non_nfa_trust_assigned,
+    primary_photo: f._photo_filename ? { filename: f._photo_filename } : null,
+    _photo_filename: undefined,
+  })),
+  setNonNfaTrustAssigned: (id, value) => getDB().prepare('UPDATE firearms SET non_nfa_trust_assigned = ? WHERE id = ?').run(value ? 1 : 0, id),
   distinctTrustNames: () => getDB().prepare("SELECT DISTINCT nfa_trust_name FROM firearms WHERE nfa_trust_name IS NOT NULL AND nfa_trust_name != '' ORDER BY nfa_trust_name ASC").all().map(r => r.nfa_trust_name),
+  distinctNonNfaTrustNames: () => getDB().prepare("SELECT DISTINCT non_nfa_trust_name FROM firearms WHERE non_nfa_trust_name IS NOT NULL AND non_nfa_trust_name != '' ORDER BY non_nfa_trust_name ASC").all().map(r => r.non_nfa_trust_name),
   addDocument: (trustId, filename, originalName, docType = 'additional') =>
     getDB().prepare('INSERT INTO trust_documents (trust_id, filename, original_name, doc_type) VALUES (?, ?, ?, ?)').run(trustId, filename, originalName, docType),
   replaceTrustDoc: (trustId, filename, originalName) => {

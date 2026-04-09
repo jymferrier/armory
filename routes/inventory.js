@@ -79,7 +79,7 @@ router.post('/new', requireAdmin, (req, res) => {
       manufacturer, model, model_number, caliber, serial, barrel_length, overall_length, optics, date_acquired,
       acquired_from, price_paid, spouse_price, transfer_date, ffl_transferred_from,
       is_3d_printed,
-      item_type, nfa_form_type, nfa_form_number, nfa_fmi, nfa_submit_date, nfa_tax_stamp_serial, nfa_approve_date, nfa_trust_name,
+      item_type, nfa_form_type, nfa_form_number, nfa_fmi, nfa_submit_date, nfa_tax_stamp_serial, nfa_approve_date, nfa_trust_name, non_nfa_trust_name,
       nfa2_enabled, nfa2_form_type, nfa2_form_number, nfa2_fmi, nfa2_submit_date, nfa2_tax_stamp_serial, nfa2_approve_date,
       is_disposed, date_disposed, disposal_method, notes, round_count
     } = req.body;
@@ -112,6 +112,7 @@ router.post('/new', requireAdmin, (req, res) => {
       nfa_tax_stamp_serial: isNfa ? (cap(nfa_tax_stamp_serial, 100) || null) : null,
       nfa_approve_date: isNfa ? (nfa_approve_date || null) : null,
       nfa_trust_name: cap(nfa_trust_name, 500) || null,
+      non_nfa_trust_name: cap(non_nfa_trust_name, 500) || null,
       nfa2_enabled: isNfa && nfa2_enabled ? 1 : 0,
       nfa2_form_type: isNfa && nfa2_enabled ? (nfa2_form_type || null) : null,
       nfa2_form_number: isNfa && nfa2_enabled ? (cap(nfa2_form_number, 100) || null) : null,
@@ -174,7 +175,7 @@ router.post('/:id/edit', requireAdmin, (req, res) => {
     manufacturer, model, model_number, caliber, serial, barrel_length, overall_length, optics, date_acquired,
     acquired_from, price_paid, spouse_price, transfer_date, ffl_transferred_from,
     is_3d_printed,
-    item_type, nfa_form_type, nfa_form_number, nfa_fmi, nfa_submit_date, nfa_tax_stamp_serial, nfa_approve_date, nfa_trust_name,
+    item_type, nfa_form_type, nfa_form_number, nfa_fmi, nfa_submit_date, nfa_tax_stamp_serial, nfa_approve_date, nfa_trust_name, non_nfa_trust_name,
     nfa2_enabled, nfa2_form_type, nfa2_form_number, nfa2_fmi, nfa2_submit_date, nfa2_tax_stamp_serial, nfa2_approve_date,
     is_disposed, date_disposed, disposal_method, notes, round_count
   } = req.body;
@@ -206,6 +207,7 @@ router.post('/:id/edit', requireAdmin, (req, res) => {
     nfa_tax_stamp_serial: isNfa ? (cap(nfa_tax_stamp_serial, 100) || null) : null,
     nfa_approve_date: isNfa ? (nfa_approve_date || null) : null,
     nfa_trust_name: cap(nfa_trust_name, 500) || null,
+    non_nfa_trust_name: cap(non_nfa_trust_name, 500) || null,
     nfa2_enabled: isNfa && nfa2_enabled ? 1 : 0,
     nfa2_form_type: isNfa && nfa2_enabled ? (nfa2_form_type || null) : null,
     nfa2_form_number: isNfa && nfa2_enabled ? (cap(nfa2_form_number, 100) || null) : null,
@@ -258,6 +260,7 @@ router.post('/:id/duplicate', requireAdmin, (req, res) => {
     nfa_tax_stamp_serial: null,
     nfa_approve_date:    null,
     nfa_trust_name:      null,
+    non_nfa_trust_name:  null,
     nfa2_enabled:        0,
     nfa2_form_type:      null,
     nfa2_form_number:    null,

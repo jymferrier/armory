@@ -151,8 +151,14 @@
         <% } %>
         <% if (firearm.nfa_trust_name) { %>
         <div class="info-item">
-          <span class="info-label">TRUST / ENTITY</span>
+          <span class="info-label">NFA TRUST / ENTITY</span>
           <span class="info-value"><%= firearm.nfa_trust_name %></span>
+        </div>
+        <% } %>
+        <% if (firearm.non_nfa_trust_name) { %>
+        <div class="info-item">
+          <span class="info-label">NON-NFA TRUST</span>
+          <span class="info-value"><%= firearm.non_nfa_trust_name %></span>
         </div>
         <% } %>
       </div>

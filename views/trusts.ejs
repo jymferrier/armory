@@ -31,7 +31,7 @@
       <% trusts.forEach(trust => { %>
       <div class="trust-row">
         <div class="trust-row__info">
-          <div class="trust-row__name"><%= trust.name %></div>
+          <div class="trust-row__name"><%= trust.name %> <span class="badge <%= trust.trust_type === 'Non-NFA' ? 'badge--type' : 'badge--nfa' %>" style="font-size:0.55rem;vertical-align:middle;margin-left:0.5rem;"><%= trust.trust_type || 'NFA' %></span></div>
           <% if (trust.settlor_name || trust.settlor_location || trust.agreement_date) { %>
           <div class="trust-row__meta">
             <% if (trust.settlor_name) { %><%= trust.settlor_name %><% } %>
