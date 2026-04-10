@@ -35,12 +35,20 @@ const photoFilter = (req, file, cb) => {
   }
 };
 
+const DOC_ALLOWED_EXTS = new Set(['.pdf', '.jpg', '.jpeg', '.png', '.gif', '.webp', '.doc', '.docx']);
+const DOC_ALLOWED_MIMES = new Set([
+  'application/pdf',
+  'image/jpeg', 'image/png', 'image/gif', 'image/webp',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+]);
+
 const docFilter = (req, file, cb) => {
-  const allowed = /pdf|jpg|jpeg|png|gif|webp|doc|docx/;
-  if (allowed.test(path.extname(file.originalname).toLowerCase())) {
+  const ext = path.extname(file.originalname).toLowerCase();
+  if (DOC_ALLOWED_EXTS.has(ext) && DOC_ALLOWED_MIMES.has(file.mimetype)) {
     cb(null, true);
   } else {
-    cb(new Error('Unsupported document format'));
+    cb(new Error('Unsupported document format. Allowed: PDF, JPG, PNG, GIF, WEBP, DOC, DOCX.'));
   }
 };
 

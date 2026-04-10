@@ -68,10 +68,10 @@ router.post('/new', requireAdmin, (req, res) => {
     brand:    cap(brand.trim(), 200),
     model:    cap(model, 200) || null,
     color:    cap(color, 100) || null,
-    capacity: capacity ? parseInt(capacity, 10) : null,
+    capacity: parseInt(capacity, 10) || null,
     caliber:  cap(caliber, 100) || null,
     material: MATERIALS.includes(material) ? material : null,
-    quantity: quantity ? parseInt(quantity, 10) : 1,
+    quantity: parseInt(quantity, 10) || 1,
     notes:    cap(notes, 2000) || null,
   });
   res.redirect('/mags/' + id);
@@ -104,10 +104,10 @@ router.post('/:id/edit', requireAdmin, (req, res) => {
     brand:    cap(brand.trim(), 200),
     model:    cap(model, 200) || null,
     color:    cap(color, 100) || null,
-    capacity: capacity ? parseInt(capacity, 10) : null,
+    capacity: parseInt(capacity, 10) || null,
     caliber:  cap(caliber, 100) || null,
     material: MATERIALS.includes(material) ? material : null,
-    quantity: quantity ? parseInt(quantity, 10) : 1,
+    quantity: parseInt(quantity, 10) || 1,
     notes:    cap(notes, 2000) || null,
   });
   res.redirect('/mags/' + req.params.id);

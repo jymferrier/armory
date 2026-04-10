@@ -31,11 +31,11 @@ const CSV_COLUMNS = [
   'ID', 'Manufacturer', 'Model', 'Caliber', 'Serial Number',
   'Barrel Length', 'Overall Length', 'Optics / Accessories',
   'Acquired Date', 'Acquired From', 'Price Paid', 'Transfer Date', 'FFL Transferred From',
-  'Trust / Entity Name', '3D Printed', 'Is NFA', 'Item Type',
+  'Trust / Entity Name', 'Non-NFA Trust Name', '3D Printed', 'Is NFA', 'Item Type',
   'Form Type', 'Form Number', 'FMI',
   'Date Submitted to ATF', 'Tax Stamp / Form Serial', 'ATF Approval Date',
   'Is Disposed', 'Date Disposed', 'Disposal Method',
-  'Notes', 'Date Added'
+  'Spouse Visible', 'Notes', 'Date Added'
 ];
 
 function csvCell(val) {
@@ -58,12 +58,12 @@ function buildCsvRows(firearms) {
     f.id, f.manufacturer, f.model, f.caliber, f.serial,
     f.barrel_length, f.overall_length, parseOpticsToStr(f.optics),
     f.date_acquired, f.acquired_from, f.price_paid, f.transfer_date, f.ffl_transferred_from,
-    f.nfa_trust_name, f.is_3d_printed ? 'Yes' : 'No',
+    f.nfa_trust_name, f.non_nfa_trust_name, f.is_3d_printed ? 'Yes' : 'No',
     f.is_nfa ? 'Yes' : 'No', f.nfa_type,
     f.nfa_form_type, f.nfa_form_number, f.nfa_fmi ? 'Yes' : 'No',
     f.nfa_submit_date, f.nfa_tax_stamp_serial, f.nfa_approve_date,
     f.is_disposed ? 'Yes' : 'No', f.date_disposed, f.disposal_method,
-    f.notes, f.created_at
+    f.spouse_visible ? 'Yes' : 'No', f.notes, f.created_at
   ].map(csvCell).join(','));
 }
 
@@ -136,6 +136,7 @@ function csvRowToFirearm(headers, row) {
     nfa_approve_date: opt('ATF Approval Date'),
     is_disposed: bool('Is Disposed') ? 1 : 0,
     date_disposed: opt('Date Disposed'), disposal_method: opt('Disposal Method'),
+    spouse_visible: bool('Spouse Visible') ? 1 : 0,
     notes: opt('Notes')
   };
 }
@@ -165,6 +166,7 @@ function jsonRecordToFirearm(r) {
     nfa_approve_date: r.nfa_approve_date || null,
     is_disposed: r.is_disposed ? 1 : 0,
     date_disposed: r.date_disposed || null, disposal_method: r.disposal_method || null,
+    spouse_visible: r.spouse_visible ? 1 : 0,
     notes: r.notes || null
   };
 }
@@ -281,6 +283,7 @@ router.get('/settings/export/json', requireAuth, requireAdmin, (req, res) => {
       ffl_transferred_from: f.ffl_transferred_from,
       nfa_trust_name: f.nfa_trust_name,
       non_nfa_trust_name: f.non_nfa_trust_name,
+      spouse_visible: !!f.spouse_visible,
       is_3d_printed: !!f.is_3d_printed,
       is_nfa: !!f.is_nfa, nfa_type: f.nfa_type,
       nfa_form_type: f.nfa_form_type, nfa_form_number: f.nfa_form_number,

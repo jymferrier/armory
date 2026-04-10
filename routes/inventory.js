@@ -84,6 +84,11 @@ router.post('/new', requireAdmin, (req, res) => {
       is_disposed, date_disposed, disposal_method, notes, round_count
     } = req.body;
 
+    if (!manufacturer || !model) {
+      cleanupUploadedFiles(req);
+      return res.render('firearm-form', { user: req.session.user, firearm: req.body, error: 'Manufacturer and model are required.', isSpouseView: !!req.session.user.is_spouse_view, ...getFormSuggestions() });
+    }
+
     const isSpouseView = !!req.session.user.is_spouse_view;
     const isNfa = NFA_TYPES.has(item_type);
     const hasSbrSbs = item_type === 'Short Barrel Rifle (SBR)' || item_type === 'Short Barrel Shotgun (SBS)';
@@ -179,6 +184,11 @@ router.post('/:id/edit', requireAdmin, (req, res) => {
     nfa2_enabled, nfa2_form_type, nfa2_form_number, nfa2_fmi, nfa2_submit_date, nfa2_tax_stamp_serial, nfa2_approve_date,
     is_disposed, date_disposed, disposal_method, notes, round_count
   } = req.body;
+
+  if (!manufacturer || !model) {
+    const firearm = firearmsQueries.findById(req.params.id);
+    return res.render('firearm-form', { user: req.session.user, firearm: { ...firearm, ...req.body }, error: 'Manufacturer and model are required.', isSpouseView, ...getFormSuggestions() });
+  }
 
   const isNfa = NFA_TYPES.has(item_type);
   const hasSbrSbs = item_type === 'Short Barrel Rifle (SBR)' || item_type === 'Short Barrel Shotgun (SBS)';

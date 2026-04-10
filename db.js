@@ -309,16 +309,16 @@ const firearmsQueries = {
         is_3d_printed, is_nfa, nfa_type, nfa_form_type, nfa_form_number, nfa_fmi, nfa_submit_date, nfa_tax_stamp_serial, nfa_approve_date, nfa_trust_name,
         nfa2_enabled, nfa2_form_type, nfa2_form_number, nfa2_fmi, nfa2_submit_date, nfa2_tax_stamp_serial, nfa2_approve_date,
         non_nfa_trust_name,
-        is_disposed, date_disposed, disposal_method, notes, round_count
+        is_disposed, date_disposed, disposal_method, notes, round_count, spouse_visible
       ) VALUES (
         @manufacturer, @model, @model_number, @caliber, @serial, @barrel_length, @overall_length, @optics,
         @date_acquired, @acquired_from, @price_paid, @spouse_price, @transfer_date, @ffl_transferred_from,
         @is_3d_printed, @is_nfa, @nfa_type, @nfa_form_type, @nfa_form_number, @nfa_fmi, @nfa_submit_date, @nfa_tax_stamp_serial, @nfa_approve_date, @nfa_trust_name,
         @nfa2_enabled, @nfa2_form_type, @nfa2_form_number, @nfa2_fmi, @nfa2_submit_date, @nfa2_tax_stamp_serial, @nfa2_approve_date,
         @non_nfa_trust_name,
-        @is_disposed, @date_disposed, @disposal_method, @notes, @round_count
+        @is_disposed, @date_disposed, @disposal_method, @notes, @round_count, @spouse_visible
       )
-    `).run(data);
+    `).run({ spouse_visible: 0, ...data });
     return result.lastInsertRowid;
   },
   update: (id, data) => {
