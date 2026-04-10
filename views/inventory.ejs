@@ -3,7 +3,7 @@
   <div class="page-header">
     <div>
       <h1 class="page-title">INVENTORY</h1>
-      <p class="page-sub"><%= firearms.length %> ITEM<%= firearms.length !== 1 ? 'S' : '' %> CATALOGUED</p>
+      <p class="page-sub" id="inventoryCount"><%= firearms.length %> ITEM<%= firearms.length !== 1 ? 'S' : '' %> CATALOGUED</p>
     </div>
     <div class="page-actions">
       <form method="GET" action="/inventory" class="search-form">
@@ -19,6 +19,12 @@
     </div>
   </div>
 
+  <div id="typeFilterBar" class="type-filter" style="display:none">
+    <span class="type-filter__label">TYPE</span>
+    <div class="type-filter__chips" id="typeChips"></div>
+    <button type="button" class="type-filter__clear" id="typeFilterClear" style="display:none">CLEAR</button>
+  </div>
+
   <% if (firearms.length === 0) { %>
     <div class="empty-state">
       <div class="empty-icon">⊘</div>
@@ -31,7 +37,7 @@
     <div id="viewGrid">
       <div class="inventory-grid">
         <% firearms.forEach(f => { %>
-          <a href="/inventory/<%= f.id %>" class="firearm-card">
+          <a href="/inventory/<%= f.id %>" class="firearm-card" data-type="<%= f.nfa_type || '' %>">
             <div class="firearm-card__photo">
               <% if (f.primary_photo) { %>
                 <img src="/api/photo/<%= f.primary_photo.filename %>" alt="<%= f.manufacturer %> <%= f.model %>">
@@ -66,7 +72,7 @@
     <div id="viewList">
       <div class="inventory-list">
         <% firearms.forEach(f => { %>
-          <a href="/inventory/<%= f.id %>" class="firearm-row">
+          <a href="/inventory/<%= f.id %>" class="firearm-row" data-type="<%= f.nfa_type || '' %>">
             <div class="firearm-row__thumb">
               <% if (f.primary_photo) { %>
                 <img src="/api/photo/<%= f.primary_photo.filename %>" alt="">
@@ -119,5 +125,72 @@ document.addEventListener('click', function(e) {
   e.stopImmediatePropagation();
   window.location.href = '/inventory?q=' + encodeURIComponent(badge.getAttribute('data-search'));
 }, true);
+
+// ── Type filter ────────────────────────────────────────────
+(function() {
+  var NFA_TYPES = new Set(['Suppressor/Silencer','Short Barrel Rifle (SBR)','Short Barrel Shotgun (SBS)','Machine Gun','Destructive Device (DD)','Any Other Weapon (AOW)']);
+  var gridCards = Array.from(document.querySelectorAll('.firearm-card[data-type]'));
+  var listRows  = Array.from(document.querySelectorAll('.firearm-row[data-type]'));
+  if (!gridCards.length) return;
+
+  // Build sorted list of distinct types present in inventory
+  var typeSet = new Set(gridCards.map(function(c) { return c.dataset.type; }));
+  var types = Array.from(typeSet).sort(function(a, b) {
+    if (!a && b) return 1;  // empty ("unclassified") last
+    if (a && !b) return -1;
+    return a.localeCompare(b);
+  });
+  if (types.length <= 1) return; // nothing to filter
+
+  var bar      = document.getElementById('typeFilterBar');
+  var chipsEl  = document.getElementById('typeChips');
+  var clearBtn = document.getElementById('typeFilterClear');
+  var countEl  = document.getElementById('inventoryCount');
+  var active   = new Set();
+  var total    = gridCards.length;
+
+  // Render chips
+  types.forEach(function(type) {
+    var chip = document.createElement('button');
+    chip.type = 'button';
+    chip.className = 'type-chip' + (NFA_TYPES.has(type) ? ' type-chip--nfa' : '');
+    chip.textContent = type || 'UNCLASSIFIED';
+    chip.dataset.type = type;
+    chip.addEventListener('click', function() {
+      if (active.has(type)) active.delete(type); else active.add(type);
+      apply();
+    });
+    chipsEl.appendChild(chip);
+  });
+
+  bar.style.display = '';
+
+  function apply() {
+    // Update chip states
+    chipsEl.querySelectorAll('.type-chip').forEach(function(chip) {
+      chip.classList.toggle('type-chip--active', active.has(chip.dataset.type));
+    });
+    clearBtn.style.display = active.size > 0 ? '' : 'none';
+
+    // Filter cards and rows together
+    var visible = 0;
+    gridCards.forEach(function(card, i) {
+      var show = active.size === 0 || active.has(card.dataset.type);
+      card.style.display = show ? '' : 'none';
+      if (listRows[i]) listRows[i].style.display = show ? '' : 'none';
+      if (show) visible++;
+    });
+
+    // Update subtitle count
+    if (countEl) {
+      var label = active.size > 0
+        ? visible + ' OF ' + total + ' ITEM' + (total !== 1 ? 'S' : '')
+        : total + ' ITEM' + (total !== 1 ? 'S' : '');
+      countEl.textContent = label + ' CATALOGUED';
+    }
+  }
+
+  clearBtn.addEventListener('click', function() { active.clear(); apply(); });
+})();
 </script>
 <%- include('partials/footer') %>

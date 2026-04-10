@@ -1256,6 +1256,63 @@ a:hover { color: var(--text); }
 }
 
 /* ============================================================
+   TYPE FILTER
+   ============================================================ */
+.type-filter {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.85rem 0;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+}
+
+.type-filter__label {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.1em;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+
+.type-filter__chips {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  flex: 1;
+}
+
+.type-filter__clear {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.08em;
+  color: var(--text-dim);
+  background: none;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  padding: 0.25rem 0.6rem;
+  white-space: nowrap;
+  transition: color var(--transition), border-color var(--transition);
+}
+.type-filter__clear:hover { color: var(--text); border-color: var(--border-accent); }
+
+.type-chip {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.08em;
+  padding: 0.25rem 0.7rem;
+  border: 1px solid var(--border-accent);
+  background: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background var(--transition), color var(--transition), border-color var(--transition);
+}
+.type-chip:hover { border-color: var(--text-muted); color: var(--text); }
+.type-chip--active { background: var(--accent-glow); border-color: var(--accent); color: var(--accent); }
+.type-chip--nfa.type-chip--active { background: var(--nfa-red-bg); border-color: var(--nfa-red); color: var(--nfa-red); }
+
+/* ============================================================
    VIEW TOGGLE
    ============================================================ */
 .view-toggle {
