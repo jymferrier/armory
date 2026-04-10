@@ -75,7 +75,7 @@ if (!sessionSecret) {
 
 // Open sessions DB and migrate schema if it was created by the old connect-sqlite3
 // library (which used column "expired") — better-sqlite3-session-store expects "expire".
-const sessionDb = new Database(path.join(__dirname, 'data', 'sessions.db'));
+const sessionDb = new Database(process.env.SESSION_DB_PATH || path.join(__dirname, 'data', 'sessions.db'));
 (function migrateSessionSchema() {
   const cols = sessionDb.prepare("PRAGMA table_info('sessions')").all().map(c => c.name);
   if (cols.includes('expired') && !cols.includes('expire')) {
@@ -162,6 +162,29 @@ app.use((req, res) => {
   res.status(404).render('error', { message: 'Page not found', user: req.session.user });
 });
 
-app.listen(PORT, () => {
-  console.log(`Armory running on port ${PORT}`);
+// Global error handler — catches errors forwarded via next(err) or thrown in async handlers
+app.use((err, req, res, next) => { // eslint-disable-line no-unused-vars
+  const status = err.status || err.statusCode || 500;
+  console.error(JSON.stringify({
+    ts: new Date().toISOString(),
+    level: 'error',
+    message: err.message,
+    stack: err.stack,
+    method: req.method,
+    url: req.originalUrl,
+    user: req.session?.user?.username || null,
+  }));
+  if (res.headersSent) return;
+  res.status(status).render('error', {
+    message: status === 500 ? 'An unexpected error occurred.' : err.message,
+    user: req.session?.user,
+  });
 });
+
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`Armory running on port ${PORT}`);
+  });
+}
+
+module.exports = app;

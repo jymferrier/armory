@@ -6,6 +6,7 @@ const { trustQueries, firearmsQueries } = require('../db');
 const { requireAuth, requireAdmin } = require('../middleware/auth');
 const { validateCsrf } = require('../middleware/csrf');
 const { uploadDocs, DOC_DIR } = require('../middleware/upload');
+const asyncHandler = require('../middleware/asyncHandler');
 
 const trustDocUpload = uploadDocs.single('trust_doc');
 
@@ -81,7 +82,7 @@ router.get('/:id/assignment', (req, res) => {
 });
 
 // Download assignment document as PDF
-router.get('/:id/assignment/pdf', async (req, res) => {
+router.get('/:id/assignment/pdf', asyncHandler(async (req, res) => {
   const trust = trustQueries.findById(req.params.id);
   if (!trust) return res.status(404).render('error', { message: 'Trust not found', user: req.session.user });
 
@@ -134,7 +135,7 @@ router.get('/:id/assignment/pdf', async (req, res) => {
   } finally {
     if (browser) await browser.close();
   }
-});
+}));
 
 // Upload primary trust document (replaces existing)
 router.post('/:id/trust-document', requireAdmin, (req, res) => {

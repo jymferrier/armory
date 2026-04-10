@@ -7,7 +7,7 @@ const path = require('path');
 const DATA_DIR = path.join(__dirname, 'data');
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
 
-const DB_PATH = path.join(DATA_DIR, 'armory.db');
+const DB_PATH = process.env.DB_PATH || path.join(DATA_DIR, 'armory.db');
 let db;
 
 function getDB() {
@@ -139,58 +139,77 @@ function initDB() {
     );
   `);
 
-  // Migrate existing databases — safely add new columns if they don't exist
+  // Migration tracking — each migration runs at most once and is recorded by name.
+  // On first startup with the new tracking system, existing columns cause the ALTER TABLE
+  // to fail; we still record the migration as applied so it is never retried.
+  db.exec(`CREATE TABLE IF NOT EXISTS schema_migrations (
+    name TEXT PRIMARY KEY,
+    applied_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )`);
+
   const migrations = [
-    "ALTER TABLE firearms ADD COLUMN barrel_length TEXT",
-    "ALTER TABLE firearms ADD COLUMN date_acquired TEXT",
-    "ALTER TABLE firearms ADD COLUMN nfa_form_number TEXT",
-    "ALTER TABLE firearms ADD COLUMN nfa_submit_date TEXT",
-    "ALTER TABLE firearms ADD COLUMN nfa_tax_stamp_serial TEXT",
-    "ALTER TABLE firearms ADD COLUMN nfa_approve_date TEXT",
-    "ALTER TABLE firearms ADD COLUMN nfa_trust_name TEXT",
-    "ALTER TABLE firearms ADD COLUMN is_disposed INTEGER DEFAULT 0",
-    "ALTER TABLE firearms ADD COLUMN date_disposed TEXT",
-    "ALTER TABLE firearms ADD COLUMN disposal_method TEXT",
-    "ALTER TABLE firearms ADD COLUMN overall_length TEXT",
-    "ALTER TABLE firearms ADD COLUMN is_3d_printed INTEGER DEFAULT 0",
-    "ALTER TABLE firearms ADD COLUMN nfa_form_type TEXT",
-    "ALTER TABLE firearms ADD COLUMN nfa_fmi INTEGER DEFAULT 0",
-    "ALTER TABLE firearms ADD COLUMN acquired_from TEXT",
-    "ALTER TABLE firearms ADD COLUMN price_paid TEXT",
-    "ALTER TABLE firearms ADD COLUMN transfer_date TEXT",
-    "ALTER TABLE firearms ADD COLUMN ffl_transferred_from TEXT",
-    "ALTER TABLE firearms ADD COLUMN round_count INTEGER DEFAULT 0",
-    "ALTER TABLE firearms ADD COLUMN model_number TEXT",
-    "ALTER TABLE firearms ADD COLUMN spouse_price TEXT",
-    "ALTER TABLE users ADD COLUMN is_spouse_view INTEGER DEFAULT 0",
-    "ALTER TABLE firearms ADD COLUMN spouse_visible INTEGER DEFAULT 0",
-    "ALTER TABLE users ADD COLUMN session_version INTEGER DEFAULT 0",
-    "ALTER TABLE firearms ADD COLUMN trust_assigned INTEGER DEFAULT 0",
-    "ALTER TABLE trusts ADD COLUMN notes TEXT",
-    "ALTER TABLE trust_documents ADD COLUMN doc_type TEXT DEFAULT 'additional'",
-    "ALTER TABLE trusts ADD COLUMN trust_type TEXT DEFAULT 'NFA'",
-    "ALTER TABLE firearms ADD COLUMN non_nfa_trust_name TEXT",
-    "ALTER TABLE firearms ADD COLUMN non_nfa_trust_assigned INTEGER DEFAULT 0",
-    "ALTER TABLE firearms ADD COLUMN nfa2_enabled INTEGER DEFAULT 0",
-    "ALTER TABLE firearms ADD COLUMN nfa2_form_type TEXT",
-    "ALTER TABLE firearms ADD COLUMN nfa2_form_number TEXT",
-    "ALTER TABLE firearms ADD COLUMN nfa2_fmi INTEGER DEFAULT 0",
-    "ALTER TABLE firearms ADD COLUMN nfa2_submit_date TEXT",
-    "ALTER TABLE firearms ADD COLUMN nfa2_tax_stamp_serial TEXT",
-    "ALTER TABLE firearms ADD COLUMN nfa2_approve_date TEXT",
-    "ALTER TABLE optics_items ADD COLUMN serial TEXT",
-    "ALTER TABLE optics_items ADD COLUMN spouse_price TEXT",
-    "ALTER TABLE optics_items ADD COLUMN firearm_id INTEGER",
-    "ALTER TABLE optics_items ADD COLUMN reticle TEXT",
-    "ALTER TABLE optics_items ADD COLUMN tube_size TEXT",
-    "ALTER TABLE optics_items ADD COLUMN mount_type TEXT",
-    "ALTER TABLE optics_items ADD COLUMN mount_brand TEXT",
-    "ALTER TABLE optics_items ADD COLUMN mount_model TEXT",
-    "ALTER TABLE optics_items ADD COLUMN mount_cant TEXT",
-    "ALTER TABLE optics_items ADD COLUMN adjustment TEXT",
+    { name: '001_firearms_barrel_length',        sql: 'ALTER TABLE firearms ADD COLUMN barrel_length TEXT' },
+    { name: '002_firearms_date_acquired',         sql: 'ALTER TABLE firearms ADD COLUMN date_acquired TEXT' },
+    { name: '003_firearms_nfa_form_number',       sql: 'ALTER TABLE firearms ADD COLUMN nfa_form_number TEXT' },
+    { name: '004_firearms_nfa_submit_date',       sql: 'ALTER TABLE firearms ADD COLUMN nfa_submit_date TEXT' },
+    { name: '005_firearms_nfa_tax_stamp_serial',  sql: 'ALTER TABLE firearms ADD COLUMN nfa_tax_stamp_serial TEXT' },
+    { name: '006_firearms_nfa_approve_date',      sql: 'ALTER TABLE firearms ADD COLUMN nfa_approve_date TEXT' },
+    { name: '007_firearms_nfa_trust_name',        sql: 'ALTER TABLE firearms ADD COLUMN nfa_trust_name TEXT' },
+    { name: '008_firearms_is_disposed',           sql: 'ALTER TABLE firearms ADD COLUMN is_disposed INTEGER DEFAULT 0' },
+    { name: '009_firearms_date_disposed',         sql: 'ALTER TABLE firearms ADD COLUMN date_disposed TEXT' },
+    { name: '010_firearms_disposal_method',       sql: 'ALTER TABLE firearms ADD COLUMN disposal_method TEXT' },
+    { name: '011_firearms_overall_length',        sql: 'ALTER TABLE firearms ADD COLUMN overall_length TEXT' },
+    { name: '012_firearms_is_3d_printed',         sql: 'ALTER TABLE firearms ADD COLUMN is_3d_printed INTEGER DEFAULT 0' },
+    { name: '013_firearms_nfa_form_type',         sql: 'ALTER TABLE firearms ADD COLUMN nfa_form_type TEXT' },
+    { name: '014_firearms_nfa_fmi',               sql: 'ALTER TABLE firearms ADD COLUMN nfa_fmi INTEGER DEFAULT 0' },
+    { name: '015_firearms_acquired_from',         sql: 'ALTER TABLE firearms ADD COLUMN acquired_from TEXT' },
+    { name: '016_firearms_price_paid',            sql: 'ALTER TABLE firearms ADD COLUMN price_paid TEXT' },
+    { name: '017_firearms_transfer_date',         sql: 'ALTER TABLE firearms ADD COLUMN transfer_date TEXT' },
+    { name: '018_firearms_ffl_transferred_from',  sql: 'ALTER TABLE firearms ADD COLUMN ffl_transferred_from TEXT' },
+    { name: '019_firearms_round_count',           sql: 'ALTER TABLE firearms ADD COLUMN round_count INTEGER DEFAULT 0' },
+    { name: '020_firearms_model_number',          sql: 'ALTER TABLE firearms ADD COLUMN model_number TEXT' },
+    { name: '021_firearms_spouse_price',          sql: 'ALTER TABLE firearms ADD COLUMN spouse_price TEXT' },
+    { name: '022_users_is_spouse_view',           sql: 'ALTER TABLE users ADD COLUMN is_spouse_view INTEGER DEFAULT 0' },
+    { name: '023_firearms_spouse_visible',        sql: 'ALTER TABLE firearms ADD COLUMN spouse_visible INTEGER DEFAULT 0' },
+    { name: '024_users_session_version',          sql: 'ALTER TABLE users ADD COLUMN session_version INTEGER DEFAULT 0' },
+    { name: '025_firearms_trust_assigned',        sql: 'ALTER TABLE firearms ADD COLUMN trust_assigned INTEGER DEFAULT 0' },
+    { name: '026_trusts_notes',                   sql: 'ALTER TABLE trusts ADD COLUMN notes TEXT' },
+    { name: '027_trust_documents_doc_type',       sql: "ALTER TABLE trust_documents ADD COLUMN doc_type TEXT DEFAULT 'additional'" },
+    { name: '028_trusts_trust_type',              sql: "ALTER TABLE trusts ADD COLUMN trust_type TEXT DEFAULT 'NFA'" },
+    { name: '029_firearms_non_nfa_trust_name',    sql: 'ALTER TABLE firearms ADD COLUMN non_nfa_trust_name TEXT' },
+    { name: '030_firearms_non_nfa_trust_assigned',sql: 'ALTER TABLE firearms ADD COLUMN non_nfa_trust_assigned INTEGER DEFAULT 0' },
+    { name: '031_firearms_nfa2_enabled',          sql: 'ALTER TABLE firearms ADD COLUMN nfa2_enabled INTEGER DEFAULT 0' },
+    { name: '032_firearms_nfa2_form_type',        sql: 'ALTER TABLE firearms ADD COLUMN nfa2_form_type TEXT' },
+    { name: '033_firearms_nfa2_form_number',      sql: 'ALTER TABLE firearms ADD COLUMN nfa2_form_number TEXT' },
+    { name: '034_firearms_nfa2_fmi',              sql: 'ALTER TABLE firearms ADD COLUMN nfa2_fmi INTEGER DEFAULT 0' },
+    { name: '035_firearms_nfa2_submit_date',      sql: 'ALTER TABLE firearms ADD COLUMN nfa2_submit_date TEXT' },
+    { name: '036_firearms_nfa2_tax_stamp_serial', sql: 'ALTER TABLE firearms ADD COLUMN nfa2_tax_stamp_serial TEXT' },
+    { name: '037_firearms_nfa2_approve_date',     sql: 'ALTER TABLE firearms ADD COLUMN nfa2_approve_date TEXT' },
+    { name: '038_optics_serial',                  sql: 'ALTER TABLE optics_items ADD COLUMN serial TEXT' },
+    { name: '039_optics_spouse_price',            sql: 'ALTER TABLE optics_items ADD COLUMN spouse_price TEXT' },
+    { name: '040_optics_firearm_id',              sql: 'ALTER TABLE optics_items ADD COLUMN firearm_id INTEGER' },
+    { name: '041_optics_reticle',                 sql: 'ALTER TABLE optics_items ADD COLUMN reticle TEXT' },
+    { name: '042_optics_tube_size',               sql: 'ALTER TABLE optics_items ADD COLUMN tube_size TEXT' },
+    { name: '043_optics_mount_type',              sql: 'ALTER TABLE optics_items ADD COLUMN mount_type TEXT' },
+    { name: '044_optics_mount_brand',             sql: 'ALTER TABLE optics_items ADD COLUMN mount_brand TEXT' },
+    { name: '045_optics_mount_model',             sql: 'ALTER TABLE optics_items ADD COLUMN mount_model TEXT' },
+    { name: '046_optics_mount_cant',              sql: 'ALTER TABLE optics_items ADD COLUMN mount_cant TEXT' },
+    { name: '047_optics_adjustment',              sql: 'ALTER TABLE optics_items ADD COLUMN adjustment TEXT' },
   ];
-  for (const sql of migrations) {
-    try { db.exec(sql); } catch (_) { /* column already exists */ }
+
+  const applied = new Set(
+    db.prepare('SELECT name FROM schema_migrations').all().map(r => r.name)
+  );
+  const recordApplied = db.prepare('INSERT OR IGNORE INTO schema_migrations (name) VALUES (?)');
+
+  for (const m of migrations) {
+    if (applied.has(m.name)) continue;
+    try {
+      db.exec(m.sql);
+    } catch (_) {
+      // Column already exists — applied by the pre-tracking system; record and move on.
+    }
+    recordApplied.run(m.name);
   }
 
   // Indexes — idempotent, safe to run on every startup
@@ -615,4 +634,8 @@ const magsQueries = {
   },
 };
 
-module.exports = { initDB, userQueries, firearmsQueries, trustQueries, opticsQueries, magsQueries };
+function closeDB() {
+  if (db) { db.close(); db = null; }
+}
+
+module.exports = { initDB, closeDB, userQueries, firearmsQueries, trustQueries, opticsQueries, magsQueries };
