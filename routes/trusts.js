@@ -5,7 +5,7 @@ const fs = require('fs');
 const { trustQueries, firearmsQueries } = require('../db');
 const { requireAuth, requireAdmin } = require('../middleware/auth');
 const { validateCsrf } = require('../middleware/csrf');
-const { uploadDocs, DOC_DIR } = require('../middleware/upload');
+const { uploadDocs, DOC_DIR, cleanupUploadedFiles } = require('../middleware/upload');
 const asyncHandler = require('../middleware/asyncHandler');
 
 const trustDocUpload = uploadDocs.single('trust_doc');
@@ -140,7 +140,7 @@ router.get('/:id/assignment/pdf', asyncHandler(async (req, res) => {
 // Upload primary trust document (replaces existing)
 router.post('/:id/trust-document', requireAdmin, (req, res) => {
   trustDocUpload(req, res, (err) => {
-    if (!validateCsrf(req)) return res.status(403).render('error', { message: 'Security token validation failed.', user: req.session.user });
+    if (!validateCsrf(req)) { cleanupUploadedFiles(req); return res.status(403).render('error', { message: 'Security token validation failed.', user: req.session.user }); }
     const trust = trustQueries.findById(req.params.id);
     if (!trust) return res.status(404).render('error', { message: 'Trust not found', user: req.session.user });
     if (err) return res.redirect(`/trusts/${req.params.id}?docError=${encodeURIComponent(err.message)}`);
@@ -158,7 +158,7 @@ router.post('/:id/trust-document', requireAdmin, (req, res) => {
 // Upload additional trust document
 router.post('/:id/documents', requireAdmin, (req, res) => {
   trustDocUpload(req, res, (err) => {
-    if (!validateCsrf(req)) return res.status(403).render('error', { message: 'Security token validation failed.', user: req.session.user });
+    if (!validateCsrf(req)) { cleanupUploadedFiles(req); return res.status(403).render('error', { message: 'Security token validation failed.', user: req.session.user }); }
     const trust = trustQueries.findById(req.params.id);
     if (!trust) return res.status(404).render('error', { message: 'Trust not found', user: req.session.user });
     if (err) return res.redirect(`/trusts/${req.params.id}?docError=${encodeURIComponent(err.message)}`);

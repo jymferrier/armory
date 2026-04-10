@@ -5,7 +5,7 @@ const fs = require('fs');
 const { firearmsQueries, opticsQueries } = require('../db');
 const { requireAuth, requireAdmin } = require('../middleware/auth');
 const { validateCsrf } = require('../middleware/csrf');
-const { uploadPhotos, uploadDocs, PHOTO_DIR, DOC_DIR } = require('../middleware/upload');
+const { uploadPhotos, uploadDocs, PHOTO_DIR, DOC_DIR, cleanupUploadedFiles } = require('../middleware/upload');
 
 // Cap string field length to prevent oversized inputs
 const cap = (val, max) => (val && typeof val === 'string') ? val.slice(0, max) : val;
@@ -71,7 +71,7 @@ router.get('/new', requireAdmin, (req, res) => {
 // Create
 router.post('/new', requireAdmin, (req, res) => {
   photoUpload(req, res, (err) => {
-    if (!validateCsrf(req)) return res.status(403).render('error', { message: 'Security token validation failed.', user: req.session.user });
+    if (!validateCsrf(req)) { cleanupUploadedFiles(req); return res.status(403).render('error', { message: 'Security token validation failed.', user: req.session.user }); }
     const manufacturers = firearmsQueries.distinctManufacturers();
     if (err) return res.render('firearm-form', { user: req.session.user, firearm: null, error: err.message, isSpouseView: !!req.session.user.is_spouse_view, ...getFormSuggestions() });
 
@@ -294,7 +294,7 @@ router.post('/:id/delete', requireAdmin, (req, res) => {
 // Upload photos
 router.post('/:id/photos', requireAdmin, (req, res) => {
   photoUpload(req, res, (err) => {
-    if (!validateCsrf(req)) return res.status(403).render('error', { message: 'Security token validation failed.', user: req.session.user });
+    if (!validateCsrf(req)) { cleanupUploadedFiles(req); return res.status(403).render('error', { message: 'Security token validation failed.', user: req.session.user }); }
     if (err) return res.redirect(`/inventory/${req.params.id}?photoError=${encodeURIComponent(err.message)}`);
     if (req.files && req.files.length > 0) {
       const existing = firearmsQueries.findById(req.params.id);
@@ -330,7 +330,7 @@ router.post('/:id/photos/:photoId/delete', requireAdmin, (req, res) => {
 // Upload documents
 router.post('/:id/documents', requireAdmin, (req, res) => {
   docUpload(req, res, (err) => {
-    if (!validateCsrf(req)) return res.status(403).render('error', { message: 'Security token validation failed.', user: req.session.user });
+    if (!validateCsrf(req)) { cleanupUploadedFiles(req); return res.status(403).render('error', { message: 'Security token validation failed.', user: req.session.user }); }
     if (err) return res.redirect(`/inventory/${req.params.id}?docError=${encodeURIComponent(err.message)}`);
     const fields = { atf_form: 'ATF Form', form5320: 'Form 5320', additional_docs: 'Additional Document' };
     Object.entries(fields).forEach(([field, label]) => {

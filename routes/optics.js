@@ -5,7 +5,7 @@ const fs = require('fs');
 const { opticsQueries, firearmsQueries } = require('../db');
 const { requireAuth, requireAdmin } = require('../middleware/auth');
 const { validateCsrf } = require('../middleware/csrf');
-const { uploadPhotos, PHOTO_DIR } = require('../middleware/upload');
+const { uploadPhotos, PHOTO_DIR, cleanupUploadedFiles } = require('../middleware/upload');
 
 const photoUpload = uploadPhotos.array('photos', 20);
 
@@ -83,7 +83,7 @@ router.get('/new', requireAdmin, (req, res) => {
 // Create
 router.post('/new', requireAdmin, (req, res) => {
   photoUpload(req, res, (err) => {
-    if (!validateCsrf(req)) return res.status(403).render('error', { message: 'Security token validation failed.', user: req.session.user });
+    if (!validateCsrf(req)) { cleanupUploadedFiles(req); return res.status(403).render('error', { message: 'Security token validation failed.', user: req.session.user }); }
 
     if (err) return res.render('optic-form', { user: req.session.user, optic: null, error: err.message, ...formLocals() });
 
@@ -204,7 +204,7 @@ router.post('/:id/duplicate', requireAdmin, (req, res) => {
 // Upload photos
 router.post('/:id/photos', requireAdmin, (req, res) => {
   photoUpload(req, res, (err) => {
-    if (!validateCsrf(req)) return res.status(403).render('error', { message: 'Security token validation failed.', user: req.session.user });
+    if (!validateCsrf(req)) { cleanupUploadedFiles(req); return res.status(403).render('error', { message: 'Security token validation failed.', user: req.session.user }); }
     const optic = opticsQueries.findById(req.params.id);
     if (!optic) return res.status(404).render('error', { message: 'Optic not found', user: req.session.user });
     if (err) return res.redirect(`/optics/${req.params.id}?photoError=${encodeURIComponent(err.message)}`);

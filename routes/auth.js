@@ -480,8 +480,17 @@ router.post('/settings/import', requireAuth, requireAdmin, (req, res) => {
     }
 
     let imported = 0;
+    const importErrors = [];
     for (const record of records) {
-      try { firearmsQueries.create(record); imported++; } catch (e) { /* skip bad rows */ }
+      try {
+        firearmsQueries.create(record);
+        imported++;
+      } catch (e) {
+        importErrors.push(e.message);
+      }
+    }
+    if (importErrors.length > 0) {
+      console.warn(JSON.stringify({ ts: new Date().toISOString(), level: 'warn', action: 'IMPORT_ROWS_SKIPPED', skipped: importErrors.length, reasons: importErrors }));
     }
 
     audit(req, 'IMPORT', `${imported}/${records.length} records`);
@@ -532,15 +541,16 @@ router.post('/settings/import/zip', requireAuth, requireAdmin, (req, res) => {
       folders[folder].push(entry);
     });
 
-    let imported = 0, skipped = 0;
+    let imported = 0;
+    const zipSkipped = [];
 
     for (const [folder, folderEntries] of Object.entries(folders)) {
       const metaEntry = folderEntries.find(e => e.entryName === `${folder}/firearm.json`);
-      if (!metaEntry) { skipped++; continue; }
+      if (!metaEntry) { zipSkipped.push(`${folder}: no firearm.json`); continue; }
 
       let meta;
       try { meta = JSON.parse(metaEntry.getData().toString('utf8')); }
-      catch (e) { skipped++; continue; }
+      catch (e) { zipSkipped.push(`${folder}: invalid JSON — ${e.message}`); continue; }
 
       const data = sanitizeImportRecord({
         ...jsonRecordToFirearm(meta),
@@ -551,7 +561,7 @@ router.post('/settings/import/zip', requireAuth, requireAdmin, (req, res) => {
 
       let firearmsId;
       try { firearmsId = firearmsQueries.create(data); }
-      catch (e) { skipped++; continue; }
+      catch (e) { zipSkipped.push(`${folder}: DB insert failed — ${e.message}`); continue; }
 
       // Import photos
       let primarySet = false;
@@ -566,7 +576,9 @@ router.post('/settings/import/zip', requireAuth, requireAdmin, (req, res) => {
             const isPrimary = basename.startsWith('primary') && !primarySet;
             if (isPrimary) primarySet = true;
             firearmsQueries.addPhoto(firearmsId, newFilename, basename, isPrimary);
-          } catch (e) { /* skip bad photo */ }
+          } catch (e) {
+            console.warn(JSON.stringify({ ts: new Date().toISOString(), level: 'warn', action: 'ZIP_IMPORT_PHOTO_SKIP', folder, file: basename, reason: e.message }));
+          }
         });
 
       // Import documents — subfolders are doc_type
@@ -588,13 +600,19 @@ router.post('/settings/import/zip', requireAuth, requireAdmin, (req, res) => {
           try {
             fs.writeFileSync(path.join(DOC_DIR, newFilename), docEntry.getData());
             firearmsQueries.addDocument(firearmsId, docType, newFilename, basename);
-          } catch (e) { /* skip bad doc */ }
+          } catch (e) {
+            console.warn(JSON.stringify({ ts: new Date().toISOString(), level: 'warn', action: 'ZIP_IMPORT_DOC_SKIP', folder, file: basename, reason: e.message }));
+          }
         });
 
       imported++;
     }
 
-    const skippedNote = skipped ? `, ${skipped} folder${skipped !== 1 ? 's' : ''} skipped` : '';
+    if (zipSkipped.length > 0) {
+      console.warn(JSON.stringify({ ts: new Date().toISOString(), level: 'warn', action: 'ZIP_IMPORT_FOLDERS_SKIPPED', skipped: zipSkipped.length, reasons: zipSkipped }));
+    }
+
+    const skippedNote = zipSkipped.length ? `, ${zipSkipped.length} item${zipSkipped.length !== 1 ? 's' : ''} skipped` : '';
     audit(req, 'IMPORT_ZIP', `${imported} items imported`);
     res.render('settings', { ...settingsLocals(req.session.user), message: { type: 'success', text: `ZIP import complete: ${imported} item${imported !== 1 ? 's' : ''} imported${skippedNote}.` } });
   });

@@ -225,6 +225,7 @@ function initDB() {
     CREATE INDEX IF NOT EXISTS idx_firearm_docs_firearm      ON firearm_documents(firearm_id);
     CREATE INDEX IF NOT EXISTS idx_trust_docs_trust          ON trust_documents(trust_id);
     CREATE INDEX IF NOT EXISTS idx_optics_photos_optic       ON optics_photos(optic_id);
+    CREATE INDEX IF NOT EXISTS idx_users_username            ON users(username);
   `);
 
   // Seed default admin user if none exists

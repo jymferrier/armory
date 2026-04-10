@@ -66,11 +66,20 @@ const KNOWN_WEAK_SECRETS = [
   'secret', 'changeme', 'password', 'armory', 'armory123',
 ];
 let sessionSecret = process.env.SESSION_SECRET;
+const isProd = process.env.NODE_ENV === 'production';
 if (!sessionSecret) {
+  if (isProd) {
+    console.error('FATAL: SESSION_SECRET is not set. Refusing to start in production without a secret.');
+    process.exit(1);
+  }
   sessionSecret = crypto.randomBytes(32).toString('hex');
-  console.warn('WARNING: SESSION_SECRET env var is not set. Generated a random ephemeral secret — all sessions will be invalidated on restart. Set SESSION_SECRET to a strong random value.');
+  console.warn('WARNING: SESSION_SECRET not set — using ephemeral secret. Sessions will be lost on restart.');
 } else if (KNOWN_WEAK_SECRETS.includes(sessionSecret) || sessionSecret.length < 32) {
-  console.warn('WARNING: SESSION_SECRET is a known placeholder or is too short (< 32 chars). Sessions may be forgeable. Generate a strong secret with: node -e "console.log(require(\'crypto\').randomBytes(32).toString(\'hex\'))"');
+  if (isProd) {
+    console.error('FATAL: SESSION_SECRET is a known weak value or too short (< 32 chars). Refusing to start in production.');
+    process.exit(1);
+  }
+  console.warn('WARNING: SESSION_SECRET is weak or too short. Generate one with: node -e "console.log(require(\'crypto\').randomBytes(32).toString(\'hex\'))"');
 }
 
 // Open sessions DB and migrate schema if it was created by the old connect-sqlite3

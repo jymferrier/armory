@@ -15,6 +15,7 @@ afterAll(() => cleanupTestEnv(env));
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
+// firearmsQueries.create() returns the numeric lastInsertRowid directly
 function createTestFirearm(overrides = {}) {
   return firearmsQueries.create({
     manufacturer: 'Test Mfg', model: 'Test Model', model_number: null,
@@ -134,9 +135,8 @@ describe('Trust assign toggle', () => {
     const trustAlpha = trustQueries.findByName('Trust Alpha');
     const trustBeta  = trustQueries.findByName('Trust Beta');
 
-    // Firearm belongs to Alpha
-    const result = createTestFirearm({ serial: 'ALPHA01', nfa_trust_name: 'Trust Alpha' });
-    const firearmId = result.lastInsertRowid;
+    // Firearm belongs to Alpha — create returns numeric id
+    const firearmId = createTestFirearm({ serial: 'ALPHA01', nfa_trust_name: 'Trust Alpha' });
 
     // Try to toggle via Beta's assign route — should be forbidden
     const res = await postWithCsrf(

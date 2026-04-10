@@ -8,6 +8,8 @@ router.use(requireAuth);
 
 const MATERIALS = ['Polymer', 'Steel', 'Stainless Steel', 'Aluminum', 'Other'];
 
+const cap = (s, n) => (s ? String(s).slice(0, n) : s);
+
 const PLATFORM_SUGGESTIONS = [
   'AR-15', 'AR-10', 'AK-47', 'AK-74',
   'MP5', 'Scorpion', 'PCC',
@@ -62,15 +64,15 @@ router.post('/new', requireAdmin, (req, res) => {
     return res.render('mag-form', { user: req.session.user, mag: req.body, error: 'Brand is required.', ...formLocals() });
   }
   const id = magsQueries.create({
-    platform: platform || null,
-    brand: brand.trim(),
-    model: model || null,
-    color: color || null,
+    platform: cap(platform, 200) || null,
+    brand:    cap(brand.trim(), 200),
+    model:    cap(model, 200) || null,
+    color:    cap(color, 100) || null,
     capacity: capacity ? parseInt(capacity, 10) : null,
-    caliber: caliber || null,
-    material: material || null,
+    caliber:  cap(caliber, 100) || null,
+    material: MATERIALS.includes(material) ? material : null,
     quantity: quantity ? parseInt(quantity, 10) : 1,
-    notes: notes || null,
+    notes:    cap(notes, 2000) || null,
   });
   res.redirect('/mags/' + id);
 });
@@ -98,15 +100,15 @@ router.post('/:id/edit', requireAdmin, (req, res) => {
     return res.render('mag-form', { user: req.session.user, mag: { ...mag, ...req.body }, error: 'Brand is required.', ...formLocals() });
   }
   magsQueries.update(req.params.id, {
-    platform: platform || null,
-    brand: brand.trim(),
-    model: model || null,
-    color: color || null,
+    platform: cap(platform, 200) || null,
+    brand:    cap(brand.trim(), 200),
+    model:    cap(model, 200) || null,
+    color:    cap(color, 100) || null,
     capacity: capacity ? parseInt(capacity, 10) : null,
-    caliber: caliber || null,
-    material: material || null,
+    caliber:  cap(caliber, 100) || null,
+    material: MATERIALS.includes(material) ? material : null,
     quantity: quantity ? parseInt(quantity, 10) : 1,
-    notes: notes || null,
+    notes:    cap(notes, 2000) || null,
   });
   res.redirect('/mags/' + req.params.id);
 });

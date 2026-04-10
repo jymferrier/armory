@@ -47,4 +47,19 @@ const docFilter = (req, file, cb) => {
 const uploadPhotos = multer({ storage: photoStorage, fileFilter: photoFilter, limits: { fileSize: 20 * 1024 * 1024 } });
 const uploadDocs = multer({ storage: docStorage, fileFilter: docFilter, limits: { fileSize: 50 * 1024 * 1024 } });
 
-module.exports = { uploadPhotos, uploadDocs, PHOTO_DIR, DOC_DIR };
+/**
+ * Delete any files multer wrote to disk during a request that is being
+ * rejected (e.g. CSRF failure). Covers req.file (single), req.files (array),
+ * and req.files (object of arrays from fields()). Memory-storage uploads
+ * have no path set, so they're silently skipped.
+ */
+function cleanupUploadedFiles(req) {
+  const unlink = (f) => { if (f && f.path) try { fs.unlinkSync(f.path); } catch (_) {} };
+  if (req.file) unlink(req.file);
+  if (Array.isArray(req.files)) req.files.forEach(unlink);
+  else if (req.files && typeof req.files === 'object') {
+    Object.values(req.files).forEach(arr => arr.forEach(unlink));
+  }
+}
+
+module.exports = { uploadPhotos, uploadDocs, PHOTO_DIR, DOC_DIR, cleanupUploadedFiles };
