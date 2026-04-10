@@ -93,6 +93,11 @@ router.post('/new', requireAdmin, (req, res) => {
       return res.render('optic-form', { user: req.session.user, optic: req.body, error: 'Manufacturer and model are required.', ...formLocals() });
     }
 
+    const parsedFirearmId = firearm_id ? parseInt(firearm_id, 10) : null;
+    if (parsedFirearmId && !firearmsQueries.findById(parsedFirearmId)) {
+      return res.render('optic-form', { user: req.session.user, optic: req.body, error: 'Selected firearm not found.', ...formLocals() });
+    }
+
     const id = opticsQueries.create({
       manufacturer: manufacturer.trim(),
       model: model.trim(),
@@ -111,7 +116,7 @@ router.post('/new', requireAdmin, (req, res) => {
       date_acquired: date_acquired || null,
       price_paid: price_paid || null,
       spouse_price: spouse_price || null,
-      firearm_id: firearm_id ? parseInt(firearm_id, 10) : null,
+      firearm_id: parsedFirearmId,
       notes: notes || null,
     });
 
@@ -149,6 +154,10 @@ router.post('/:id/edit', requireAdmin, (req, res) => {
   if (!manufacturer || !model) {
     return res.render('optic-form', { user: req.session.user, optic: { ...optic, ...req.body }, error: 'Manufacturer and model are required.', ...formLocals() });
   }
+  const parsedFirearmId = firearm_id ? parseInt(firearm_id, 10) : null;
+  if (parsedFirearmId && !firearmsQueries.findById(parsedFirearmId)) {
+    return res.render('optic-form', { user: req.session.user, optic: { ...optic, ...req.body }, error: 'Selected firearm not found.', ...formLocals() });
+  }
   opticsQueries.update(req.params.id, {
     manufacturer: manufacturer.trim(),
     model: model.trim(),
@@ -167,7 +176,7 @@ router.post('/:id/edit', requireAdmin, (req, res) => {
     date_acquired: date_acquired || null,
     price_paid: price_paid || null,
     spouse_price: spouse_price || null,
-    firearm_id: firearm_id ? parseInt(firearm_id, 10) : null,
+    firearm_id: parsedFirearmId,
     notes: notes || null,
   });
   res.redirect('/optics/' + req.params.id);

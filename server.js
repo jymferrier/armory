@@ -159,6 +159,7 @@ app.use('/settings/export', exportLimiter);
 
 // Routes
 app.use('/', require('./routes/auth'));
+app.use('/', require('./routes/settings'));
 app.use('/search', require('./routes/search'));
 app.use('/inventory', require('./routes/inventory'));
 app.use('/trusts', require('./routes/trusts'));

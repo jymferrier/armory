@@ -227,7 +227,7 @@ router.post('/:id/edit', requireAdmin, (req, res) => {
 // Log rounds fired
 router.post('/:id/rounds', requireAdmin, (req, res) => {
   const add = parseInt(req.body.add_rounds, 10);
-  if (add > 0) firearmsQueries.addRounds(req.params.id, add);
+  if (!isNaN(add) && add > 0 && add <= 100000) firearmsQueries.addRounds(req.params.id, add);
   res.redirect(`/inventory/${req.params.id}`);
 });
 
