@@ -193,6 +193,21 @@ function initDB() {
     try { db.exec(sql); } catch (_) { /* column already exists */ }
   }
 
+  // Indexes — idempotent, safe to run on every startup
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_firearms_manufacturer     ON firearms(manufacturer);
+    CREATE INDEX IF NOT EXISTS idx_firearms_serial           ON firearms(serial);
+    CREATE INDEX IF NOT EXISTS idx_firearms_is_disposed      ON firearms(is_disposed);
+    CREATE INDEX IF NOT EXISTS idx_firearms_is_nfa           ON firearms(is_nfa);
+    CREATE INDEX IF NOT EXISTS idx_firearms_nfa_trust        ON firearms(nfa_trust_name);
+    CREATE INDEX IF NOT EXISTS idx_firearms_non_nfa_trust    ON firearms(non_nfa_trust_name);
+    CREATE INDEX IF NOT EXISTS idx_firearm_photos_firearm    ON firearm_photos(firearm_id);
+    CREATE INDEX IF NOT EXISTS idx_firearm_photos_primary    ON firearm_photos(firearm_id, is_primary);
+    CREATE INDEX IF NOT EXISTS idx_firearm_docs_firearm      ON firearm_documents(firearm_id);
+    CREATE INDEX IF NOT EXISTS idx_trust_docs_trust          ON trust_documents(trust_id);
+    CREATE INDEX IF NOT EXISTS idx_optics_photos_optic       ON optics_photos(optic_id);
+  `);
+
   // Seed default admin user if none exists
   const existing = db.prepare('SELECT id FROM users LIMIT 1').get();
   if (!existing) {
