@@ -1256,61 +1256,68 @@ a:hover { color: var(--text); }
 }
 
 /* ============================================================
-   TYPE FILTER
+   TYPE FILTER DROPDOWN
    ============================================================ */
-.type-filter {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.85rem 0;
-  border-bottom: 1px solid var(--border);
-  margin-bottom: 2rem;
-  flex-wrap: wrap;
+.type-dropdown {
+  position: relative;
 }
 
-.type-filter__label {
+.type-dropdown__btn {
   font-family: var(--font-mono);
-  font-size: 0.65rem;
-  letter-spacing: 0.1em;
-  color: var(--text-dim);
-  white-space: nowrap;
-}
-
-.type-filter__chips {
-  display: flex;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-  flex: 1;
-}
-
-.type-filter__clear {
-  font-family: var(--font-mono);
-  font-size: 0.65rem;
+  font-size: 0.7rem;
   letter-spacing: 0.08em;
-  color: var(--text-dim);
-  background: none;
-  border: 1px solid var(--border);
-  cursor: pointer;
-  padding: 0.25rem 0.6rem;
-  white-space: nowrap;
-  transition: color var(--transition), border-color var(--transition);
-}
-.type-filter__clear:hover { color: var(--text); border-color: var(--border-accent); }
-
-.type-chip {
-  font-family: var(--font-mono);
-  font-size: 0.65rem;
-  letter-spacing: 0.08em;
-  padding: 0.25rem 0.7rem;
+  padding: 0 0.85rem;
+  height: 36px;
   border: 1px solid var(--border-accent);
-  background: none;
+  background: var(--bg-2);
   color: var(--text-muted);
   cursor: pointer;
-  transition: background var(--transition), color var(--transition), border-color var(--transition);
+  white-space: nowrap;
+  transition: color var(--transition), border-color var(--transition), background var(--transition);
 }
-.type-chip:hover { border-color: var(--text-muted); color: var(--text); }
-.type-chip--active { background: var(--accent-glow); border-color: var(--accent); color: var(--accent); }
-.type-chip--nfa.type-chip--active { background: var(--nfa-red-bg); border-color: var(--nfa-red); color: var(--nfa-red); }
+.type-dropdown__btn:hover { border-color: var(--text-muted); color: var(--text); }
+.type-dropdown__btn--open { border-color: var(--accent); color: var(--text); background: var(--bg-3); }
+.type-dropdown__btn--active { border-color: var(--accent); color: var(--accent); }
+.type-dropdown__btn--active.type-dropdown__btn--open { background: var(--bg-3); }
+
+.type-dropdown__panel {
+  display: none;
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  min-width: 220px;
+  background: var(--bg-3);
+  border: 1px solid var(--border-accent);
+  z-index: 200;
+  padding: 0.4rem 0;
+}
+.type-dropdown__panel--open { display: block; }
+
+.type-option {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.45rem 0.85rem;
+  cursor: pointer;
+  transition: background var(--transition);
+}
+.type-option:hover { background: var(--bg-4); }
+
+.type-option__cb {
+  accent-color: var(--accent);
+  width: 13px;
+  height: 13px;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.type-option__label {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+}
+.type-option__label--nfa { color: var(--nfa-red); }
 
 /* ============================================================
    VIEW TOGGLE

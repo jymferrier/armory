@@ -8,6 +8,10 @@
     <div class="page-actions">
       <form method="GET" action="/inventory" class="search-form">
         <input type="text" name="q" value="<%= q %>" placeholder="SEARCH INVENTORY…" class="search-input">
+        <div class="type-dropdown" id="typeDropdown" style="display:none">
+          <button type="button" class="type-dropdown__btn" id="typeDropdownBtn">ALL TYPES ▾</button>
+          <div class="type-dropdown__panel" id="typeDropdownPanel"></div>
+        </div>
         <button type="submit" class="btn btn--ghost">SEARCH</button>
         <% if (q) { %><a href="/inventory" class="btn btn--ghost">CLEAR</a><% } %>
       </form>
@@ -17,12 +21,6 @@
       </div>
       <a href="/inventory/new" class="btn btn--primary">+ ADD FIREARM</a>
     </div>
-  </div>
-
-  <div id="typeFilterBar" class="type-filter" style="display:none">
-    <span class="type-filter__label">TYPE</span>
-    <div class="type-filter__chips" id="typeChips"></div>
-    <button type="button" class="type-filter__clear" id="typeFilterClear" style="display:none">CLEAR</button>
   </div>
 
   <% if (firearms.length === 0) { %>
@@ -126,53 +124,74 @@ document.addEventListener('click', function(e) {
   window.location.href = '/inventory?q=' + encodeURIComponent(badge.getAttribute('data-search'));
 }, true);
 
-// ── Type filter ────────────────────────────────────────────
+// ── Type filter dropdown ───────────────────────────────────
 (function() {
   var NFA_TYPES = new Set(['Suppressor/Silencer','Short Barrel Rifle (SBR)','Short Barrel Shotgun (SBS)','Machine Gun','Destructive Device (DD)','Any Other Weapon (AOW)']);
   var gridCards = Array.from(document.querySelectorAll('.firearm-card[data-type]'));
   var listRows  = Array.from(document.querySelectorAll('.firearm-row[data-type]'));
   if (!gridCards.length) return;
 
-  // Build sorted list of distinct types present in inventory
   var typeSet = new Set(gridCards.map(function(c) { return c.dataset.type; }));
   var types = Array.from(typeSet).sort(function(a, b) {
-    if (!a && b) return 1;  // empty ("unclassified") last
+    if (!a && b) return 1;
     if (a && !b) return -1;
     return a.localeCompare(b);
   });
-  if (types.length <= 1) return; // nothing to filter
+  if (types.length <= 1) return;
 
-  var bar      = document.getElementById('typeFilterBar');
-  var chipsEl  = document.getElementById('typeChips');
-  var clearBtn = document.getElementById('typeFilterClear');
-  var countEl  = document.getElementById('inventoryCount');
-  var active   = new Set();
-  var total    = gridCards.length;
+  var dropdown  = document.getElementById('typeDropdown');
+  var btn       = document.getElementById('typeDropdownBtn');
+  var panel     = document.getElementById('typeDropdownPanel');
+  var countEl   = document.getElementById('inventoryCount');
+  var active    = new Set();
+  var total     = gridCards.length;
 
-  // Render chips
+  // Build checkbox list
   types.forEach(function(type) {
-    var chip = document.createElement('button');
-    chip.type = 'button';
-    chip.className = 'type-chip' + (NFA_TYPES.has(type) ? ' type-chip--nfa' : '');
-    chip.textContent = type || 'UNCLASSIFIED';
-    chip.dataset.type = type;
-    chip.addEventListener('click', function() {
-      if (active.has(type)) active.delete(type); else active.add(type);
+    var label = document.createElement('label');
+    label.className = 'type-option';
+    var cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.className = 'type-option__cb';
+    cb.value = type;
+    cb.addEventListener('change', function() {
+      if (cb.checked) active.add(type); else active.delete(type);
       apply();
     });
-    chipsEl.appendChild(chip);
+    var text = document.createElement('span');
+    text.className = 'type-option__label' + (NFA_TYPES.has(type) ? ' type-option__label--nfa' : '');
+    text.textContent = type || 'UNCLASSIFIED';
+    label.appendChild(cb);
+    label.appendChild(text);
+    panel.appendChild(label);
   });
 
-  bar.style.display = '';
+  dropdown.style.display = '';
+
+  // Toggle open/close
+  btn.addEventListener('click', function(e) {
+    e.stopPropagation();
+    var open = panel.classList.toggle('type-dropdown__panel--open');
+    btn.classList.toggle('type-dropdown__btn--open', open);
+  });
+  document.addEventListener('click', function(e) {
+    if (!dropdown.contains(e.target)) {
+      panel.classList.remove('type-dropdown__panel--open');
+      btn.classList.remove('type-dropdown__btn--open');
+    }
+  });
 
   function apply() {
-    // Update chip states
-    chipsEl.querySelectorAll('.type-chip').forEach(function(chip) {
-      chip.classList.toggle('type-chip--active', active.has(chip.dataset.type));
-    });
-    clearBtn.style.display = active.size > 0 ? '' : 'none';
+    // Update button label
+    if (active.size === 0) {
+      btn.textContent = 'ALL TYPES ▾';
+      btn.classList.remove('type-dropdown__btn--active');
+    } else {
+      btn.textContent = active.size + ' TYPE' + (active.size !== 1 ? 'S' : '') + ' ▾';
+      btn.classList.add('type-dropdown__btn--active');
+    }
 
-    // Filter cards and rows together
+    // Filter items
     var visible = 0;
     gridCards.forEach(function(card, i) {
       var show = active.size === 0 || active.has(card.dataset.type);
@@ -181,7 +200,7 @@ document.addEventListener('click', function(e) {
       if (show) visible++;
     });
 
-    // Update subtitle count
+    // Update count
     if (countEl) {
       var label = active.size > 0
         ? visible + ' OF ' + total + ' ITEM' + (total !== 1 ? 'S' : '')
@@ -189,8 +208,6 @@ document.addEventListener('click', function(e) {
       countEl.textContent = label + ' CATALOGUED';
     }
   }
-
-  clearBtn.addEventListener('click', function() { active.clear(); apply(); });
 })();
 </script>
 <%- include('partials/footer') %>
