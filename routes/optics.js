@@ -184,6 +184,7 @@ router.post('/:id/edit', requireAdmin, (req, res) => {
 
 // Duplicate
 router.post('/:id/duplicate', requireAdmin, (req, res) => {
+  if (!validateCsrf(req)) return res.status(403).render('error', { message: 'Security token validation failed.', user: req.session.user });
   const optic = opticsQueries.findById(req.params.id);
   if (!optic) return res.status(404).render('error', { message: 'Optic not found', user: req.session.user });
   const newId = opticsQueries.create({
@@ -229,6 +230,7 @@ router.post('/:id/photos', requireAdmin, (req, res) => {
 
 // Set primary photo
 router.post('/:id/photos/:photoId/primary', requireAdmin, (req, res) => {
+  if (!validateCsrf(req)) return res.status(403).render('error', { message: 'Security token validation failed.', user: req.session.user });
   const optic = opticsQueries.findById(req.params.id);
   if (!optic) return res.status(404).render('error', { message: 'Optic not found', user: req.session.user });
   const photo = opticsQueries.findPhotoById(req.params.photoId);
@@ -240,6 +242,7 @@ router.post('/:id/photos/:photoId/primary', requireAdmin, (req, res) => {
 
 // Delete photo
 router.post('/:id/photos/:photoId/delete', requireAdmin, (req, res) => {
+  if (!validateCsrf(req)) return res.status(403).render('error', { message: 'Security token validation failed.', user: req.session.user });
   const optic = opticsQueries.findById(req.params.id);
   if (!optic) return res.status(404).render('error', { message: 'Optic not found', user: req.session.user });
   const photo = opticsQueries.findPhotoById(req.params.photoId);

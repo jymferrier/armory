@@ -181,6 +181,7 @@ router.post('/:id/documents/:docId/delete', requireAdmin, (req, res) => {
 
 // Toggle trust_assigned flag on a firearm (NFA trusts)
 router.post('/:id/firearms/:firearmsId/assign', requireAdmin, (req, res) => {
+  if (!validateCsrf(req)) return res.status(403).render('error', { message: 'Security token validation failed.', user: req.session.user });
   const trust = trustQueries.findById(req.params.id);
   if (!trust) return res.status(404).render('error', { message: 'Trust not found', user: req.session.user });
   const firearm = firearmsQueries.findById(req.params.firearmsId);
@@ -201,6 +202,7 @@ router.post('/:id/firearms/:firearmsId/assign', requireAdmin, (req, res) => {
 
 // Delete
 router.post('/:id/delete', requireAdmin, (req, res) => {
+  if (!validateCsrf(req)) return res.status(403).render('error', { message: 'Security token validation failed.', user: req.session.user });
   trustQueries.delete(req.params.id);
   res.redirect('/trusts');
 });

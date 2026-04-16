@@ -108,6 +108,8 @@ function initDB() {
       caliber TEXT,
       material TEXT,
       quantity INTEGER DEFAULT 1,
+      basket TEXT,
+      storage_location TEXT,
       notes TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -195,6 +197,8 @@ function initDB() {
     { name: '045_optics_mount_model',             sql: 'ALTER TABLE optics_items ADD COLUMN mount_model TEXT' },
     { name: '046_optics_mount_cant',              sql: 'ALTER TABLE optics_items ADD COLUMN mount_cant TEXT' },
     { name: '047_optics_adjustment',              sql: 'ALTER TABLE optics_items ADD COLUMN adjustment TEXT' },
+    { name: '048_mags_basket',                    sql: 'ALTER TABLE mags ADD COLUMN basket TEXT' },
+    { name: '049_mags_storage_location',          sql: 'ALTER TABLE mags ADD COLUMN storage_location TEXT' },
   ];
 
   const applied = new Set(
@@ -605,8 +609,8 @@ const magsQueries = {
   findById: (id) => getDB().prepare('SELECT * FROM mags WHERE id = ?').get(id),
   create: (data) => {
     const result = getDB().prepare(`
-      INSERT INTO mags (platform, brand, model, color, capacity, caliber, material, quantity, notes)
-      VALUES (@platform, @brand, @model, @color, @capacity, @caliber, @material, @quantity, @notes)
+      INSERT INTO mags (platform, brand, model, color, capacity, caliber, material, quantity, basket, storage_location, notes)
+      VALUES (@platform, @brand, @model, @color, @capacity, @caliber, @material, @quantity, @basket, @storage_location, @notes)
     `).run(data);
     return result.lastInsertRowid;
   },
@@ -615,7 +619,8 @@ const magsQueries = {
       UPDATE mags SET
         platform = @platform, brand = @brand, model = @model, color = @color,
         capacity = @capacity, caliber = @caliber, material = @material,
-        quantity = @quantity, notes = @notes, updated_at = CURRENT_TIMESTAMP
+        quantity = @quantity, basket = @basket, storage_location = @storage_location,
+        notes = @notes, updated_at = CURRENT_TIMESTAMP
       WHERE id = @id
     `).run({ ...data, id });
   },
@@ -624,14 +629,16 @@ const magsQueries = {
   distinctBrands: () => getDB().prepare("SELECT DISTINCT brand FROM mags WHERE brand IS NOT NULL AND brand != '' ORDER BY brand ASC").all().map(r => r.brand),
   distinctModels: () => getDB().prepare("SELECT DISTINCT model FROM mags WHERE model IS NOT NULL AND model != '' ORDER BY model ASC").all().map(r => r.model),
   distinctCalibers: () => getDB().prepare("SELECT DISTINCT caliber FROM mags WHERE caliber IS NOT NULL AND caliber != '' ORDER BY caliber ASC").all().map(r => r.caliber),
+  distinctBaskets: () => getDB().prepare("SELECT DISTINCT basket FROM mags WHERE basket IS NOT NULL AND basket != '' ORDER BY basket ASC").all().map(r => r.basket),
+  distinctStorageLocations: () => getDB().prepare("SELECT DISTINCT storage_location FROM mags WHERE storage_location IS NOT NULL AND storage_location != '' ORDER BY storage_location ASC").all().map(r => r.storage_location),
   search: (q) => {
     const like = `%${q}%`;
     return getDB().prepare(`
       SELECT * FROM mags
       WHERE platform LIKE ? OR brand LIKE ? OR model LIKE ? OR caliber LIKE ?
-         OR color LIKE ? OR material LIKE ? OR notes LIKE ?
+         OR color LIKE ? OR material LIKE ? OR basket LIKE ? OR storage_location LIKE ? OR notes LIKE ?
       ORDER BY platform ASC, brand ASC
-    `).all(like, like, like, like, like, like, like);
+    `).all(like, like, like, like, like, like, like, like, like);
   },
 };
 

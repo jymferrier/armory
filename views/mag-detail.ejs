@@ -79,6 +79,24 @@
       </div>
     </div>
 
+    <% if (mag.basket || mag.storage_location) { %>
+    <h3 class="section-title mt-lg">STORAGE</h3>
+    <div class="info-grid">
+      <% if (mag.basket) { %>
+      <div class="info-item">
+        <span class="info-label">BASKET</span>
+        <span class="info-value"><%= mag.basket %></span>
+      </div>
+      <% } %>
+      <% if (mag.storage_location) { %>
+      <div class="info-item">
+        <span class="info-label">STORAGE LOCATION</span>
+        <span class="info-value"><%= mag.storage_location %></span>
+      </div>
+      <% } %>
+    </div>
+    <% } %>
+
     <% if (mag.notes) { %>
     <h3 class="section-title mt-lg">NOTES</h3>
     <div class="notes-block"><%= mag.notes %></div>

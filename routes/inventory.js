@@ -6,24 +6,13 @@ const { firearmsQueries, opticsQueries } = require('../db');
 const { requireAuth, requireAdmin } = require('../middleware/auth');
 const { validateCsrf } = require('../middleware/csrf');
 const { uploadPhotos, uploadDocs, PHOTO_DIR, DOC_DIR, cleanupUploadedFiles } = require('../middleware/upload');
-
-// Cap string field length to prevent oversized inputs
-const cap = (val, max) => (val && typeof val === 'string') ? val.slice(0, max) : val;
+const { NFA_TYPES, cap } = require('../lib/constants');
 
 const sanitizePrice = (val) => {
   if (!val) return null;
   const n = parseFloat(String(val).replace(/[$,\s]/g, ''));
   return isNaN(n) ? null : String(n);
 };
-
-const NFA_TYPES = new Set([
-  'Suppressor/Silencer',
-  'Short Barrel Rifle (SBR)',
-  'Short Barrel Shotgun (SBS)',
-  'Machine Gun',
-  'Destructive Device (DD)',
-  'Any Other Weapon (AOW)'
-]);
 
 const photoUpload = uploadPhotos.array('photos', 20);
 const docUpload = uploadDocs.fields([
@@ -236,6 +225,7 @@ router.post('/:id/edit', requireAdmin, (req, res) => {
 
 // Log rounds fired
 router.post('/:id/rounds', requireAdmin, (req, res) => {
+  if (!validateCsrf(req)) return res.status(403).render('error', { message: 'Security token validation failed.', user: req.session.user });
   const add = parseInt(req.body.add_rounds, 10);
   if (!isNaN(add) && add > 0 && add <= 100000) firearmsQueries.addRounds(req.params.id, add);
   res.redirect(`/inventory/${req.params.id}`);
@@ -243,6 +233,7 @@ router.post('/:id/rounds', requireAdmin, (req, res) => {
 
 // Duplicate — copies everything except serial, NFA fields, and photos/docs
 router.post('/:id/duplicate', requireAdmin, (req, res) => {
+  if (!validateCsrf(req)) return res.status(403).render('error', { message: 'Security token validation failed.', user: req.session.user });
   const firearm = firearmsQueries.findById(req.params.id);
   if (!firearm) return res.status(404).render('error', { message: 'Item not found', user: req.session.user });
   const newId = firearmsQueries.create({
@@ -289,6 +280,7 @@ router.post('/:id/duplicate', requireAdmin, (req, res) => {
 
 // Delete
 router.post('/:id/delete', requireAdmin, (req, res) => {
+  if (!validateCsrf(req)) return res.status(403).render('error', { message: 'Security token validation failed.', user: req.session.user });
   const firearm = firearmsQueries.findById(req.params.id);
   if (firearm) {
     [...firearm.photos, ...firearm.documents].forEach(f => {
@@ -319,6 +311,7 @@ router.post('/:id/photos', requireAdmin, (req, res) => {
 
 // Set primary photo
 router.post('/:id/photos/:photoId/primary', requireAdmin, (req, res) => {
+  if (!validateCsrf(req)) return res.status(403).render('error', { message: 'Security token validation failed.', user: req.session.user });
   const photo = firearmsQueries.findPhotoById(req.params.photoId);
   if (!photo || photo.firearm_id !== parseInt(req.params.id, 10))
     return res.status(403).render('error', { message: 'Forbidden', user: req.session.user });
@@ -328,6 +321,7 @@ router.post('/:id/photos/:photoId/primary', requireAdmin, (req, res) => {
 
 // Delete photo
 router.post('/:id/photos/:photoId/delete', requireAdmin, (req, res) => {
+  if (!validateCsrf(req)) return res.status(403).render('error', { message: 'Security token validation failed.', user: req.session.user });
   const photo = firearmsQueries.findPhotoById(req.params.photoId);
   if (!photo || photo.firearm_id !== parseInt(req.params.id, 10))
     return res.status(403).render('error', { message: 'Forbidden', user: req.session.user });
@@ -356,6 +350,7 @@ router.post('/:id/documents', requireAdmin, (req, res) => {
 
 // Delete document
 router.post('/:id/documents/:docId/delete', requireAdmin, (req, res) => {
+  if (!validateCsrf(req)) return res.status(403).render('error', { message: 'Security token validation failed.', user: req.session.user });
   const doc = firearmsQueries.findDocumentById(req.params.docId);
   if (!doc || doc.firearm_id !== parseInt(req.params.id, 10))
     return res.status(403).render('error', { message: 'Forbidden', user: req.session.user });

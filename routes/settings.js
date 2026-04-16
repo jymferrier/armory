@@ -9,6 +9,7 @@ const { requireAuth, requireAdmin } = require('../middleware/auth');
 const { validateCsrf } = require('../middleware/csrf');
 const { PHOTO_DIR, DOC_DIR } = require('../middleware/upload');
 const { audit } = require('../middleware/audit');
+const { NFA_TYPES } = require('../lib/constants');
 
 const archiver = require('archiver');
 const AdmZip = require('adm-zip');
@@ -114,7 +115,6 @@ function csvRowToFirearm(headers, row) {
   const opt = (col) => get(col) || null;
   const opticsRaw = get('Optics / Accessories');
   const opticsTags = opticsRaw ? opticsRaw.split(';').map(s => s.trim()).filter(Boolean) : [];
-  const NFA_TYPES = new Set(['Suppressor/Silencer','Short Barrel Rifle (SBR)','Short Barrel Shotgun (SBS)','Machine Gun','Destructive Device (DD)','Any Other Weapon (AOW)']);
   const itemType = opt('Item Type');
   const isNfa = NFA_TYPES.has(itemType);
   return {
@@ -142,7 +142,6 @@ function csvRowToFirearm(headers, row) {
 }
 
 function jsonRecordToFirearm(r) {
-  const NFA_TYPES = new Set(['Suppressor/Silencer','Short Barrel Rifle (SBR)','Short Barrel Shotgun (SBS)','Machine Gun','Destructive Device (DD)','Any Other Weapon (AOW)']);
   const itemType = r.nfa_type || r.item_type || null;
   const isNfa = NFA_TYPES.has(itemType);
   const optics = Array.isArray(r.optics) ? JSON.stringify(r.optics) : (r.optics || null);

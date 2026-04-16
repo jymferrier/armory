@@ -103,9 +103,9 @@
       </div>
     </div>
 
-    <!-- 03: QUANTITY & NOTES -->
+    <!-- 03: QUANTITY -->
     <div class="form-band">
-      <div class="form-band__label">03 / QUANTITY &amp; NOTES</div>
+      <div class="form-band__label">03 / QUANTITY</div>
       <div class="form-band__fields">
 
         <div class="field-row field-row--half">
@@ -115,6 +115,41 @@
               value="<%= mag ? (mag.quantity != null ? mag.quantity : 1) : 1 %>" placeholder="1">
           </div>
         </div>
+
+      </div>
+    </div>
+
+    <!-- 04: STORAGE -->
+    <div class="form-band">
+      <div class="form-band__label">04 / STORAGE</div>
+      <div class="form-band__fields">
+
+        <div class="field-row">
+          <div class="field">
+            <label class="field-label">BASKET</label>
+            <input type="text" name="basket" class="field-input" list="basketList"
+              value="<%= mag ? (mag.basket || '') : '' %>" placeholder="e.g. Range Bag A, Red Basket" autocomplete="off">
+            <datalist id="basketList">
+              <% baskets.forEach(b => { %><option value="<%= b %>"><% }) %>
+            </datalist>
+          </div>
+          <div class="field">
+            <label class="field-label">STORAGE LOCATION</label>
+            <input type="text" name="storage_location" class="field-input" list="storageLocationList"
+              value="<%= mag ? (mag.storage_location || '') : '' %>" placeholder="e.g. Safe, Shelf 2, Gun Room" autocomplete="off">
+            <datalist id="storageLocationList">
+              <% storageLocations.forEach(s => { %><option value="<%= s %>"><% }) %>
+            </datalist>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- 05: NOTES -->
+    <div class="form-band">
+      <div class="form-band__label">05 / NOTES</div>
+      <div class="form-band__fields">
 
         <div class="field">
           <label class="field-label">NOTES</label>

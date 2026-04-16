@@ -107,7 +107,7 @@ a:hover { color: var(--text); }
   font-family: var(--font-mono);
   font-size: 0.7rem;
   letter-spacing: 0.05em;
-  background: var(--surface);
+  background: var(--bg-2);
   border: 1px solid var(--border);
   color: var(--text);
   padding: 0.3rem 0.6rem;
@@ -608,7 +608,6 @@ a:hover { color: var(--text); }
 /* ============================================================
    FORMS
    ============================================================ */
-.firearm-form { }
 
 .form-grid {
   display: grid;
