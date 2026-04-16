@@ -332,8 +332,9 @@ router.get('/settings/export/full', requireAuth, requireAdmin, (req, res) => {
       f.photos.forEach(p => {
         const src = path.join(PHOTO_DIR, p.filename);
         if (fs.existsSync(src)) {
-          const ext = path.extname(p.original_name || p.filename);
-          const label = p.is_primary ? `primary${ext}` : p.original_name || p.filename;
+          const safeName = path.basename(p.original_name || p.filename);
+          const ext = path.extname(safeName);
+          const label = p.is_primary ? `primary${ext}` : safeName;
           archive.file(src, { name: `${dir}/photos/${label}` });
         }
       });
@@ -343,7 +344,8 @@ router.get('/settings/export/full', requireAuth, requireAdmin, (req, res) => {
       f.documents.forEach(d => {
         const src = path.join(DOC_DIR, d.filename);
         if (fs.existsSync(src)) {
-          archive.file(src, { name: `${dir}/documents/${d.doc_type}/${d.original_name || d.filename}` });
+          const safeDocName = path.basename(d.original_name || d.filename);
+          archive.file(src, { name: `${dir}/documents/${d.doc_type}/${safeDocName}` });
         }
       });
     }
@@ -427,6 +429,8 @@ router.post('/settings/import/zip', requireAuth, requireAdmin, (req, res) => {
     }
 
     const VALID_DOC_TYPES = new Set(['atf_form', 'form5320', 'additional_docs']);
+    const PHOTO_ALLOWED_EXTS = new Set(['.jpg', '.jpeg', '.png', '.gif', '.webp']);
+    const DOC_ALLOWED_EXTS = new Set(['.pdf', '.jpg', '.jpeg', '.png', '.gif', '.webp', '.doc', '.docx']);
     const folders = {};
     zip.getEntries().forEach(entry => {
       const parts = entry.entryName.split('/');
@@ -463,7 +467,11 @@ router.post('/settings/import/zip', requireAuth, requireAdmin, (req, res) => {
         .filter(e => e.entryName.startsWith(`${folder}/photos/`) && !e.isDirectory)
         .forEach(photoEntry => {
           const basename = path.basename(photoEntry.entryName);
-          const ext = path.extname(basename);
+          const ext = path.extname(basename).toLowerCase();
+          if (!PHOTO_ALLOWED_EXTS.has(ext)) {
+            console.warn(JSON.stringify({ ts: new Date().toISOString(), level: 'warn', action: 'ZIP_IMPORT_PHOTO_SKIP', folder, file: basename, reason: 'disallowed file type' }));
+            return;
+          }
           const newFilename = uuidv4() + ext;
           try {
             fs.writeFileSync(path.join(PHOTO_DIR, newFilename), photoEntry.getData());
@@ -487,7 +495,11 @@ router.post('/settings/import/zip', requireAuth, requireAdmin, (req, res) => {
             docType = 'additional_docs';
             basename = path.basename(parts[parts.length - 1]);
           }
-          const ext = path.extname(basename);
+          const ext = path.extname(basename).toLowerCase();
+          if (!DOC_ALLOWED_EXTS.has(ext)) {
+            console.warn(JSON.stringify({ ts: new Date().toISOString(), level: 'warn', action: 'ZIP_IMPORT_DOC_SKIP', folder, file: basename, reason: 'disallowed file type' }));
+            return;
+          }
           const newFilename = uuidv4() + ext;
           try {
             fs.writeFileSync(path.join(DOC_DIR, newFilename), docEntry.getData());
