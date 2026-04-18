@@ -8,6 +8,10 @@
     <div class="page-actions">
       <form method="GET" action="/mags" class="search-form">
         <input type="text" name="q" value="<%= q %>" placeholder="SEARCH MAGS…" class="search-input">
+        <div class="type-dropdown" id="platformDropdown" style="display:none">
+          <button type="button" class="type-dropdown__btn" id="platformDropdownBtn">ALL PLATFORMS ▾</button>
+          <div class="type-dropdown__panel" id="platformDropdownPanel"></div>
+        </div>
         <button type="submit" class="btn btn--ghost">SEARCH</button>
         <% if (q) { %><a href="/mags" class="btn btn--ghost">CLEAR</a><% } %>
       </form>
@@ -36,7 +40,7 @@
       <span class="mag-col-qty">QTY</span>
     </div>
     <% mags.forEach(m => { %>
-      <a href="/mags/<%= m.id %>" class="mag-row">
+      <a href="/mags/<%= m.id %>" class="mag-row" data-platform="<%= m.platform || '' %>">
         <span class="mag-cell mag-cell--platform"><%= m.platform || '—' %></span>
         <span class="mag-cell mag-cell--brand">
           <strong><%= m.brand %></strong><% if (m.model) { %> <span class="mag-model"><%= m.model %></span><% } %>
@@ -52,4 +56,69 @@
 
   <% } %>
 </div>
+<script nonce="<%= cspNonce %>">
+(function() {
+  var rows = Array.from(document.querySelectorAll('.mag-row[data-platform]'));
+  if (!rows.length) return;
+
+  var platformSet = new Set(rows.map(function(r) { return r.dataset.platform; }));
+  var platforms = Array.from(platformSet).sort(function(a, b) {
+    if (!a && b) return 1;
+    if (a && !b) return -1;
+    return a.localeCompare(b);
+  });
+  if (platforms.length <= 1) return;
+
+  var dropdown = document.getElementById('platformDropdown');
+  var btn      = document.getElementById('platformDropdownBtn');
+  var panel    = document.getElementById('platformDropdownPanel');
+  var active   = new Set();
+
+  platforms.forEach(function(platform) {
+    var label = document.createElement('label');
+    label.className = 'type-option';
+    var cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.className = 'type-option__cb';
+    cb.value = platform;
+    cb.addEventListener('change', function() {
+      if (cb.checked) active.add(platform); else active.delete(platform);
+      apply();
+    });
+    var text = document.createElement('span');
+    text.className = 'type-option__label';
+    text.textContent = platform || 'UNSPECIFIED';
+    label.appendChild(cb);
+    label.appendChild(text);
+    panel.appendChild(label);
+  });
+
+  dropdown.style.display = '';
+
+  btn.addEventListener('click', function(e) {
+    e.stopPropagation();
+    var open = panel.classList.toggle('type-dropdown__panel--open');
+    btn.classList.toggle('type-dropdown__btn--open', open);
+  });
+  document.addEventListener('click', function(e) {
+    if (!dropdown.contains(e.target)) {
+      panel.classList.remove('type-dropdown__panel--open');
+      btn.classList.remove('type-dropdown__btn--open');
+    }
+  });
+
+  function apply() {
+    if (active.size === 0) {
+      btn.textContent = 'ALL PLATFORMS \u25be';
+      btn.classList.remove('type-dropdown__btn--active');
+    } else {
+      btn.textContent = active.size + ' PLATFORM' + (active.size !== 1 ? 'S' : '') + ' \u25be';
+      btn.classList.add('type-dropdown__btn--active');
+    }
+    rows.forEach(function(row) {
+      row.style.display = (active.size === 0 || active.has(row.dataset.platform)) ? '' : 'none';
+    });
+  }
+})();
+</script>
 <%- include('partials/footer') %>
