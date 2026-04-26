@@ -369,9 +369,12 @@
            const globalNum = i + 1;
 
            let approveDate = '';
-           if (item && item.nfa_approve_date) {
-             const d = new Date(item.nfa_approve_date + 'T00:00:00');
-             approveDate = d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+           if (item) {
+             const rawDate = (item.nfa2_enabled && item.nfa2_approve_date) ? item.nfa2_approve_date : item.nfa_approve_date;
+             if (rawDate) {
+               const d = new Date(rawDate + 'T00:00:00');
+               approveDate = d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+             }
            }
            const acquiredFrom = item ? (item.acquired_from || '') : '';
       %>

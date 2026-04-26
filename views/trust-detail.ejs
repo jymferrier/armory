@@ -177,7 +177,7 @@
               <% if (!isNonNfa && item.nfa_type) { %><span style="color:<%= fullyApproved ? 'var(--nfa-green)' : 'var(--nfa-red)' %>"><%= item.nfa_type %></span><% } %>
               <% if (isNonNfa && item.nfa_type) { %><span><%= item.nfa_type %></span><% } %>
               <% if (item.serial) { %> · S/N: <%= item.serial %><% } %>
-              <% if (!isNonNfa && item.nfa_approve_date) { %> · Approved: <%= item.nfa_approve_date %><% } %>
+              <% if (!isNonNfa && item.nfa_approve_date) { %> · Approved: <%= (item.nfa2_enabled && item.nfa2_approve_date) ? item.nfa2_approve_date : item.nfa_approve_date %><% } %>
               <% if (item.date_acquired) { %> · Acquired: <%= item.date_acquired %><% } %>
             </div>
           </div>
