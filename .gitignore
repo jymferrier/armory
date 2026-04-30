@@ -1,5 +1,6 @@
 node_modules/
 .claude/settings.local.json
+.claude/**/*.md
 data/
 uploads/
 *.db
