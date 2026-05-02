@@ -50,7 +50,7 @@ router.get('/', (req, res) => {
       (m.notes || '').toLowerCase().includes(ql)
     );
   }
-  const totalQty = mags.reduce((sum, m) => sum + (m.quantity || 1), 0);
+  const totalQty = mags.reduce((sum, m) => sum + (m.quantity ?? 1), 0);
   res.render('mags', { user: req.session.user, mags, q, totalQty });
 });
 
