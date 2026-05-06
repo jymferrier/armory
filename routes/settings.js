@@ -4,7 +4,7 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const router = express.Router();
-const { userQueries, firearmsQueries, trustQueries } = require('../db');
+const { userQueries, firearmsQueries, trustQueries, opticsQueries, magsQueries } = require('../db');
 const { requireAuth, requireAdmin } = require('../middleware/auth');
 const { validateCsrf } = require('../middleware/csrf');
 const { PHOTO_DIR, DOC_DIR } = require('../middleware/upload');
@@ -299,6 +299,116 @@ router.get('/settings/export/json', requireAuth, requireAdmin, (req, res) => {
   res.setHeader('Content-Type', 'application/json');
   res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
   res.send(JSON.stringify(data, null, 2));
+});
+
+// ── Trusts / Optics / Mags exports ───────────────────────────────────────────
+const TRUSTS_CSV_COLUMNS = ['ID', 'Name', 'Trust Type', 'Settlor Name', 'Settlor Location', 'Agreement Date', 'Notes', 'Date Added'];
+function buildTrustsCsvRows(trusts) {
+  return trusts.map(t => [
+    t.id, t.name, t.trust_type, t.settlor_name, t.settlor_location,
+    t.agreement_date, t.notes, t.created_at
+  ].map(csvCell).join(','));
+}
+
+const OPTICS_CSV_COLUMNS = [
+  'ID', 'Manufacturer', 'Model', 'Model Number', 'Serial Number', 'Optic Type',
+  'Magnification', 'Reticle', 'Tube Size', 'Adjustment',
+  'Mount Type', 'Mount Brand', 'Mount Model', 'Mount Cant',
+  'Acquired From', 'Acquired Date', 'Price Paid', 'Spouse Price',
+  'Assigned Firearm ID', 'Notes', 'Date Added'
+];
+function buildOpticsCsvRows(optics) {
+  return optics.map(o => [
+    o.id, o.manufacturer, o.model, o.model_number, o.serial, o.optic_type,
+    o.magnification, o.reticle, o.tube_size, o.adjustment,
+    o.mount_type, o.mount_brand, o.mount_model, o.mount_cant,
+    o.acquired_from, o.date_acquired, o.price_paid, o.spouse_price,
+    o.firearm_id, o.notes, o.created_at
+  ].map(csvCell).join(','));
+}
+
+const MAGS_CSV_COLUMNS = [
+  'ID', 'Platform', 'Brand', 'Model', 'Color', 'Capacity', 'Caliber',
+  'Material', 'Quantity', 'Basket', 'Storage Location', 'Notes', 'Date Added'
+];
+function buildMagsCsvRows(mags) {
+  return mags.map(m => [
+    m.id, m.platform, m.brand, m.model, m.color, m.capacity, m.caliber,
+    m.material, m.quantity, m.basket, m.storage_location, m.notes, m.created_at
+  ].map(csvCell).join(','));
+}
+
+function sendCsv(res, filename, columns, rows) {
+  const csv = [columns.map(csvCell).join(','), ...rows].join('\r\n');
+  res.setHeader('Content-Type', 'text/csv');
+  res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+  res.send(csv);
+}
+
+function sendJson(res, filename, payload) {
+  res.setHeader('Content-Type', 'application/json');
+  res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+  res.send(JSON.stringify(payload, null, 2));
+}
+
+router.get('/settings/export/trusts/csv', requireAuth, requireAdmin, (req, res) => {
+  const trusts = trustQueries.all();
+  audit(req, 'EXPORT_TRUSTS_CSV', `${trusts.length} records`);
+  const filename = `armory-trusts-${new Date().toISOString().slice(0, 10)}.csv`;
+  sendCsv(res, filename, TRUSTS_CSV_COLUMNS, buildTrustsCsvRows(trusts));
+});
+
+router.get('/settings/export/trusts/json', requireAuth, requireAdmin, (req, res) => {
+  const trusts = trustQueries.all();
+  audit(req, 'EXPORT_TRUSTS_JSON', `${trusts.length} records`);
+  const filename = `armory-trusts-${new Date().toISOString().slice(0, 10)}.json`;
+  sendJson(res, filename, {
+    version: '1.0',
+    exported_at: new Date().toISOString(),
+    count: trusts.length,
+    trusts,
+  });
+});
+
+router.get('/settings/export/optics/csv', requireAuth, requireAdmin, (req, res) => {
+  const optics = opticsQueries.all();
+  audit(req, 'EXPORT_OPTICS_CSV', `${optics.length} records`);
+  const filename = `armory-optics-${new Date().toISOString().slice(0, 10)}.csv`;
+  sendCsv(res, filename, OPTICS_CSV_COLUMNS, buildOpticsCsvRows(optics));
+});
+
+router.get('/settings/export/optics/json', requireAuth, requireAdmin, (req, res) => {
+  const optics = opticsQueries.all().map(o => {
+    const { primary_photo, ...rest } = o;
+    return rest;
+  });
+  audit(req, 'EXPORT_OPTICS_JSON', `${optics.length} records`);
+  const filename = `armory-optics-${new Date().toISOString().slice(0, 10)}.json`;
+  sendJson(res, filename, {
+    version: '1.0',
+    exported_at: new Date().toISOString(),
+    count: optics.length,
+    optics,
+  });
+});
+
+router.get('/settings/export/mags/csv', requireAuth, requireAdmin, (req, res) => {
+  const mags = magsQueries.all();
+  audit(req, 'EXPORT_MAGS_CSV', `${mags.length} records`);
+  const filename = `armory-mags-${new Date().toISOString().slice(0, 10)}.csv`;
+  sendCsv(res, filename, MAGS_CSV_COLUMNS, buildMagsCsvRows(mags));
+});
+
+router.get('/settings/export/mags/json', requireAuth, requireAdmin, (req, res) => {
+  const mags = magsQueries.all();
+  audit(req, 'EXPORT_MAGS_JSON', `${mags.length} records`);
+  const filename = `armory-mags-${new Date().toISOString().slice(0, 10)}.json`;
+  sendJson(res, filename, {
+    version: '1.0',
+    exported_at: new Date().toISOString(),
+    count: mags.length,
+    mags,
+  });
 });
 
 router.get('/settings/export/full', requireAuth, requireAdmin, (req, res) => {
