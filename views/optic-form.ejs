@@ -215,10 +215,19 @@
       </div>
     </div>
 
-    <!-- 06: NOTES -->
+    <!-- 06: STORAGE & NOTES -->
     <div class="form-band">
       <div class="form-band__label">06 / NOTES</div>
       <div class="form-band__fields">
+        <div class="field">
+          <label class="field-label">STORAGE LOCATION</label>
+          <input type="text" name="storage_location" class="field-input" list="opticStorageLocationList"
+            value="<%= optic ? (optic.storage_location || '') : '' %>"
+            placeholder="e.g. Safe, Shelf 2, Gun Room" autocomplete="off">
+          <datalist id="opticStorageLocationList">
+            <% storageLocations.forEach(s => { %><option value="<%= s %>"><% }) %>
+          </datalist>
+        </div>
         <div class="field">
           <label class="field-label">NOTES</label>
           <textarea name="notes" class="field-input field-textarea" rows="4"

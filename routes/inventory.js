@@ -49,6 +49,7 @@ function getFormSuggestions() {
     acquiredFromList: firearmsQueries.distinctAcquiredFrom(),
     fflList: firearmsQueries.distinctFflTransferredFrom(),
     opticsTags: firearmsQueries.distinctOpticsTags(),
+    storageLocations: firearmsQueries.distinctStorageLocations(),
   };
 }
 
@@ -70,7 +71,7 @@ router.post('/new', requireAdmin, (req, res) => {
       is_3d_printed,
       item_type, nfa_form_type, nfa_form_number, nfa_fmi, nfa_submit_date, nfa_tax_stamp_serial, nfa_approve_date, nfa_trust_name, non_nfa_trust_name,
       nfa2_enabled, nfa2_form_type, nfa2_form_number, nfa2_fmi, nfa2_submit_date, nfa2_tax_stamp_serial, nfa2_approve_date,
-      is_disposed, date_disposed, disposal_method, notes, round_count
+      is_disposed, date_disposed, disposal_method, notes, round_count, storage_location
     } = req.body;
 
     if (!manufacturer || !model) {
@@ -118,7 +119,8 @@ router.post('/new', requireAdmin, (req, res) => {
       date_disposed: is_disposed ? (date_disposed || null) : null,
       disposal_method: is_disposed ? (cap(disposal_method, 500) || null) : null,
       notes: cap(notes, 10000) || null,
-      round_count: parseInt(round_count, 10) || 0
+      round_count: parseInt(round_count, 10) || 0,
+      storage_location: cap(storage_location, 200) || null
     });
 
     if (req.files && req.files.length > 0) {
@@ -171,7 +173,7 @@ router.post('/:id/edit', requireAdmin, (req, res) => {
     is_3d_printed,
     item_type, nfa_form_type, nfa_form_number, nfa_fmi, nfa_submit_date, nfa_tax_stamp_serial, nfa_approve_date, nfa_trust_name, non_nfa_trust_name,
     nfa2_enabled, nfa2_form_type, nfa2_form_number, nfa2_fmi, nfa2_submit_date, nfa2_tax_stamp_serial, nfa2_approve_date,
-    is_disposed, date_disposed, disposal_method, notes, round_count
+    is_disposed, date_disposed, disposal_method, notes, round_count, storage_location
   } = req.body;
 
   if (!manufacturer || !model) {
@@ -218,7 +220,8 @@ router.post('/:id/edit', requireAdmin, (req, res) => {
     date_disposed: is_disposed ? (date_disposed || null) : null,
     disposal_method: is_disposed ? (cap(disposal_method, 500) || null) : null,
     notes: cap(notes, 10000) || null,
-    round_count: parseInt(round_count, 10) || 0
+    round_count: parseInt(round_count, 10) || 0,
+    storage_location: cap(storage_location, 200) || null
   });
   res.redirect(`/inventory/${req.params.id}`);
 });
@@ -274,6 +277,7 @@ router.post('/:id/duplicate', requireAdmin, (req, res) => {
     disposal_method:     null,
     notes:               firearm.notes || null,
     round_count:         0,
+    storage_location:    firearm.storage_location || null,
   });
   res.redirect('/inventory/' + newId);
 });

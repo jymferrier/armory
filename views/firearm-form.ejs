@@ -369,18 +369,27 @@
     <div class="form-band">
       <div class="form-band__label">05 / NOTES</div>
       <div class="form-band__fields">
-        <div class="field-row field-row--half">
+        <div class="field-row">
           <div class="field">
             <label class="field-label">ROUND COUNT</label>
             <input type="number" name="round_count" class="field-input mono" min="0" step="1"
               value="<%= firearm ? (firearm.round_count || 0) : 0 %>"
               placeholder="0">
           </div>
+          <div class="field">
+            <label class="field-label">STORAGE LOCATION</label>
+            <input type="text" name="storage_location" class="field-input" list="storageLocationList"
+              value="<%= firearm ? (firearm.storage_location || '') : '' %>"
+              placeholder="e.g. Safe, Shelf 2, Gun Room" autocomplete="off">
+            <datalist id="storageLocationList">
+              <% storageLocations.forEach(s => { %><option value="<%= s %>"><% }) %>
+            </datalist>
+          </div>
         </div>
         <div class="field">
           <label class="field-label">GENERAL NOTES</label>
           <textarea name="notes" class="field-textarea" rows="5"
-            placeholder="Condition, modifications, storage location, purchase details, provenance…"><%= firearm ? (firearm.notes || '') : '' %></textarea>
+            placeholder="Condition, modifications, purchase details, provenance…"><%= firearm ? (firearm.notes || '') : '' %></textarea>
         </div>
       </div>
     </div>

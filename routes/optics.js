@@ -55,6 +55,7 @@ router.get('/', (req, res) => {
       (o.mount_brand || '').toLowerCase().includes(ql) ||
       (o.mount_model || '').toLowerCase().includes(ql) ||
       (o.acquired_from || '').toLowerCase().includes(ql) ||
+      (o.storage_location || '').toLowerCase().includes(ql) ||
       (o.notes || '').toLowerCase().includes(ql)
     );
   }
@@ -72,6 +73,7 @@ function formLocals() {
     mountTypes: MOUNT_TYPES,
     mountBrands: opticsQueries.distinctMountBrands(),
     mountModels: opticsQueries.distinctMountModels(),
+    storageLocations: opticsQueries.distinctStorageLocations(),
   };
 }
 
@@ -87,7 +89,7 @@ router.post('/new', requireAdmin, (req, res) => {
 
     if (err) return res.render('optic-form', { user: req.session.user, optic: null, error: err.message, ...formLocals() });
 
-    const { manufacturer, model, model_number, serial, optic_type, magnification, reticle, tube_size, adjustment, mount_type, mount_brand, mount_model, mount_cant, acquired_from, date_acquired, price_paid, spouse_price, firearm_id, notes } = req.body;
+    const { manufacturer, model, model_number, serial, optic_type, magnification, reticle, tube_size, adjustment, mount_type, mount_brand, mount_model, mount_cant, acquired_from, date_acquired, price_paid, spouse_price, firearm_id, notes, storage_location } = req.body;
 
     if (!manufacturer || !model) {
       return res.render('optic-form', { user: req.session.user, optic: req.body, error: 'Manufacturer and model are required.', ...formLocals() });
@@ -118,6 +120,7 @@ router.post('/new', requireAdmin, (req, res) => {
       spouse_price: spouse_price || null,
       firearm_id: parsedFirearmId,
       notes: notes || null,
+      storage_location: storage_location || null,
     });
 
     if (req.files && req.files.length > 0) {
@@ -150,7 +153,7 @@ router.post('/:id/edit', requireAdmin, (req, res) => {
   if (!validateCsrf(req)) return res.status(403).render('error', { message: 'Security token validation failed.', user: req.session.user });
   const optic = opticsQueries.findById(req.params.id);
   if (!optic) return res.status(404).render('error', { message: 'Optic not found', user: req.session.user });
-  const { manufacturer, model, model_number, serial, optic_type, magnification, reticle, tube_size, adjustment, mount_type, mount_brand, mount_model, mount_cant, acquired_from, date_acquired, price_paid, spouse_price, firearm_id, notes } = req.body;
+  const { manufacturer, model, model_number, serial, optic_type, magnification, reticle, tube_size, adjustment, mount_type, mount_brand, mount_model, mount_cant, acquired_from, date_acquired, price_paid, spouse_price, firearm_id, notes, storage_location } = req.body;
   if (!manufacturer || !model) {
     return res.render('optic-form', { user: req.session.user, optic: { ...optic, ...req.body }, error: 'Manufacturer and model are required.', ...formLocals() });
   }
@@ -178,6 +181,7 @@ router.post('/:id/edit', requireAdmin, (req, res) => {
     spouse_price: spouse_price || null,
     firearm_id: parsedFirearmId,
     notes: notes || null,
+    storage_location: storage_location || null,
   });
   res.redirect('/optics/' + req.params.id);
 });
@@ -207,6 +211,7 @@ router.post('/:id/duplicate', requireAdmin, (req, res) => {
     spouse_price: optic.spouse_price || null,
     firearm_id: optic.firearm_id || null,
     notes: optic.notes || null,
+    storage_location: optic.storage_location || null,
   });
   res.redirect('/optics/' + newId);
 });

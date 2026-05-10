@@ -408,6 +408,17 @@
       </div>
       <% } %>
 
+      <!-- Storage -->
+      <% if (firearm.storage_location) { %>
+      <h3 class="section-title mt-lg">STORAGE</h3>
+      <div class="info-grid">
+        <div class="info-item">
+          <span class="info-label">STORAGE LOCATION</span>
+          <span class="info-value"><%= firearm.storage_location %></span>
+        </div>
+      </div>
+      <% } %>
+
       <!-- Notes -->
       <% if (firearm.notes) { %>
       <div class="notes-block mt-lg">

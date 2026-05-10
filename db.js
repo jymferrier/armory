@@ -199,6 +199,8 @@ function initDB() {
     { name: '047_optics_adjustment',              sql: 'ALTER TABLE optics_items ADD COLUMN adjustment TEXT' },
     { name: '048_mags_basket',                    sql: 'ALTER TABLE mags ADD COLUMN basket TEXT' },
     { name: '049_mags_storage_location',          sql: 'ALTER TABLE mags ADD COLUMN storage_location TEXT' },
+    { name: '050_firearms_storage_location',      sql: 'ALTER TABLE firearms ADD COLUMN storage_location TEXT' },
+    { name: '051_optics_storage_location',        sql: 'ALTER TABLE optics_items ADD COLUMN storage_location TEXT' },
   ];
 
   const applied = new Set(
@@ -313,16 +315,16 @@ const firearmsQueries = {
         is_3d_printed, is_nfa, nfa_type, nfa_form_type, nfa_form_number, nfa_fmi, nfa_submit_date, nfa_tax_stamp_serial, nfa_approve_date, nfa_trust_name,
         nfa2_enabled, nfa2_form_type, nfa2_form_number, nfa2_fmi, nfa2_submit_date, nfa2_tax_stamp_serial, nfa2_approve_date,
         non_nfa_trust_name,
-        is_disposed, date_disposed, disposal_method, notes, round_count, spouse_visible
+        is_disposed, date_disposed, disposal_method, notes, round_count, spouse_visible, storage_location
       ) VALUES (
         @manufacturer, @model, @model_number, @caliber, @serial, @barrel_length, @overall_length, @optics,
         @date_acquired, @acquired_from, @price_paid, @spouse_price, @transfer_date, @ffl_transferred_from,
         @is_3d_printed, @is_nfa, @nfa_type, @nfa_form_type, @nfa_form_number, @nfa_fmi, @nfa_submit_date, @nfa_tax_stamp_serial, @nfa_approve_date, @nfa_trust_name,
         @nfa2_enabled, @nfa2_form_type, @nfa2_form_number, @nfa2_fmi, @nfa2_submit_date, @nfa2_tax_stamp_serial, @nfa2_approve_date,
         @non_nfa_trust_name,
-        @is_disposed, @date_disposed, @disposal_method, @notes, @round_count, @spouse_visible
+        @is_disposed, @date_disposed, @disposal_method, @notes, @round_count, @spouse_visible, @storage_location
       )
-    `).run({ spouse_visible: 0, ...data });
+    `).run({ spouse_visible: 0, storage_location: null, ...data });
     return result.lastInsertRowid;
   },
   update: (id, data) => {
@@ -342,9 +344,10 @@ const firearmsQueries = {
         non_nfa_trust_name = @non_nfa_trust_name,
         is_disposed = @is_disposed, date_disposed = @date_disposed,
         disposal_method = @disposal_method, notes = @notes,
-        round_count = @round_count, updated_at = CURRENT_TIMESTAMP
+        round_count = @round_count, storage_location = @storage_location,
+        updated_at = CURRENT_TIMESTAMP
       WHERE id = @id
-    `).run({ ...data, id });
+    `).run({ storage_location: null, ...data, id });
   },
   delete: (id) => getDB().prepare('DELETE FROM firearms WHERE id = ?').run(id),
   addRounds: (id, count) => getDB().prepare('UPDATE firearms SET round_count = round_count + ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(count, id),
@@ -388,6 +391,7 @@ const firearmsQueries = {
   distinctBarrelLengths: () => getDB().prepare("SELECT DISTINCT barrel_length FROM firearms WHERE barrel_length IS NOT NULL AND barrel_length != '' ORDER BY barrel_length ASC").all().map(r => r.barrel_length),
   distinctAcquiredFrom: () => getDB().prepare("SELECT DISTINCT acquired_from FROM firearms WHERE acquired_from IS NOT NULL AND acquired_from != '' ORDER BY acquired_from ASC").all().map(r => r.acquired_from),
   distinctFflTransferredFrom: () => getDB().prepare("SELECT DISTINCT ffl_transferred_from FROM firearms WHERE ffl_transferred_from IS NOT NULL AND ffl_transferred_from != '' ORDER BY ffl_transferred_from ASC").all().map(r => r.ffl_transferred_from),
+  distinctStorageLocations: () => getDB().prepare("SELECT DISTINCT storage_location FROM firearms WHERE storage_location IS NOT NULL AND storage_location != '' ORDER BY storage_location ASC").all().map(r => r.storage_location),
   distinctOpticsTags: () => {
     const rows = getDB().prepare("SELECT optics FROM firearms WHERE optics IS NOT NULL AND optics != ''").all();
     const tags = new Set();
@@ -413,8 +417,9 @@ const firearmsQueries = {
          OR f.optics LIKE ? OR f.notes LIKE ? OR f.nfa_type LIKE ?
          OR f.nfa_form_number LIKE ? OR f.nfa_tax_stamp_serial LIKE ?
          OR f.nfa_trust_name LIKE ? OR f.acquired_from LIKE ? OR f.model_number LIKE ?
+         OR f.storage_location LIKE ?
       ORDER BY f.created_at DESC
-    `).all(like, like, like, like, like, like, like, like, like, like, like, like);
+    `).all(like, like, like, like, like, like, like, like, like, like, like, like, like);
     return firearms.map(f => ({
       ...f,
       is_3d_printed: !!f.is_3d_printed,
@@ -523,9 +528,9 @@ const opticsQueries = {
   },
   create: (data) => {
     const result = getDB().prepare(`
-      INSERT INTO optics_items (manufacturer, model, model_number, serial, optic_type, magnification, reticle, tube_size, adjustment, mount_type, mount_brand, mount_model, mount_cant, acquired_from, date_acquired, price_paid, spouse_price, firearm_id, notes)
-      VALUES (@manufacturer, @model, @model_number, @serial, @optic_type, @magnification, @reticle, @tube_size, @adjustment, @mount_type, @mount_brand, @mount_model, @mount_cant, @acquired_from, @date_acquired, @price_paid, @spouse_price, @firearm_id, @notes)
-    `).run(data);
+      INSERT INTO optics_items (manufacturer, model, model_number, serial, optic_type, magnification, reticle, tube_size, adjustment, mount_type, mount_brand, mount_model, mount_cant, acquired_from, date_acquired, price_paid, spouse_price, firearm_id, notes, storage_location)
+      VALUES (@manufacturer, @model, @model_number, @serial, @optic_type, @magnification, @reticle, @tube_size, @adjustment, @mount_type, @mount_brand, @mount_model, @mount_cant, @acquired_from, @date_acquired, @price_paid, @spouse_price, @firearm_id, @notes, @storage_location)
+    `).run({ storage_location: null, ...data });
     return result.lastInsertRowid;
   },
   update: (id, data) => {
@@ -536,9 +541,9 @@ const opticsQueries = {
         mount_type = @mount_type, mount_brand = @mount_brand, mount_model = @mount_model, mount_cant = @mount_cant,
         acquired_from = @acquired_from, date_acquired = @date_acquired,
         price_paid = @price_paid, spouse_price = @spouse_price, firearm_id = @firearm_id,
-        notes = @notes, updated_at = CURRENT_TIMESTAMP
+        notes = @notes, storage_location = @storage_location, updated_at = CURRENT_TIMESTAMP
       WHERE id = @id
-    `).run({ ...data, id });
+    `).run({ storage_location: null, ...data, id });
   },
   delete: (id) => getDB().prepare('DELETE FROM optics_items WHERE id = ?').run(id),
   addPhoto: (opticId, filename, originalName, isPrimary) => {
@@ -564,6 +569,7 @@ const opticsQueries = {
   distinctAcquiredFrom: () => getDB().prepare("SELECT DISTINCT acquired_from FROM optics_items WHERE acquired_from IS NOT NULL AND acquired_from != '' ORDER BY acquired_from ASC").all().map(r => r.acquired_from),
   distinctMountBrands: () => getDB().prepare("SELECT DISTINCT mount_brand FROM optics_items WHERE mount_brand IS NOT NULL AND mount_brand != '' ORDER BY mount_brand ASC").all().map(r => r.mount_brand),
   distinctMountModels: () => getDB().prepare("SELECT DISTINCT mount_model FROM optics_items WHERE mount_model IS NOT NULL AND mount_model != '' ORDER BY mount_model ASC").all().map(r => r.mount_model),
+  distinctStorageLocations: () => getDB().prepare("SELECT DISTINCT storage_location FROM optics_items WHERE storage_location IS NOT NULL AND storage_location != '' ORDER BY storage_location ASC").all().map(r => r.storage_location),
   findByFirearmId: (firearmsId) => {
     const items = getDB().prepare(`
       SELECT o.*, COALESCE(pp.filename, fp.filename) AS _photo_filename
@@ -594,8 +600,9 @@ const opticsQueries = {
       WHERE o.manufacturer LIKE ? OR o.model LIKE ? OR o.model_number LIKE ? OR o.serial LIKE ?
          OR o.optic_type LIKE ? OR o.magnification LIKE ? OR o.acquired_from LIKE ? OR o.notes LIKE ?
          OR o.reticle LIKE ? OR o.mount_type LIKE ? OR o.mount_brand LIKE ? OR o.mount_model LIKE ?
+         OR o.storage_location LIKE ?
       ORDER BY o.created_at DESC
-    `).all(like, like, like, like, like, like, like, like, like, like, like, like);
+    `).all(like, like, like, like, like, like, like, like, like, like, like, like, like);
     return items.map(o => ({
       ...o,
       primary_photo: o._photo_filename ? { filename: o._photo_filename } : null,

@@ -36,7 +36,7 @@ const CSV_COLUMNS = [
   'Form Type', 'Form Number', 'FMI',
   'Date Submitted to ATF', 'Tax Stamp / Form Serial', 'ATF Approval Date',
   'Is Disposed', 'Date Disposed', 'Disposal Method',
-  'Spouse Visible', 'Notes', 'Date Added'
+  'Spouse Visible', 'Storage Location', 'Notes', 'Date Added'
 ];
 
 function csvCell(val) {
@@ -64,7 +64,7 @@ function buildCsvRows(firearms) {
     f.nfa_form_type, f.nfa_form_number, f.nfa_fmi ? 'Yes' : 'No',
     f.nfa_submit_date, f.nfa_tax_stamp_serial, f.nfa_approve_date,
     f.is_disposed ? 'Yes' : 'No', f.date_disposed, f.disposal_method,
-    f.spouse_visible ? 'Yes' : 'No', f.notes, f.created_at
+    f.spouse_visible ? 'Yes' : 'No', f.storage_location, f.notes, f.created_at
   ].map(csvCell).join(','));
 }
 
@@ -292,6 +292,7 @@ router.get('/settings/export/json', requireAuth, requireAdmin, (req, res) => {
       nfa_approve_date: f.nfa_approve_date,
       is_disposed: !!f.is_disposed,
       date_disposed: f.date_disposed, disposal_method: f.disposal_method,
+      storage_location: f.storage_location,
       notes: f.notes
     }))
   };
@@ -315,7 +316,7 @@ const OPTICS_CSV_COLUMNS = [
   'Magnification', 'Reticle', 'Tube Size', 'Adjustment',
   'Mount Type', 'Mount Brand', 'Mount Model', 'Mount Cant',
   'Acquired From', 'Acquired Date', 'Price Paid', 'Spouse Price',
-  'Assigned Firearm ID', 'Notes', 'Date Added'
+  'Assigned Firearm ID', 'Storage Location', 'Notes', 'Date Added'
 ];
 function buildOpticsCsvRows(optics) {
   return optics.map(o => [
@@ -323,7 +324,7 @@ function buildOpticsCsvRows(optics) {
     o.magnification, o.reticle, o.tube_size, o.adjustment,
     o.mount_type, o.mount_brand, o.mount_model, o.mount_cant,
     o.acquired_from, o.date_acquired, o.price_paid, o.spouse_price,
-    o.firearm_id, o.notes, o.created_at
+    o.firearm_id, o.storage_location, o.notes, o.created_at
   ].map(csvCell).join(','));
 }
 
