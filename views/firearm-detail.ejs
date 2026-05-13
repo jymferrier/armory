@@ -414,7 +414,7 @@
       <div class="info-grid">
         <div class="info-item">
           <span class="info-label">STORAGE LOCATION</span>
-          <span class="info-value"><%= firearm.storage_location %></span>
+          <span class="info-value"><a href="/inventory?q=<%= encodeURIComponent(firearm.storage_location) %>"><%= firearm.storage_location %></a></span>
         </div>
       </div>
       <% } %>

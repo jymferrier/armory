@@ -44,6 +44,7 @@
             <div class="firearm-card__body">
               <div class="firearm-card__badges">
                 <% if (o.optic_type) { %><span class="badge badge--type"><%= o.optic_type %></span><% } %>
+                <% if (o.storage_location) { %><span class="badge badge--storage badge--searchable" data-search="<%= o.storage_location %>">⌂ <%= o.storage_location %></span><% } %>
               </div>
               <h2 class="firearm-card__make"><%= o.manufacturer %></h2>
               <p class="firearm-card__model"><%= o.model %></p>
@@ -80,6 +81,7 @@
             </div>
             <div class="firearm-row__badges">
               <% if (o.optic_type) { %><span class="badge badge--type"><%= o.optic_type %></span><% } %>
+              <% if (o.storage_location) { %><span class="badge badge--storage badge--searchable" data-search="<%= o.storage_location %>">⌂ <%= o.storage_location %></span><% } %>
             </div>
           </a>
         <% }) %>
@@ -104,5 +106,12 @@ document.getElementById('btnList').addEventListener('click', function() { setVie
   try { saved = localStorage.getItem('armory_optics_view') || 'grid'; } catch(e) {}
   setView(saved);
 })();
+document.addEventListener('click', function(e) {
+  var badge = e.target.closest('.badge--searchable');
+  if (!badge) return;
+  e.preventDefault();
+  e.stopImmediatePropagation();
+  window.location.href = '/optics?q=' + encodeURIComponent(badge.getAttribute('data-search'));
+}, true);
 </script>
 <%- include('partials/footer') %>
